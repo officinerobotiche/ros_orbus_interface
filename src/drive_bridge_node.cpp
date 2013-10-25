@@ -34,14 +34,14 @@ int main(int argc, char** argv)
   keyboard = new Keyboard(nh, robot);
   signal(SIGINT, quit);
   
-  ROS_INFO("Wait 2sec...");
-  sleep(2);
-  ROS_INFO("Ready!");
-  ros::spinOnce();
+//  ROS_INFO("Wait 2sec...");
+//  sleep(2);
+//  ROS_INFO("Ready!");
+//  ros::spinOnce();
 
   puts("Reading from keyboard");
   puts("---------------------------");
-  puts("Use arrow keys to move the turtle.");
+  puts("Use arrow keys to move the robot.");
   
   keyboard->read_keyboard();
 

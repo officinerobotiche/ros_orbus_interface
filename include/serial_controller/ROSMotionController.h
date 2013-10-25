@@ -8,13 +8,9 @@
 #ifndef ROSMOTIONCONTROLLER_H
 #define	ROSMOTIONCONTROLLER_H
 
-#include "Serial.h"
-#include "ros/ros.h"
 #include "std_msgs/String.h"
 
 #include "AbstractROSController.h"
-
-#include <boost/thread.hpp>
 
 #include <serial_bridge/Enable.h>
 #include <serial_bridge/Pose.h>
@@ -30,8 +26,6 @@
 #include <tf/transform_broadcaster.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
-
-//const std::string name_node = "robot";
 
 const std::string update_pid_string = "update_pid";
 const std::string update_parameter_string = "update_parameter";

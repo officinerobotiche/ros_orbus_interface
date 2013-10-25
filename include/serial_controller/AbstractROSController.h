@@ -8,10 +8,14 @@
 #ifndef ABSTRACTROSCONTROLLER_H
 #define	ABSTRACTROSCONTROLLER_H
 
+#include "Serial.h"
+#include "ros/ros.h"
+
+#include <boost/thread.hpp>
+
 class AbstractROSController {
 public:
     virtual void loadParameter() = 0;
-    virtual boost::thread * run() = 0;
 private:
 };
 

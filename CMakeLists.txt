@@ -114,6 +114,7 @@ link_directories(${catkin_LIBRARY_DIRS})
 set(serial_SRC
     src/serial_bridge_node.cpp
     src/serial_controller/ROSMotionController.cpp
+    src/serial_controller/ROSSensorController.cpp
     src/Serial.cpp
 )
 

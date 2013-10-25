@@ -15,7 +15,6 @@ ROSMotionController::ROSMotionController(std::string name_node, const ros::NodeH
 {
   name_node_ = name_node; // Initialize node name
   this->serial_ = serial; // Initialize serial port
-  ROS_INFO("Init");
   serial_->asyncPacket(&ROSMotionController::actionAsync, this);
   rate_ = rate; // Initialize rate
 
@@ -173,10 +172,8 @@ bool ROSMotionController::stream_bool()
 
 void ROSMotionController::loadParameter()
 {
-  ROS_INFO("Name node: %s", name_node_.c_str());
   if (nh_.hasParam(name_node_))
   {
-    ROS_INFO("Sync parameter: ROS -> ROBOT");
     packet_t send_pkg;
     send_pkg.length = 0;
     constraint_t constraint = get_constraint();
@@ -194,12 +191,10 @@ void ROSMotionController::loadParameter()
     nh_.param<std::string>("/" + name_node_ + "/" + tf_string + "/" + odometry_string, tf_odometry_string_, tf_odometry_string_);
     nh_.param<std::string>("/" + name_node_ + "/" + tf_string + "/" + base_link_string, tf_base_link_string_, tf_base_link_string_);
     nh_.param<std::string>("/" + name_node_ + "/" + tf_string + "/" + joint_string, tf_joint_string_, tf_joint_string_);
-
-    ROS_INFO("Write!");
+    ROS_INFO("Sync parameter: ROS -> ROBOT");
   }
   else
   {
-    ROS_INFO("Sync parameter: ROBOT -> ROS");
     tf_odometry_string_ = odometry_string;
     tf_base_link_string_ = base_link_string;
     tf_joint_string_ = joint_string;
@@ -210,6 +205,7 @@ void ROSMotionController::loadParameter()
     nh_.setParam("/" + name_node_ + "/" + tf_string + "/" + base_link_string, tf_base_link_string_);
     nh_.setParam("/" + name_node_ + "/" + tf_string + "/" + joint_string, tf_joint_string_);
     init();
+    ROS_INFO("Sync parameter: ROBOT -> ROS");
   }
 }
 
@@ -290,7 +286,6 @@ void ROSMotionController::init()
   nh_.setParam("/" + name_node_ + "/" + rate_update_string, rate_);
   // total space move robot
   nh_.setParam("/" + name_node_ + "/" + space_robot_string, 0);
-  ROS_INFO("Saved");
 }
 
 float ROSMotionController::correction_time_process(float process_time)

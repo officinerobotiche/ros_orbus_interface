@@ -5,12 +5,14 @@
  * Created on June 7, 2013, 4:33 PM
  */
 
-#ifndef ROSCONTROLLERSERIAL_H
-#define	ROSCONTROLLERSERIAL_H
+#ifndef ROSMOTIONCONTROLLER_H
+#define	ROSMOTIONCONTROLLER_H
 
 #include "Serial.h"
 #include "ros/ros.h"
 #include "std_msgs/String.h"
+
+#include "AbstractROSController.h"
 
 #include <boost/thread.hpp>
 
@@ -82,10 +84,10 @@ const std::string standard_string = "standard";
 
 const std::string base_link_string = "base_link";
 
-class RosControllerSerial {
+class ROSMotionController : public AbstractROSController {
 public:
-    RosControllerSerial(std::string name_node, const ros::NodeHandle& nh, Serial* serial, int rate);
-    virtual ~RosControllerSerial();
+    ROSMotionController(std::string name_node, const ros::NodeHandle& nh, Serial* serial, int rate);
+    virtual ~ROSMotionController();
 
     boost::thread * run();
     void setPacketStream(packet_t packet);
@@ -169,4 +171,4 @@ private:
     void sendOdom(serial_bridge::Velocity velocity, serial_bridge::Pose pose);
 };
 
-#endif	/* ROSCONTROLLERSERIAL_H */
+#endif	/* ROSMOTIONCONTROLLER_H */

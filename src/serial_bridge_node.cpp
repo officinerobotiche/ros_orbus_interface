@@ -9,7 +9,7 @@
 #include "std_msgs/String.h"
 
 #include "Serial.h"
-#include "serial_controller/ROSControllerSerial.h"
+#include "serial_controller/ROSMotionController.h"
 
 #include <boost/thread.hpp>
 
@@ -46,7 +46,7 @@ int main(int argc, char** argv)
     ROS_INFO("Serial Arduino started");
   }
   //Start ros serial controller
-  RosControllerSerial* controller = new RosControllerSerial(name, nh, serial, rate);
+  AbstractROSController* controller = new ROSMotionController(name, nh, serial, rate);
   controller->loadParameter();
 
   ROS_INFO("start serial motion node");
@@ -55,7 +55,6 @@ int main(int argc, char** argv)
   thr_stream_->detach();
   
   ros::spin();
-
 
   return 0;
 }

@@ -12,7 +12,8 @@
           <in>packet.h</in>
         </df>
         <df name="serial_controller">
-          <in>ROSControllerSerial.h</in>
+          <in>AbstractROSController.h</in>
+          <in>ROSMotionController.h</in>
         </df>
         <in>Serial.h</in>
       </df>
@@ -21,12 +22,13 @@
           <in>Keyboard.cpp</in>
         </df>
         <df name="serial_controller">
-          <in>ROSControllerSerial.cpp</in>
+          <in>ROSMotionController.cpp</in>
         </df>
         <in>Serial.cpp</in>
         <in>drive_bridge_node.cpp</in>
         <in>serial_bridge_node.cpp</in>
       </df>
+      <in>README.md</in>
     </df>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -70,6 +72,8 @@
           </ccTool>
         </makeTool>
       </makefileType>
+      <item path="README.md" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="include/Serial.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/drive_bridge/Keyboard.h" ex="false" tool="3" flavor2="0">
@@ -80,7 +84,12 @@
       </item>
       <item path="include/packet/packet.h" ex="false" tool="3" flavor2="0">
       </item>
-      <item path="include/serial_controller/ROSControllerSerial.h"
+      <item path="include/serial_controller/AbstractROSController.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/serial_controller/ROSMotionController.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -101,7 +110,7 @@
         <ccTool>
         </ccTool>
       </item>
-      <item path="src/serial_controller/ROSControllerSerial.cpp"
+      <item path="src/serial_controller/ROSMotionController.cpp"
             ex="false"
             tool="1"
             flavor2="4">

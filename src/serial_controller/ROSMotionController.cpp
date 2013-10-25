@@ -5,60 +5,60 @@
  * Created on June 7, 2013, 4:33 PM
  */
 
-#include "serial_controller/ROSControllerSerial.h"
+#include "serial_controller/ROSMotionController.h"
 
 /*
  *
  */
-RosControllerSerial::RosControllerSerial(std::string name_node, const ros::NodeHandle& nh, Serial* serial, int rate)
+ROSMotionController::ROSMotionController(std::string name_node, const ros::NodeHandle& nh, Serial* serial, int rate)
   : nh_(nh), loop_rate_(rate)
 {
   name_node_ = name_node; // Initialize node name
   this->serial_ = serial; // Initialize serial port
   ROS_INFO("Init");
-  serial_->asyncPacket(&RosControllerSerial::actionAsync, this);
+  serial_->asyncPacket(&ROSMotionController::actionAsync, this);
   rate_ = rate; // Initialize rate
 
 
   //Open Publisher
   //- Measure
   velocity_mis_pub_ = nh_.advertise<serial_bridge::Velocity>("/" + name_node + "/" + measure_string + "/" + velocity_string, 1000,
-    boost::bind(&RosControllerSerial::connectCallback, this, _1));
+    boost::bind(&ROSMotionController::connectCallback, this, _1));
   //- Command receive
   pose_pub_ = nh_.advertise<serial_bridge::Pose>("/" + name_node + "/" + pose_string, 1000,
-    boost::bind(&RosControllerSerial::connectCallback, this, _1));
+    boost::bind(&ROSMotionController::connectCallback, this, _1));
   velocity_pub_ = nh_.advertise<serial_bridge::Velocity>("/" + name_node + "/" + velocity_string, 1000,
-    boost::bind(&RosControllerSerial::connectCallback, this, _1));
+    boost::bind(&ROSMotionController::connectCallback, this, _1));
   enable_pub_ = nh_.advertise<serial_bridge::Enable>("/" + name_node + "/" + enable_motors, 1000,
-    boost::bind(&RosControllerSerial::connectCallback, this, _1));
+    boost::bind(&ROSMotionController::connectCallback, this, _1));
   motor_left_pub_ = nh_.advertise<serial_bridge::Motor>("/" + name_node + "/" + motor + "/" + left_string, 1000,
-    boost::bind(&RosControllerSerial::connectCallback, this, _1));
+    boost::bind(&ROSMotionController::connectCallback, this, _1));
   motor_right_pub_ = nh_.advertise<serial_bridge::Motor>("/" + name_node + "/" + motor + "/" + right_string, 1000,
-    boost::bind(&RosControllerSerial::connectCallback, this, _1));
+    boost::bind(&ROSMotionController::connectCallback, this, _1));
   time_process_pub_ = nh_.advertise<serial_bridge::Process>("/" + name_node + "/" + process, 1000,
-    boost::bind(&RosControllerSerial::connectCallback, this, _1));
+    boost::bind(&ROSMotionController::connectCallback, this, _1));
   //-- Conventional (Using TF, NAV)
   odom_pub_ = nh_.advertise<nav_msgs::Odometry>("/" + name_node + "/" + odometry_string, 1000,
-    boost::bind(&RosControllerSerial::connectCallback, this, _1));
+    boost::bind(&ROSMotionController::connectCallback, this, _1));
   //JointState position
   joint_pub_ = nh_.advertise<sensor_msgs::JointState>(joint_string, 1,
-    boost::bind(&RosControllerSerial::connectCallback, this, _1));
+    boost::bind(&ROSMotionController::connectCallback, this, _1));
 
   //Open Subscriber
   //- Command
-  pose_sub_ = nh_.subscribe("/" + name_node + "/" + command_string + "/" + pose_string, 1, &RosControllerSerial::poseCallback, this);
-  velocity_sub_ = nh_.subscribe("/" + name_node + "/" + command_string + "/" + velocity_string, 1, &RosControllerSerial::velocityCallback, this);
-  enable_sub_ = nh_.subscribe("/" + name_node + "/" + command_string + "/" + enable_motors, 1, &RosControllerSerial::enableCallback, this);
+  pose_sub_ = nh_.subscribe("/" + name_node + "/" + command_string + "/" + pose_string, 1, &ROSMotionController::poseCallback, this);
+  velocity_sub_ = nh_.subscribe("/" + name_node + "/" + command_string + "/" + velocity_string, 1, &ROSMotionController::velocityCallback, this);
+  enable_sub_ = nh_.subscribe("/" + name_node + "/" + command_string + "/" + enable_motors, 1, &ROSMotionController::enableCallback, this);
   //-- Conventional (Using TF, NAV)
-  pose_estimate_sub_ = nh_.subscribe("/" + name_node + "/" + command_string + "/" + odometry_string, 1, &RosControllerSerial::pose_tf_Callback, this);
+  pose_estimate_sub_ = nh_.subscribe("/" + name_node + "/" + command_string + "/" + odometry_string, 1, &ROSMotionController::pose_tf_Callback, this);
 
   //Open Service
-  pid_update_srv_ = nh_.advertiseService("/" + name_node + "/" + update_pid_string, &RosControllerSerial::pid_update_Callback, this);
-  parameter_update_srv_ = nh_.advertiseService("/" + name_node + "/" + update_parameter_string, &RosControllerSerial::parameter_update_Callback, this);
-  constraint_update_srv_ = nh_.advertiseService("/" + name_node + "/" + update_constraint_string, &RosControllerSerial::constraint_update_Callback, this);
-  process_update_srv_ = nh_.advertiseService("/" + name_node + "/" + update_process_string, &RosControllerSerial::process_update_Callback, this);
-  convert_velocity_srv_ = nh_.advertiseService("/" + name_node + "/" + convert_string, &RosControllerSerial::convert_Callback, this);
-  reset_srv_ = nh_.advertiseService("/" + name_node + "/" + service_string, &RosControllerSerial::service_Callback, this);
+  pid_update_srv_ = nh_.advertiseService("/" + name_node + "/" + update_pid_string, &ROSMotionController::pid_update_Callback, this);
+  parameter_update_srv_ = nh_.advertiseService("/" + name_node + "/" + update_parameter_string, &ROSMotionController::parameter_update_Callback, this);
+  constraint_update_srv_ = nh_.advertiseService("/" + name_node + "/" + update_constraint_string, &ROSMotionController::constraint_update_Callback, this);
+  process_update_srv_ = nh_.advertiseService("/" + name_node + "/" + update_process_string, &ROSMotionController::process_update_Callback, this);
+  convert_velocity_srv_ = nh_.advertiseService("/" + name_node + "/" + convert_string, &ROSMotionController::convert_Callback, this);
+  reset_srv_ = nh_.advertiseService("/" + name_node + "/" + service_string, &ROSMotionController::service_Callback, this);
 
   //Initialize boolean for encapsulation streaming
   pose_active_ = false;
@@ -86,7 +86,7 @@ RosControllerSerial::RosControllerSerial(std::string name_node, const ros::NodeH
   positon_joint_right_ = 0;
 }
 
-void RosControllerSerial::actionAsync(packet_t packet)
+void ROSMotionController::actionAsync(packet_t packet)
 {
   std::list<information_packet_t> decode_packet = Serial::parsing(NULL, packet);
   for (std::list<information_packet_t>::iterator list_iter = decode_packet.begin(); list_iter != decode_packet.end(); list_iter++)
@@ -109,22 +109,22 @@ void RosControllerSerial::actionAsync(packet_t packet)
   }
 }
 
-RosControllerSerial::~RosControllerSerial()
+ROSMotionController::~ROSMotionController()
 {
 }
 
-boost::thread * RosControllerSerial::run()
+boost::thread * ROSMotionController::run()
 {
-  thr_ = new boost::thread(boost::bind(&RosControllerSerial::th_stream, this));
+  thr_ = new boost::thread(boost::bind(&ROSMotionController::th_stream, this));
   return thr_;
 }
 
-void RosControllerSerial::setPacketStream(packet_t packet)
+void ROSMotionController::setPacketStream(packet_t packet)
 {
   this->packet_ = packet;
 }
 
-bool RosControllerSerial::stream_bool()
+bool ROSMotionController::stream_bool()
 {
   boost::unique_lock<boost::mutex> lock(mutex_);
 
@@ -171,7 +171,7 @@ bool RosControllerSerial::stream_bool()
   return user_;
 }
 
-void RosControllerSerial::loadParameter()
+void ROSMotionController::loadParameter()
 {
   ROS_INFO("Name node: %s", name_node_.c_str());
   if (nh_.hasParam(name_node_))
@@ -213,7 +213,7 @@ void RosControllerSerial::loadParameter()
   }
 }
 
-void RosControllerSerial::init()
+void ROSMotionController::init()
 {
   packet_t packet;
   packet.length = 0;
@@ -293,7 +293,7 @@ void RosControllerSerial::init()
   ROS_INFO("Saved");
 }
 
-float RosControllerSerial::correction_time_process(float process_time)
+float ROSMotionController::correction_time_process(float process_time)
 {
   if (process_time < 0)
   {
@@ -304,7 +304,7 @@ float RosControllerSerial::correction_time_process(float process_time)
   return process_time;
 }
 
-void RosControllerSerial::th_stream()
+void ROSMotionController::th_stream()
 {
   while (~(stream_bool() ^ !stream_exit_) && ros::ok())
   {
@@ -406,7 +406,7 @@ void RosControllerSerial::th_stream()
   ROS_INFO("close stream");
 }
 
-void RosControllerSerial::sendJoint(serial_bridge::Motor motor_left, serial_bridge::Motor motor_right)
+void ROSMotionController::sendJoint(serial_bridge::Motor motor_left, serial_bridge::Motor motor_right)
 {
   sensor_msgs::JointState joint;
   ros::Time now = ros::Time::now();
@@ -435,7 +435,7 @@ void RosControllerSerial::sendJoint(serial_bridge::Motor motor_left, serial_brid
   joint_pub_.publish(joint);
 }
 
-void RosControllerSerial::sendOdom(serial_bridge::Velocity velocity, serial_bridge::Pose pose)
+void ROSMotionController::sendOdom(serial_bridge::Velocity velocity, serial_bridge::Pose pose)
 {
   ros::Time current_time = ros::Time::now();
   //first, we'll publish the transform over tf
@@ -476,7 +476,7 @@ void RosControllerSerial::sendOdom(serial_bridge::Velocity velocity, serial_brid
   odom_pub_.publish(odom);
 }
 
-packet_t RosControllerSerial::updatePacket()
+packet_t ROSMotionController::updatePacket()
 {
   packet_t packet;
   packet.length = 0;
@@ -518,7 +518,7 @@ packet_t RosControllerSerial::updatePacket()
   return packet;
 }
 
-void RosControllerSerial::connectCallback(const ros::SingleSubscriberPublisher& pub)
+void ROSMotionController::connectCallback(const ros::SingleSubscriberPublisher& pub)
 {
   //  ROS_INFO("callback: %s", pub.getTopic().c_str());
   if (((pose_pub_.getNumSubscribers() == 1) || (velocity_pub_.getNumSubscribers() == 1)
@@ -532,7 +532,7 @@ void RosControllerSerial::connectCallback(const ros::SingleSubscriberPublisher& 
   }
 }
 
-void RosControllerSerial::velocityCallback(const serial_bridge::Velocity::ConstPtr &msg)
+void ROSMotionController::velocityCallback(const serial_bridge::Velocity::ConstPtr &msg)
 {
   //  ROS_INFO("VELOCITY CALLBACK");
   packet_t send_pkg;
@@ -545,7 +545,7 @@ void RosControllerSerial::velocityCallback(const serial_bridge::Velocity::ConstP
   Serial::parsing(NULL, serial_->sendPacket(send_pkg));
 }
 
-void RosControllerSerial::enableCallback(const serial_bridge::Enable::ConstPtr &msg)
+void ROSMotionController::enableCallback(const serial_bridge::Enable::ConstPtr &msg)
 {
   packet_t send_pkg;
   send_pkg.length = 0;
@@ -555,7 +555,7 @@ void RosControllerSerial::enableCallback(const serial_bridge::Enable::ConstPtr &
   Serial::parsing(NULL, serial_->sendPacket(send_pkg));
 }
 
-void RosControllerSerial::updateOdom(const serial_bridge::Pose* pose)
+void ROSMotionController::updateOdom(const serial_bridge::Pose* pose)
 {
   float space;
   packet_t packet;
@@ -590,7 +590,7 @@ void RosControllerSerial::updateOdom(const serial_bridge::Pose* pose)
   Serial::parsing(NULL, serial_->sendPacket(send_pkg));
 }
 
-void RosControllerSerial::pose_tf_Callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg)
+void ROSMotionController::pose_tf_Callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg)
 {
   serial_bridge::Pose pose;
   pose.x = msg.get()->pose.pose.position.x;
@@ -600,13 +600,13 @@ void RosControllerSerial::pose_tf_Callback(const geometry_msgs::PoseWithCovarian
   ROS_INFO("Update initial position: [x: %f, y: %f, th: %f]", pose.x, pose.y, pose.theta);
 }
 
-void RosControllerSerial::poseCallback(const serial_bridge::Pose::ConstPtr &msg)
+void ROSMotionController::poseCallback(const serial_bridge::Pose::ConstPtr &msg)
 {
   //  ROS_INFO("POSE CALLBACK");
   updateOdom(msg.get());
 }
 
-pid_control_t RosControllerSerial::get_pid(std::string name)
+pid_control_t ROSMotionController::get_pid(std::string name)
 {
   pid_control_t pid;
   double temp;
@@ -620,7 +620,7 @@ pid_control_t RosControllerSerial::get_pid(std::string name)
   return pid;
 }
 
-parameter_t RosControllerSerial::get_parameter()
+parameter_t ROSMotionController::get_parameter()
 {
   parameter_t parameter;
   double temp;
@@ -651,7 +651,7 @@ parameter_t RosControllerSerial::get_parameter()
   return parameter;
 }
 
-constraint_t RosControllerSerial::get_constraint()
+constraint_t ROSMotionController::get_constraint()
 {
   constraint_t constraint;
   double temp;
@@ -663,7 +663,7 @@ constraint_t RosControllerSerial::get_constraint()
   return constraint;
 }
 
-process_t RosControllerSerial::get_process(std::string name)
+process_t ROSMotionController::get_process(std::string name)
 {
   process_t process;
   int temp;
@@ -682,7 +682,7 @@ process_t RosControllerSerial::get_process(std::string name)
   return process;
 }
 
-bool RosControllerSerial::parameter_update_Callback(std_srvs::Empty::Request&, std_srvs::Empty::Response&)
+bool ROSMotionController::parameter_update_Callback(std_srvs::Empty::Request&, std_srvs::Empty::Response&)
 {
   packet_t send_pkg;
   send_pkg.length = 0;
@@ -692,7 +692,7 @@ bool RosControllerSerial::parameter_update_Callback(std_srvs::Empty::Request&, s
   return true;
 }
 
-bool RosControllerSerial::process_update_Callback(serial_bridge::Update::Request &req, serial_bridge::Update::Response&)
+bool ROSMotionController::process_update_Callback(serial_bridge::Update::Request &req, serial_bridge::Update::Response&)
 {
   std::string name = req.name;
   process_t process;
@@ -722,7 +722,7 @@ bool RosControllerSerial::process_update_Callback(serial_bridge::Update::Request
   }
 }
 
-bool RosControllerSerial::pid_update_Callback(serial_bridge::Update::Request &req, serial_bridge::Update::Response&)
+bool ROSMotionController::pid_update_Callback(serial_bridge::Update::Request &req, serial_bridge::Update::Response&)
 {
   std::string name = req.name;
   pid_control_t pid;
@@ -752,7 +752,7 @@ bool RosControllerSerial::pid_update_Callback(serial_bridge::Update::Request &re
   }
 }
 
-bool RosControllerSerial::constraint_update_Callback(std_srvs::Empty::Request&, std_srvs::Empty::Response&)
+bool ROSMotionController::constraint_update_Callback(std_srvs::Empty::Request&, std_srvs::Empty::Response&)
 {
   packet_t send_pkg;
   send_pkg.length = 0;
@@ -762,7 +762,7 @@ bool RosControllerSerial::constraint_update_Callback(std_srvs::Empty::Request&, 
   return true;
 }
 
-abstract_packet_t RosControllerSerial::getServiceSerial(std::list<information_packet_t> configuration, unsigned char command, unsigned char service_command)
+abstract_packet_t ROSMotionController::getServiceSerial(std::list<information_packet_t> configuration, unsigned char command, unsigned char service_command)
 {
   abstract_packet_t packet;
   //TODO control error to receive packet
@@ -783,7 +783,7 @@ abstract_packet_t RosControllerSerial::getServiceSerial(std::list<information_pa
   return packet;
 }
 
-bool RosControllerSerial::service_Callback(serial_bridge::Service::Request &req, serial_bridge::Service::Response & msg)
+bool ROSMotionController::service_Callback(serial_bridge::Service::Request &req, serial_bridge::Service::Response & msg)
 {
   packet_t send_pkg;
   std::stringstream service_str;
@@ -835,7 +835,7 @@ bool RosControllerSerial::service_Callback(serial_bridge::Service::Request &req,
   return true;
 }
 
-bool RosControllerSerial::convert_Callback(serial_bridge::Convert::Request &req, serial_bridge::Convert::Response & msg)
+bool ROSMotionController::convert_Callback(serial_bridge::Convert::Request &req, serial_bridge::Convert::Response & msg)
 {
   double wheelbase, radius_r, radius_l;
   nh_.getParam("/" + name_node_ + "/" + structure_string + "/" + wheelbase_string, wheelbase);

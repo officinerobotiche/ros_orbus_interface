@@ -12,7 +12,8 @@
           <in>packet.h</in>
         </df>
         <df name="serial_controller">
-          <in>ROSControllerSerial.h</in>
+          <in>AbstractROSController.h</in>
+          <in>ROSMotionController.h</in>
         </df>
         <in>Serial.h</in>
       </df>
@@ -23,7 +24,7 @@
           <in>Keyboard.cpp</in>
         </df>
         <df name="serial_controller">
-          <in>ROSControllerSerial.cpp</in>
+          <in>ROSMotionController.cpp</in>
         </df>
         <in>Serial.cpp</in>
         <in>drive_bridge_node.cpp</in>
@@ -31,6 +32,7 @@
       </df>
       <df name="srv">
       </df>
+      <in>README.md</in>
     </df>
   </logicalFolder>
   <projectmakefile>../../build/Makefile</projectmakefile>

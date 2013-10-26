@@ -11,6 +11,8 @@
 #include "AbstractROSController.h"
 
 #include <sensor_msgs/LaserScan.h>
+#include <geometry_msgs/PointStamped.h>
+#include <tf/transform_listener.h>
 
 #define NUMBER_PUBLISHER 10
 const std::string laser_sharp_string = "laser_sharp";
@@ -22,6 +24,7 @@ public:
     virtual ~ROSSensorController();
     
     void loadParameter();
+    void test();
 private:
     //Initialization object
     std::string name_node_; //Name for topics, params, services
@@ -32,6 +35,7 @@ private:
     ros::Publisher pub_laser_sharp_;
     
     void actionAsync(packet_t packet);
+    void transformPoint(const tf::TransformListener& listener);
     void connectCallback(const ros::SingleSubscriberPublisher& pub);
 };
 

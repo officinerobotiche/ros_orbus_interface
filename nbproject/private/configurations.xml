@@ -17,6 +17,7 @@
           <in>ROSSensorController.h</in>
         </df>
         <in>Serial.h</in>
+        <in>ServiceSerial.h</in>
       </df>
       <df name="msg">
       </df>
@@ -29,6 +30,7 @@
           <in>ROSSensorController.cpp</in>
         </df>
         <in>Serial.cpp</in>
+        <in>ServiceSerial.cpp</in>
         <in>drive_bridge_node.cpp</in>
         <in>serial_bridge_node.cpp</in>
       </df>

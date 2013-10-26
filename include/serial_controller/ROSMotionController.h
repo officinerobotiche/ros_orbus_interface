@@ -80,7 +80,7 @@ const std::string base_link_string = "base_link";
 
 class ROSMotionController : public AbstractROSController {
 public:
-    ROSMotionController(std::string name_node, const ros::NodeHandle& nh, Serial* serial, int rate);
+    ROSMotionController(std::string name_node, const ros::NodeHandle& nh, Serial* serial, ServiceSerial* service_serial, int rate);
     virtual ~ROSMotionController();
 
     boost::thread * run();

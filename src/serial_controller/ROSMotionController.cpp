@@ -10,7 +10,7 @@
 /*
  *
  */
-ROSMotionController::ROSMotionController(std::string name_node, const ros::NodeHandle& nh, Serial* serial, int rate)
+ROSMotionController::ROSMotionController(std::string name_node, const ros::NodeHandle& nh, Serial* serial, ServiceSerial* service_serial, int rate)
   : nh_(nh), loop_rate_(rate)
 {
   name_node_ = name_node; // Initialize node name

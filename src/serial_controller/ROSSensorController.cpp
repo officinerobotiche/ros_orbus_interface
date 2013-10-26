@@ -7,7 +7,7 @@
 
 #include "serial_controller/ROSSensorController.h"
 
-ROSSensorController::ROSSensorController(std::string name_node, const ros::NodeHandle& nh, Serial* serial)
+ROSSensorController::ROSSensorController(std::string name_node, const ros::NodeHandle& nh, Serial* serial, ServiceSerial* service_serial)
   : nh_(nh)
 {
   name_node_ = name_node; // Initialize node name

@@ -9,6 +9,7 @@
 #define	ABSTRACTROSCONTROLLER_H
 
 #include "Serial.h"
+#include "ServiceSerial.h"
 #include "ros/ros.h"
 
 #include <boost/thread.hpp>

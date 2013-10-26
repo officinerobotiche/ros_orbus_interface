@@ -10,9 +10,11 @@
 
 #include "AbstractROSController.h"
 
+#include <sensor_msgs/LaserScan.h>
+
 class ROSSensorController : public AbstractROSController {
 public:
-    ROSSensorController(std::string name_node, const ros::NodeHandle& nh, Serial* serial);
+    ROSSensorController(std::string name_node, const ros::NodeHandle& nh, Serial* serial, ServiceSerial* service_serial);
     ROSSensorController(const ROSSensorController& orig);
     virtual ~ROSSensorController();
     

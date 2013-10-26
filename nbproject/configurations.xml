@@ -17,6 +17,7 @@
           <in>ROSSensorController.h</in>
         </df>
         <in>Serial.h</in>
+        <in>ServiceSerial.h</in>
       </df>
       <df name="src">
         <df name="drive_bridge">
@@ -27,6 +28,7 @@
           <in>ROSSensorController.cpp</in>
         </df>
         <in>Serial.cpp</in>
+        <in>ServiceSerial.cpp</in>
         <in>drive_bridge_node.cpp</in>
         <in>serial_bridge_node.cpp</in>
       </df>
@@ -78,6 +80,8 @@
       </item>
       <item path="include/Serial.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="include/ServiceSerial.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="include/drive_bridge/Keyboard.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/packet/motion.h" ex="false" tool="3" flavor2="0">
@@ -104,6 +108,8 @@
       <item path="src/Serial.cpp" ex="false" tool="1" flavor2="4">
         <ccTool>
         </ccTool>
+      </item>
+      <item path="src/ServiceSerial.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/drive_bridge/Keyboard.cpp" ex="false" tool="1" flavor2="4">
         <ccTool>

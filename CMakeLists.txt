@@ -116,6 +116,7 @@ set(serial_SRC
     src/serial_controller/ROSMotionController.cpp
     src/serial_controller/ROSSensorController.cpp
     src/Serial.cpp
+    src/ServiceSerial.cpp
 )
 
 set(drive_teleop_SRC

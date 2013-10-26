@@ -88,12 +88,12 @@ public:
     void loadParameter();
     void init();
     
-    void actionAsync(packet_t packet);
 private:
     //Initialization object
     std::string name_node_; //Name for topics, params, services
     ros::NodeHandle nh_; //NameSpace for bridge controller
     Serial* serial_; //Serial object to comunicate with PIC device
+    ServiceSerial* service_serial_;     //Service with board
     int rate_; //Rate to comunication with device
 
     //Thread control for streaming packets
@@ -153,7 +153,6 @@ private:
     bool convert_Callback(serial_bridge::Convert::Request &req, serial_bridge::Convert::Response &msg);
     bool service_Callback(serial_bridge::Service::Request &req, serial_bridge::Service::Response &msg);
 
-    abstract_packet_t getServiceSerial(std::list<information_packet_t> configuration, unsigned char command, unsigned char service_command);
     pid_control_t get_pid(std::string name);
     parameter_t get_parameter();
     constraint_t get_constraint();
@@ -163,6 +162,7 @@ private:
     void updateOdom(const serial_bridge::Pose* pose);
     void sendJoint(serial_bridge::Motor motor_left, serial_bridge::Motor motor_right);
     void sendOdom(serial_bridge::Velocity velocity, serial_bridge::Pose pose);
+    void actionAsync(packet_t packet);
 };
 
 #endif	/* ROSMOTIONCONTROLLER_H */

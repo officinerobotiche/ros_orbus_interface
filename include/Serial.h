@@ -51,15 +51,15 @@ public:
 
     template <class T> void asyncPacket(void(T::*fp)(packet_t), T* obj) {
         const boost::function<void (packet_t)>& _callback = boost::bind(fp, obj, _1);
-        thr_ = new boost::thread(boost::bind(&Serial::th_decoder, this, _callback));
-        thr_->detach();
+        async_functions[counter_func] = _callback;
+        counter_func++;
     }
-    
+
     static information_packet_t addPacket(ppacket send, unsigned char command, unsigned char option, abstract_packet_t* packet);
 
     static std::list<information_packet_t> parsing(ppacket send, packet_t packet);
     void setTimeout(const boost::posix_time::time_duration& t);
-    
+
     int* getBufferArray();
 
 private:
@@ -105,6 +105,8 @@ private:
     ReadSetupParameters setupParameters; ///< Global because used in the OSX fix
     size_t bytesTransferred; ///< Used by async read callback
     boost::asio::streambuf readData; ///< Holds eventual read but not consumed
+    boost::array<boost::function<void (packet_t)>, 10 > async_functions;
+    int counter_func;
 
     mutable boost::mutex mutex_; //for fast call function send
     mutable boost::mutex mutex_sync_; //mutex for sync packet
@@ -130,7 +132,8 @@ private:
     static information_packet_t buildRequestPacket(ppacket send, unsigned char command, const unsigned int length, abstract_packet_t* packet);
 
     //Function for decoding packet
-    void th_decoder(const boost::function<void (packet_t)>& _callback);
+    //    void th_decoder(const boost::function<void (packet_t)>& _callback);
+    void th_decoder();
     int decode_pkgs(unsigned char rxchar);
     int pkg_header(unsigned char rxchar);
     int pkg_length(unsigned char rxchar);

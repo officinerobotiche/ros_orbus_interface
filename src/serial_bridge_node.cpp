@@ -68,8 +68,7 @@ int main(int argc, char** argv)
   //Start ros serial controller
   ServiceSerial* service_serial = new ServiceSerial(serial);
   ROS_INFO("Name board: %s", service_serial->getNameBoard().c_str());
-  
-  std::string name_board = name_motion_control;
+  std::string name_board = service_serial->getNameBoard();
   //TODO create object to contact board
   if (argc == 3)
   {

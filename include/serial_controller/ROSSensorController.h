@@ -15,7 +15,9 @@
 #include <tf/transform_listener.h>
 
 #define NUMBER_PUBLISHER 10
-const std::string laser_sharp_string = "laser_sharp";
+const std::string default_laser_sharp_string = "laser_sharp";
+const std::string default_base_link_string = "base_link";
+const std::string laser_sharp_position_string = "sharp_pose";
 
 class ROSSensorController : public AbstractROSController {
 public:
@@ -24,7 +26,6 @@ public:
     virtual ~ROSSensorController();
     
     void loadParameter();
-    void test();
 private:
     //Initialization object
     std::string name_node_; //Name for topics, params, services
@@ -33,10 +34,20 @@ private:
     ServiceSerial* service_serial_;     //Service with board
     
     ros::Publisher pub_laser_sharp_;
+    tf::TransformBroadcaster broadcaster_;
+    tf::Vector3 pose_laser_sharp_;
+    tf::Quaternion angle_laser_sharp_;
+    
+    std::string base_link_string_, laser_sharp_string_;
     
     void actionAsync(packet_t packet);
-    void transformPoint(const tf::TransformListener& listener);
     void connectCallback(const ros::SingleSubscriberPublisher& pub);
+    
+    void sendLaserSharp(infrared_t infrared);
+    //TODO to remove
+    ros::Timer timer_;
+    int count;
+    void timerCallback(const ros::TimerEvent& event);
 };
 
 #endif	/* ROSSENSORCONTROLLER_H */

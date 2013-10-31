@@ -13,6 +13,7 @@
 #include "ros/ros.h"
 
 #include <boost/thread.hpp>
+#include <tf/transform_broadcaster.h>
 
 class AbstractROSController {
 public:

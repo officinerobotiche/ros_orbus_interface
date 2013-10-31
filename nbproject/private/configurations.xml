@@ -36,7 +36,6 @@
       </df>
       <df name="srv">
       </df>
-      <in>README.md</in>
     </df>
   </logicalFolder>
   <projectmakefile>../../build/Makefile</projectmakefile>

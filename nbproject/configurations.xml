@@ -2,23 +2,6 @@
 <configurationDescriptor version="90">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <df root="." name="0">
-      <df name="include">
-        <df name="drive_bridge">
-          <in>Keyboard.h</in>
-        </df>
-        <df name="packet">
-          <in>motion.h</in>
-          <in>navigation.h</in>
-          <in>packet.h</in>
-        </df>
-        <df name="serial_controller">
-          <in>AbstractROSController.h</in>
-          <in>ROSMotionController.h</in>
-          <in>ROSSensorController.h</in>
-        </df>
-        <in>Serial.h</in>
-        <in>ServiceSerial.h</in>
-      </df>
       <df name="src">
         <df name="drive_bridge">
           <in>Keyboard.cpp</in>
@@ -32,8 +15,13 @@
         <in>drive_bridge_node.cpp</in>
         <in>serial_bridge_node.cpp</in>
       </df>
-      <in>README.md</in>
     </df>
+    <logicalFolder name="src"
+                   displayName="src"
+                   projectFiles="true"
+                   root="../test/src">
+      <itemPath>../test/src/tf_listener.cpp</itemPath>
+    </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
                    projectFiles="false"
@@ -62,12 +50,6 @@
           <cleanCommand>${MAKE} -f Makefile clean</cleanCommand>
           <executablePath></executablePath>
           <ccTool>
-            <incDir>
-              <pElem>../../devel/include</pElem>
-              <pElem>include</pElem>
-              <pElem>/opt/ros/groovy/include</pElem>
-              <pElem>../../build/serial_bridge</pElem>
-            </incDir>
             <preprocessorList>
               <Elem>ROS_BUILD_SHARED_LIBS=1</Elem>
               <Elem>ROS_PACKAGE_NAME="serial_bridge"</Elem>
@@ -75,40 +57,36 @@
           </ccTool>
         </makeTool>
       </makefileType>
-      <item path="README.md" ex="false" tool="3" flavor2="0">
+      <item path="../test/src/tf_listener.cpp" ex="false" tool="1" flavor2="0">
       </item>
-      <item path="include/Serial.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/ServiceSerial.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/drive_bridge/Keyboard.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/packet/motion.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/packet/navigation.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/packet/packet.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/serial_controller/AbstractROSController.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="include/serial_controller/ROSMotionController.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="include/serial_controller/ROSSensorController.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
+      <folder path="0">
+        <ccTool>
+          <incDir>
+            <pElem>../../devel/include</pElem>
+            <pElem>include</pElem>
+            <pElem>/opt/ros/groovy/include</pElem>
+            <pElem>../../build/serial_bridge</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="src">
+        <ccTool>
+          <incDir>
+            <pElem>/opt/ros/groovy/include</pElem>
+            <pElem>../../build/test</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>ROS_PACKAGE_NAME="test"</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
       <item path="src/Serial.cpp" ex="false" tool="1" flavor2="4">
         <ccTool>
         </ccTool>
       </item>
-      <item path="src/ServiceSerial.cpp" ex="false" tool="1" flavor2="0">
+      <item path="src/ServiceSerial.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+        </ccTool>
       </item>
       <item path="src/drive_bridge/Keyboard.cpp" ex="false" tool="1" flavor2="4">
         <ccTool>

@@ -8,9 +8,12 @@
 #ifndef NAVIGATION_H
 #define	NAVIGATION_H
 
+#define NUMBER_INFRARED 7
+
     typedef struct infrared {
-        int16_t infrared;
+        int16_t infrared[NUMBER_INFRARED];
     } infrared_t;
+    #define LNG_INFRARED sizeof(infrared_t)
 
 #define ABSTRACT_PACKET_NAVIGATION  \
         infrared_t infrared;        \

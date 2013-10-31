@@ -15,36 +15,63 @@
 using namespace std;
 Keyboard* keyboard;
 
-std::string robot = "robot";
+std::string serial_bridge_string = "robot";
+std::string command = "command";
+std::string velocity = "velocity";
+std::string enable = "enable_motors";
 
-void quit(int sig)
-{
-  keyboard->quit(sig);
-  exit(0);
+std::string name_node = "drive_bridge";
+
+void quit(int sig) {
+    keyboard->quit(sig);
+    exit(0);
 }
 
 /*
  * 
  */
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
 
-  ros::init(argc, argv, "drive_bridge");
-  ros::NodeHandle nh;
-  keyboard = new Keyboard(nh, robot);
-  signal(SIGINT, quit);
-  
-//  ROS_INFO("Wait 2sec...");
-//  sleep(2);
-//  ROS_INFO("Ready!");
-//  ros::spinOnce();
+    ros::init(argc, argv, name_node);
+    ros::NodeHandle nh;
 
-  puts("Reading from keyboard");
-  puts("---------------------------");
-  puts("Use arrow keys to move the robot.");
-  
-  keyboard->read_keyboard();
+    //Load configuration
+    if (nh.hasParam(name_node + "/serial_bridge")) {
+        nh.getParam(name_node + "/serial_bridge", serial_bridge_string);
+    } else {
+        nh.setParam(name_node + "/serial_bridge", serial_bridge_string);
+    }
+    if (nh.hasParam(name_node + "/command")) {
+        nh.getParam(name_node + "/command", command);
+    } else {
+        nh.setParam(name_node + "/command", command);
+    }
+    if (nh.hasParam(name_node + "/velocity")) {
+        nh.getParam(name_node + "/velocity", velocity);
+    } else {
+        nh.setParam(name_node + "/velocity", velocity);
+    }
+    if (nh.hasParam(name_node + "/enable")) {
+        nh.getParam(name_node + "/enable", enable);
+    } else {
+        nh.setParam(name_node + "/enable", enable);
+    }
+    
+    //Init keyboard control
+    keyboard = new Keyboard(nh, serial_bridge_string, command, velocity, enable);
+    signal(SIGINT, quit);
 
-  return 0;
+    //  ROS_INFO("Wait 2sec...");
+    //  sleep(2);
+    //  ROS_INFO("Ready!");
+    //  ros::spinOnce();
+
+    puts("Reading from keyboard");
+    puts("---------------------------");
+    puts("Use arrow keys to move the robot.");
+
+    //Start keyboard read
+    keyboard->read_keyboard();
+
+    return 0;
 }
-

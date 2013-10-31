@@ -7,12 +7,12 @@
 
 #include "drive_bridge/Keyboard.h"
 
-Keyboard::Keyboard(const ros::NodeHandle& nh, std::string robot) : nh_(nh)
+Keyboard::Keyboard(const ros::NodeHandle& nh, std::string robot, std::string command, std::string velocity, std::string enable)
+: nh_(nh)
 {
-  pub_vel_control_ = nh_.advertise<serial_bridge::Velocity>("/" + robot + "/" + cmd_string + "/" + velocity_string, 1000);
-  pub_enable_control_ = nh_.advertise<serial_bridge::Enable>("/" + robot + "/" + cmd_string + "/" + enable_string, 1000);
-  sub_enable_ = nh_.subscribe("/" + robot + "/" + enable_string, 1000, &Keyboard::enable_Callback, this);
-  client_control_ = nh_.serviceClient<std_srvs::Empty>("/control/emergency");
+  pub_vel_control_ = nh_.advertise<serial_bridge::Velocity>("/" + robot + "/" + command + "/" + velocity, 1000);
+  pub_enable_control_ = nh_.advertise<serial_bridge::Enable>("/" + robot + "/" + command + "/" + enable, 1000);
+  sub_enable_ = nh_.subscribe("/" + robot + "/" + enable, 1000, &Keyboard::enable_Callback, this);
   kfd = 0;
   receive_command_ = false;
   // get the console in raw mode
@@ -162,10 +162,6 @@ void Keyboard::read_keyboard()
         velocity.lin_vel = 0;
         velocity.ang_vel = 0;
         receive_command_ = true;
-        break;
-      case KEYCODE_BACKSPACE:
-        ROS_INFO("EMERGENCY STOP");
-        client_control_.call(close);
         break;
     }
 

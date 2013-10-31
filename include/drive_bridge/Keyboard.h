@@ -28,15 +28,11 @@
 #define KEYCODE_BACKSPACE 0x7F
 #define KEYCODE_ENTER 0x0A
 
-
-const std::string cmd_string = "command";
-const std::string velocity_string = "velocity";
-const std::string enable_string = "enable_motors";
 const double default_step = 0.1;
 
 class Keyboard {
 public:
-    Keyboard(const ros::NodeHandle& nh, std::string robot);
+    Keyboard(const ros::NodeHandle& nh, std::string robot, std::string command, std::string velocity, std::string enable);
     Keyboard(const Keyboard& orig);
     virtual ~Keyboard();
     void read_keyboard();
@@ -62,11 +58,9 @@ private:
     
     ros::Publisher pub_vel_control_, pub_enable_control_;
     ros::Subscriber sub_enable_;
-    ros::ServiceClient client_control_;
     
     serial_bridge::Enable enable_pkg;
     serial_bridge::Velocity velocity;
 };
 
 #endif	/* KEYBOARD_H */
-

@@ -10,11 +10,10 @@
 /*
  *
  */
-ROSMotionController::ROSMotionController(std::string name_node, const ros::NodeHandle& nh, Serial* serial, ServiceSerial* service_serial, int rate)
+ROSMotionController::ROSMotionController(std::string name_node, const ros::NodeHandle& nh, Serial* serial, int rate)
 : nh_(nh), loop_rate_(rate) {
     name_node_ = name_node; // Initialize node name
     this->serial_ = serial; // Initialize serial port
-    this->service_serial_ = service_serial; //Initialize service with serial
     serial_->asyncPacket(&ROSMotionController::actionAsync, this);
     rate_ = rate; // Initialize rate
 
@@ -57,7 +56,6 @@ ROSMotionController::ROSMotionController(std::string name_node, const ros::NodeH
     constraint_update_srv_ = nh_.advertiseService("/" + name_node + "/" + update_constraint_string, &ROSMotionController::constraint_update_Callback, this);
     process_update_srv_ = nh_.advertiseService("/" + name_node + "/" + update_process_string, &ROSMotionController::process_update_Callback, this);
     convert_velocity_srv_ = nh_.advertiseService("/" + name_node + "/" + convert_string, &ROSMotionController::convert_Callback, this);
-    reset_srv_ = nh_.advertiseService("/" + name_node + "/" + service_string, &ROSMotionController::service_Callback, this);
 
     //Initialize boolean for encapsulation streaming
     pose_active_ = false;
@@ -668,21 +666,6 @@ bool ROSMotionController::constraint_update_Callback(std_srvs::Empty::Request&, 
     constraint_t constraint = get_constraint();
     Serial::addPacket(&send_pkg, CONSTRAINT, CHANGE, (abstract_packet_t*) & constraint);
     Serial::parsing(NULL, serial_->sendPacket(send_pkg));
-    return true;
-}
-
-bool ROSMotionController::service_Callback(serial_bridge::Service::Request &req, serial_bridge::Service::Response & msg) {
-    ROS_INFO("service: %s", req.name.c_str());
-    if (req.name.compare(reset_string) == 0) {
-        service_serial_->resetBoard(3);
-        msg.name = "reset";
-    } else if (req.name.compare(version_string) == 0) {
-        std::string information_string = "Name Board: " + service_serial_->getNameBoard() + " " + service_serial_->getVersion() + "\n" +
-                service_serial_->getAuthor() + " - Build in: " + service_serial_->getCompiled() + "\n";
-        msg.name = information_string;
-    } else if (req.name.compare(error_serial_string) == 0) {
-        msg.name = service_serial_->getErrorSerial();
-    }
     return true;
 }
 

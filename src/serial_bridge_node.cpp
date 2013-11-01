@@ -66,7 +66,7 @@ int main(int argc, char** argv)
     ROS_INFO("Serial Arduino started");
   }
   //Start ros serial controller
-  ServiceSerial* service_serial = new ServiceSerial(serial);
+  ServiceSerial* service_serial = new ServiceSerial(name, nh, serial);
   ROS_INFO("Name board: %s", service_serial->getNameBoard().c_str());
   std::string name_board = service_serial->getNameBoard();
   //TODO create object to contact board
@@ -80,11 +80,11 @@ int main(int argc, char** argv)
   AbstractROSController * controller;
   if (name_board.compare(name_motion_control) == 0)
   {
-    controller = new ROSMotionController(name, nh, serial, service_serial, rate);
+    controller = new ROSMotionController(name, nh, serial, rate);
   }
   else if (name_board.compare(name_navigation_board) == 0)
   {
-    controller = new ROSSensorController(name, nh, serial, service_serial);
+    controller = new ROSSensorController(name, nh, serial);
   }
   else
   {

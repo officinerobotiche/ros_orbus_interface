@@ -7,7 +7,7 @@
 
 #include "ServiceSerial.h"
 
-ServiceSerial::ServiceSerial(Serial* serial) {
+ServiceSerial::ServiceSerial(std::string name_node, const ros::NodeHandle& nh, Serial* serial) : nh_(nh) {
     this->serial_ = serial; // Initialize serial port
     serial_->asyncPacket(&ServiceSerial::actionAsync, this);
 
@@ -32,6 +32,8 @@ ServiceSerial::ServiceSerial(Serial* serial) {
     this->name_author.append(buff_auth);
     this->version.append(buff_vers);
     this->compiled.append(buff_date, SERVICE_BUFF);
+    
+    srv_board_ = nh_.advertiseService("/" + name_node + "/" + service_string, &ServiceSerial::service_Callback, this);
 }
 
 ServiceSerial::ServiceSerial(const ServiceSerial& orig) {
@@ -100,4 +102,19 @@ std::string ServiceSerial::getErrorSerial() {
         service_str << "Type: -" << (i + 1) << " - PC n: " << serial_->getBufferArray()[i] << " - PIC n: " << error_serial[i] << std::endl;
     }
     return service_str.str();
+}
+
+bool ServiceSerial::service_Callback(serial_bridge::Service::Request &req, serial_bridge::Service::Response & msg) {
+    ROS_INFO("service: %s", req.name.c_str());
+    if (req.name.compare(reset_string) == 0) {
+        resetBoard(3);
+        msg.name = "reset";
+    } else if (req.name.compare(version_string) == 0) {
+        std::string information_string = "Name Board: " + getNameBoard() + " " + getVersion() + "\n" +
+                getAuthor() + " - Build in: " + getCompiled() + "\n";
+        msg.name = information_string;
+    } else if (req.name.compare(error_serial_string) == 0) {
+        msg.name = getErrorSerial();
+    }
+    return true;
 }

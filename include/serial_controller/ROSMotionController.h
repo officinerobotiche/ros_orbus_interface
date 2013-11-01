@@ -18,7 +18,6 @@
 #include <serial_bridge/Motor.h>
 #include <serial_bridge/Process.h>
 #include <serial_bridge/Convert.h>
-#include <serial_bridge/Service.h>
 
 #include <std_srvs/Empty.h>
 #include <sensor_msgs/JointState.h>
@@ -30,16 +29,11 @@ const std::string update_pid_string = "update_pid";
 const std::string update_parameter_string = "update_parameter";
 const std::string update_constraint_string = "update_constraint";
 const std::string update_process_string = "update_process";
-const std::string service_string = "service";
-const std::string reset_string = "reset";
-const std::string version_string = "version";
-const std::string error_serial_string = "serial";
 
 const std::string priority_string = "priority";
 const std::string frequency_string = "frequency";
 const std::string parse_string = "parse_packet";
 
-const std::string command_string = "command";
 const std::string measure_string = "measure";
 
 const std::string joint_string = "joint_states";
@@ -79,7 +73,7 @@ const std::string base_link_string = "base_link";
 
 class ROSMotionController : public AbstractROSController {
 public:
-    ROSMotionController(std::string name_node, const ros::NodeHandle& nh, Serial* serial, ServiceSerial* service_serial, int rate);
+    ROSMotionController(std::string name_node, const ros::NodeHandle& nh, Serial* serial, int rate);
     virtual ~ROSMotionController();
 
     boost::thread * run();
@@ -92,7 +86,6 @@ private:
     std::string name_node_; //Name for topics, params, services
     ros::NodeHandle nh_; //NameSpace for bridge controller
     Serial* serial_; //Serial object to comunicate with PIC device
-    ServiceSerial* service_serial_;     //Service with board
     int rate_; //Rate to comunication with device
 
     //Thread control for streaming packets
@@ -122,7 +115,7 @@ private:
     ros::Subscriber pose_estimate_sub_;
     //Service
     ros::ServiceServer pid_update_srv_, parameter_update_srv_, constraint_update_srv_, process_update_srv_;
-    ros::ServiceServer convert_velocity_srv_, reset_srv_;
+    ros::ServiceServer convert_velocity_srv_;
     //Boolean activation send packet for topic
     bool pose_active_, enable_active_, velocity_active_, velocity_mis_active_;
     bool motor_left_active_, motor_right_active_;
@@ -150,7 +143,6 @@ private:
     bool parameter_update_Callback(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
     bool constraint_update_Callback(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
     bool convert_Callback(serial_bridge::Convert::Request &req, serial_bridge::Convert::Response &msg);
-    bool service_Callback(serial_bridge::Service::Request &req, serial_bridge::Service::Response &msg);
 
     pid_control_t get_pid(std::string name);
     parameter_t get_parameter();

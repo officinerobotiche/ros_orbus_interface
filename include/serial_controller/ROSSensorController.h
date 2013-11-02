@@ -15,13 +15,17 @@
 #include <tf/transform_listener.h>
 
 #include <serial_bridge/Enable.h>
+#include <serial_bridge/Sensor.h>
 
 #define NUMBER_PUBLISHER 10
 const std::string default_laser_sharp_string = "laser_sharp";
 const std::string default_base_link_string = "base_link";
 const std::string laser_sharp_position_string = "sharp_pose";
+const std::string default_sensor_string = "sensor";
+const std::string default_parameter_string = "parameter_sensor";
 
 const std::string enable_sensors = "enable_sensors";
+const std::string enable_autosend = "enable_autosend";
 
 class ROSSensorController : public AbstractROSController {
 public:
@@ -36,6 +40,7 @@ private:
     ros::NodeHandle nh_; //NameSpace for bridge controller
     Serial* serial_; //Serial object to comunicate with PIC device
 
+    autosend_t autosend_;
     ros::Publisher pub_laser_sharp_;
     tf::TransformBroadcaster broadcaster_;
     tf::Vector3 pose_laser_sharp_;
@@ -43,15 +48,20 @@ private:
     
     enable_sensor_t enable_sensor_;
     ros::Subscriber sub_enable_;
+    ros::Publisher pub_sensors_;
+    ros::ServiceServer srv_parameter_;
     
     std::string base_link_string_, laser_sharp_string_;
     double sharp_angle_min_, sharp_angle_max_, sharp_angle_increment_,
-    sharp_time_increment_, sharp_range_min_, sharp_range_max_;
+    sharp_time_increment_, sharp_range_min_, sharp_range_max_, sharp_distance_center_;
 
+    parameter_sensor_t getParameter();
     void actionAsync(packet_t packet);
     void connectCallback(const ros::SingleSubscriberPublisher& pub);
     void enableCallback(const serial_bridge::Enable::ConstPtr &msg);
-
+    void enableAutoSendCallback(const serial_bridge::Enable::ConstPtr &msg);
+    bool parameterCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
+    
     void sendLaserSharp(infrared_t infrared);
     //TODO to remove
     ros::Timer timer_;

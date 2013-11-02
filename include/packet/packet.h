@@ -37,6 +37,7 @@
 //
 
 #define TIME_PROCESS 't'
+#define PARAMETER_SYSTEM 'm'
 #define PRIORITY_PROCESS 'p'
 #define FRQ_PROCESS 'f'
 #define ERROR_SERIAL 'e'
@@ -48,6 +49,14 @@
 #define NAME_BOARD 'n'
 #define VERSION_CODE 'v'
 #define AUTHOR_CODE 'a'
+
+#define LNG_ENABLE 2
+
+typedef struct parameter_system {
+    int16_t step_timer;
+    int16_t int_tm_mill;
+} parameter_system_t;
+#define LNG_PARAMETER_SYSTEM sizeof(parameter_system_t)
 
 typedef struct error_pkg {
     int16_t number[BUFF_SERIAL_ERROR];
@@ -78,6 +87,7 @@ typedef union abstract_packet {
     process_t process;
     services_t services;
     error_pkg_t error_pkg;
+    parameter_system_t parameter_system;
 #ifdef MOTION_CONTROL
     ABSTRACT_PACKET_MOTION
 #endif

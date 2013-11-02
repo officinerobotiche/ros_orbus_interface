@@ -412,8 +412,14 @@ information_packet_t Serial::decode_pkg(packet_t* send, char command, unsigned c
         case COORDINATE:
             return Serial::addChangePacket(send, command, Buffer, position, LNG_COORDINATE, NULL);
             break;
-        case PARAMETER:
-            return Serial::addChangePacket(send, command, Buffer, position, LNG_PARAMETER, NULL);
+        case PARAMETER_SYSTEM:
+            return Serial::addChangePacket(send, command, Buffer, position, LNG_PARAMETER_SYSTEM, NULL);
+            break;
+        case PARAMETER_MOTORS:
+            return Serial::addChangePacket(send, command, Buffer, position, LNG_PARAMETER_MOTORS, NULL);
+            break;
+        case PARAMETER_SENSOR:
+            return Serial::addChangePacket(send, command, Buffer, position, LNG_PARAMETER_SENSOR, NULL);
             break;
         case CONSTRAINT:
             return Serial::addChangePacket(send, command, Buffer, position, LNG_CONSTRAINT, NULL);
@@ -423,6 +429,7 @@ information_packet_t Serial::decode_pkg(packet_t* send, char command, unsigned c
             return Serial::addChangePacket(send, command, Buffer, position, LNG_VELOCITY, NULL);
             break;
         case ENABLE:
+        case ENABLE_SENSOR:
             return Serial::addChangePacket(send, command, Buffer, position, LNG_ENABLE, NULL);
             break;
         case TIME_PROCESS:
@@ -435,6 +442,18 @@ information_packet_t Serial::decode_pkg(packet_t* send, char command, unsigned c
             break;
         case ERROR_SERIAL:
             return Serial::addChangePacket(send, command, Buffer, position, LNG_ERROR_PKG, NULL);
+            break;
+        case ENABLE_AUTOSEND:
+            return Serial::addChangePacket(send, command, Buffer, position, LNG_AUTOSEND, NULL);
+            break;
+        case SENSOR:
+            return Serial::addChangePacket(send, command, Buffer, position, LNG_SENSOR, NULL);
+            break;
+        case HUMIDITY:
+            return Serial::addChangePacket(send, command, Buffer, position, LNG_HUMIDITY, NULL);
+            break;
+        case INFRARED:
+            return Serial::addChangePacket(send, command, Buffer, position, LNG_INFRARED, NULL);
             break;
         default:
             throw ERROR_PKG;
@@ -456,8 +475,14 @@ information_packet_t Serial::addRequestPacket(packet_t* send, unsigned char comm
         case COORDINATE:
             return Serial::buildRequestPacket(send, command, LNG_COORDINATE, packet);
             break;
-        case PARAMETER:
-            return Serial::buildRequestPacket(send, command, LNG_PARAMETER, packet);
+        case PARAMETER_SYSTEM:
+            return Serial::buildRequestPacket(send, command, LNG_PARAMETER_SYSTEM, packet);
+            break;
+        case PARAMETER_MOTORS:
+            return Serial::buildRequestPacket(send, command, LNG_PARAMETER_MOTORS, packet);
+            break;
+        case PARAMETER_SENSOR:
+            return Serial::buildRequestPacket(send, command, LNG_PARAMETER_SENSOR, packet);
             break;
         case CONSTRAINT:
             return Serial::buildRequestPacket(send, command, LNG_CONSTRAINT, packet);
@@ -467,6 +492,7 @@ information_packet_t Serial::addRequestPacket(packet_t* send, unsigned char comm
             return Serial::buildRequestPacket(send, command, LNG_VELOCITY, packet);
             break;
         case ENABLE:
+        case ENABLE_SENSOR:
             return Serial::buildRequestPacket(send, command, LNG_ENABLE, packet);
             break;
         case TIME_PROCESS:
@@ -479,6 +505,18 @@ information_packet_t Serial::addRequestPacket(packet_t* send, unsigned char comm
             break;
         case ERROR_SERIAL:
             return Serial::buildRequestPacket(send, command, LNG_ERROR_PKG, packet);
+            break;
+        case ENABLE_AUTOSEND:
+            return Serial::buildRequestPacket(send, command, LNG_AUTOSEND, packet);
+            break;
+        case SENSOR:
+            return Serial::buildRequestPacket(send, command, LNG_SENSOR, packet);
+            break;
+        case HUMIDITY:
+            return Serial::buildRequestPacket(send, command, LNG_HUMIDITY, packet);
+            break;
+        case INFRARED:
+            return Serial::buildRequestPacket(send, command, LNG_INFRARED, packet);
             break;
         default:
             throw ERROR_CREATE_PKG;

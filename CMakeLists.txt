@@ -54,6 +54,7 @@ add_message_files(
     Enable.msg
     Motor.msg
     Process.msg
+    Sensor.msg
 )
 
 ## Generate services in the 'srv' folder

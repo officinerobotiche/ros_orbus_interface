@@ -1,0 +1,3 @@
+float32 temperature
+float32 current
+float32 voltage

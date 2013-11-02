@@ -20,6 +20,7 @@
         <in>ServiceSerial.h</in>
       </df>
       <df name="msg">
+        <in>Sensor.msg</in>
       </df>
       <df name="src">
         <df name="drive_bridge">

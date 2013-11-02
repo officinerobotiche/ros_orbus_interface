@@ -8,8 +8,9 @@
 #include "ServiceSerial.h"
 
 ServiceSerial::ServiceSerial(std::string name_node, const ros::NodeHandle& nh, Serial* serial) : nh_(nh) {
+    name_node_ = name_node;
     this->serial_ = serial; // Initialize serial port
-    serial_->asyncPacket(&ServiceSerial::actionAsync, this);
+//    serial_->asyncPacket(&ServiceSerial::actionAsync, this);
 
     packet_t send_pkg;
     send_pkg.length = 0;
@@ -32,7 +33,27 @@ ServiceSerial::ServiceSerial(std::string name_node, const ros::NodeHandle& nh, S
     this->name_author.append(buff_auth);
     this->version.append(buff_vers);
     this->compiled.append(buff_date, SERVICE_BUFF);
-    
+
+
+    if (nh_.hasParam(name_node_ + "/" + time_string)) {
+        ROS_INFO("Sync parameter %s: load", time_string.c_str());
+        nh_.getParam("/" + name_node + "/" + time_string + "/" + step_timer_string, step_timer_);
+        nh_.getParam("/" + name_node + "/" + time_string + "/" + int_tm_mill_string, tm_mill_);
+        nh_.getParam("/" + name_node + "/" + time_string + "/" + k_time_string, k_time_);
+    } else {
+        ROS_INFO("Sync parameter %s: ROBOT -> ROS", time_string.c_str());
+        send_pkg.length = 0;
+        Serial::addPacket(&send_pkg, PARAMETER_SYSTEM, REQUEST, NULL);
+        configuration = Serial::parsing(NULL, serial_->sendPacket(send_pkg));
+        parameter_system_t parameter_system = getServiceSerial(configuration, PARAMETER_SYSTEM, ' ').parameter_system;
+        step_timer_ = parameter_system.step_timer;
+        tm_mill_ = parameter_system.int_tm_mill;
+        k_time_ = 1 / (step_timer_ / tm_mill_);
+        nh_.setParam("/" + name_node + "/" + time_string + "/" + step_timer_string, step_timer_);
+        nh_.setParam("/" + name_node + "/" + time_string + "/" + int_tm_mill_string, tm_mill_);
+        nh_.setParam("/" + name_node + "/" + time_string + "/" + k_time_string, k_time_);
+    }
+    //Services
     srv_board_ = nh_.advertiseService("/" + name_node + "/" + service_string, &ServiceSerial::service_Callback, this);
 }
 
@@ -47,17 +68,36 @@ void ServiceSerial::actionAsync(packet_t packet) {
 
 }
 
+float ServiceSerial::getTimeProcess(float process_time) {
+    double k_time;
+    nh_.getParam("/" + name_node_ + "/" + time_string + "/" + k_time_string, k_time);
+    if (process_time < 0) {
+        double step_timer;
+        nh_.getParam("/" + name_node_ + "/" + time_string + "/" + step_timer_string, step_timer);
+        return k_time * (step_timer + process_time);
+    }
+    return k_time*process_time;
+}
+
 abstract_packet_t ServiceSerial::getServiceSerial(std::list<information_packet_t> configuration, unsigned char command, unsigned char service_command) {
     abstract_packet_t packet;
     //TODO control error to receive packet
     for (std::list<information_packet_t>::iterator list_iter = configuration.begin(); list_iter != configuration.end(); list_iter++) {
         information_packet_t packet = (*list_iter);
         if ((packet.option == CHANGE) && (packet.command = command)) {
-            if (command == SERVICES) {
-                if (packet.packet.services.command == service_command)
+            switch (command) {
+                case SERVICES:
+                    if (packet.packet.services.command == service_command)
+                        return packet.packet;
+                    break;
+                case PARAMETER_SYSTEM:
                     return packet.packet;
-            } else
-                return packet.packet;
+                    break;
+                default:
+                    ROS_ERROR("Error decode packet");
+                    return packet.packet;
+                    break;
+            }
         }
     }
     return packet;

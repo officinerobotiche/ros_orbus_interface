@@ -19,7 +19,6 @@
 #include <serial_bridge/Process.h>
 #include <serial_bridge/Convert.h>
 
-#include <std_srvs/Empty.h>
 #include <sensor_msgs/JointState.h>
 #include <serial_bridge/Update.h>
 #include <nav_msgs/Odometry.h>
@@ -56,10 +55,6 @@ const std::string sp_min_string = "sp_min";
 const std::string pwm_string = "pwm";
 const std::string constraint_string = "constraint";
 const std::string space_robot_string = "space_robot";
-const std::string step_timer_string = "step_timer";
-const std::string int_tm_mill_string = "tm_mill";
-const std::string k_time_string = "k_time";
-const std::string time_string = "time";
 const std::string structure_string = "structure";
 
 const std::string left_string = "Left";
@@ -73,20 +68,20 @@ const std::string base_link_string = "base_link";
 
 class ROSMotionController : public AbstractROSController {
 public:
-    ROSMotionController(std::string name_node, const ros::NodeHandle& nh, Serial* serial, int rate);
+    ROSMotionController(std::string name_node, const ros::NodeHandle& nh, Serial* serial, ServiceSerial* service_serial, int rate);
     virtual ~ROSMotionController();
 
     boost::thread * run();
     void setPacketStream(packet_t packet);
     void loadParameter();
-    void init();
     
 private:
     //Initialization object
     std::string name_node_; //Name for topics, params, services
     ros::NodeHandle nh_; //NameSpace for bridge controller
-    Serial* serial_; //Serial object to comunicate with PIC device
-    int rate_; //Rate to comunication with device
+    Serial* serial_; //Serial object to communicate with PIC device
+    ServiceSerial* service_serial_;
+    double rate_; //Rate to communication with device
 
     //Thread control for streaming packets
     boost::thread* thr_;
@@ -97,7 +92,7 @@ private:
     ros::Rate loop_rate_;
     bool stream_exit_;
     packet_t packet_;
-    //Publisher comunication
+    //Publisher communication
     ros::Publisher velocity_mis_pub_;
     ros::Publisher pose_pub_;
     ros::Publisher velocity_pub_;
@@ -128,7 +123,6 @@ private:
     std::string tf_odometry_string_, tf_base_link_string_, tf_joint_string_;
     double positon_joint_left_, positon_joint_right_;
     std::string string_process_motion[PROCESS_MOTION_LENGTH];
-    int pwm_motor_;
 
     bool stream_bool();
     void th_stream();
@@ -145,11 +139,10 @@ private:
     bool convert_Callback(serial_bridge::Convert::Request &req, serial_bridge::Convert::Response &msg);
 
     pid_control_t get_pid(std::string name);
-    parameter_t get_parameter();
+    parameter_motors_t get_parameter();
     constraint_t get_constraint();
     process_t get_process(std::string name);
 
-    float correction_time_process(float process_time);
     void updateOdom(const serial_bridge::Pose* pose);
     void sendJoint(serial_bridge::Motor motor_left, serial_bridge::Motor motor_right);
     void sendOdom(serial_bridge::Velocity velocity, serial_bridge::Pose pose);

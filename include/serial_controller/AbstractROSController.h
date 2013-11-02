@@ -9,10 +9,12 @@
 #define	ABSTRACTROSCONTROLLER_H
 
 #include "Serial.h"
+#include "ServiceSerial.h"
 #include "ros/ros.h"
 
 #include <boost/thread.hpp>
 #include <tf/transform_broadcaster.h>
+#include <std_srvs/Empty.h>
 
 const std::string command_string = "command";
 

@@ -13,7 +13,7 @@
 #define MOTOR_L 'a'
 #define MOTOR_R 'b'
 #define COORDINATE 'C'
-#define PARAMETER 'P'
+#define PARAMETER_MOTORS 'P'
 #define CONSTRAINT 'T'
 #define VELOCITY 'V'
 #define VELOCITY_MIS 'M'
@@ -58,7 +58,7 @@ typedef struct coordinate {
 } coordinate_t;
 #define LNG_COORDINATE sizeof(coordinate_t)
 
-typedef struct parameter {
+typedef struct parameter_motors {
     float radius_r;
     float radius_l;
     float wheelbase;
@@ -68,10 +68,8 @@ typedef struct parameter {
     float k_ang_l;
     float sp_min;
     int16_t pwm_step;
-    int16_t step_timer;
-    int16_t int_tm_mill;
-} parameter_t;
-#define LNG_PARAMETER sizeof(parameter_t)
+} parameter_motors_t;
+#define LNG_PARAMETER_MOTORS sizeof(parameter_motors_t)
 
 typedef struct velocity {
     float v;
@@ -80,16 +78,15 @@ typedef struct velocity {
 #define LNG_VELOCITY sizeof(velocity_t)
 
 typedef uint8_t enable_motor_t;
-#define LNG_ENABLE sizeof(enable_motor_t) + 1
 
-#define ABSTRACT_PACKET_MOTION      \
-        pid_control_t pid;          \
-        coordinate_t coordinate;    \
-        parameter_t parameter;      \
-        velocity_t velocity;        \
-        enable_motor_t enable;      \
-        motor_t motor;              \
-        constraint_t constraint;    \
+#define ABSTRACT_PACKET_MOTION                  \
+        pid_control_t pid;                      \
+        coordinate_t coordinate;                \
+        parameter_motors_t parameter_motors;    \
+        velocity_t velocity;                    \
+        enable_motor_t enable;                  \
+        motor_t motor;                          \
+        constraint_t constraint;                \
 
 
 #endif	/* MOTION_H */

@@ -42,6 +42,10 @@ ROSSensorController::ROSSensorController(const ROSSensorController& orig) {
 ROSSensorController::~ROSSensorController() {
 }
 
+void ROSSensorController::quit(int sig) {
+    
+}
+
 void ROSSensorController::loadParameter() {
     packet_t send_pkg;
     send_pkg.length = 0;

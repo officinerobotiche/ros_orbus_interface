@@ -71,8 +71,7 @@ public:
     ROSMotionController(std::string name_node, const ros::NodeHandle& nh, Serial* serial, ServiceSerial* service_serial);
     virtual ~ROSMotionController();
 
-//    boost::thread * run();
-    void setPacketStream(packet_t packet);
+    void quit(int sig);
     void loadParameter();
     
 private:

@@ -21,6 +21,7 @@ const std::string command_string = "command";
 class AbstractROSController {
 public:
     virtual void loadParameter() = 0;
+    virtual void quit(int sig) = 0;
 private:
     virtual void parser(ros::Duration time, std::list<information_packet_t> serial_packet) = 0;
 };

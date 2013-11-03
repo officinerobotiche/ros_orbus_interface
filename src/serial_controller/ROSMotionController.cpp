@@ -85,6 +85,11 @@ void ROSMotionController::actionAsync(packet_t packet) {
 ROSMotionController::~ROSMotionController() {
 }
 
+void ROSMotionController::quit(int sig) {
+    ROS_INFO("Stop timer");
+    timer_.stop();
+}
+
 void ROSMotionController::loadParameter() {
     packet_t send_pkg;
     send_pkg.length = 0;

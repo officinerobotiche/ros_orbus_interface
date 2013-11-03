@@ -33,6 +33,7 @@ public:
     ROSSensorController(const ROSSensorController& orig);
     virtual ~ROSSensorController();
 
+    void quit(int sig);
     void loadParameter();
 private:
     //Initialization object

@@ -45,6 +45,7 @@ public:
     //    Serial(const Serial& orig);
     virtual ~Serial();
     Serial(std::string port, unsigned int baud_rate);
+    void quit();
 
     packet_t sendPacket(packet_t packet);
     packet_t sendPacket(char header, packet_t packet);

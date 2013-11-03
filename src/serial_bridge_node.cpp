@@ -13,15 +13,25 @@
 #include "serial_controller/ROSMotionController.h"
 #include "serial_controller/ROSSensorController.h"
 
+#include <signal.h>
 #include <iostream>
 #include <exception>
-#include <boost/thread.hpp>
 
 int arduino = 0;
+Serial* serial;
+AbstractROSController * controller;
 
 std::string name_node = "serial_bridge_node";
 std::string name_motion_control = "Motion Control";
 std::string name_navigation_board = "Navigation Board";
+
+void quit(int sig) {
+    ROS_INFO("Force quit!");
+    controller->quit(sig);
+    serial->quit();
+    ros::shutdown();
+    exit(0);
+}
 
 /*
  * 
@@ -45,7 +55,6 @@ int main(int argc, char** argv) {
     } else {
         nh.setParam(name + "/baud_rate", baud_rate);
     }
-    Serial* serial;
     if (serial_port.compare("DEBUG") == 0) {
         ROS_INFO("DEBUG!");
         return -1;
@@ -74,7 +83,6 @@ int main(int argc, char** argv) {
         ROS_INFO("Manual set board: %s", name_board.c_str());
     }
     //Start bridge
-    AbstractROSController * controller;
     if (name_board.compare(name_motion_control) == 0) {
         controller = new ROSMotionController(name, nh, serial, service_serial);
     } else if (name_board.compare(name_navigation_board) == 0) {
@@ -85,10 +93,7 @@ int main(int argc, char** argv) {
     }
     //Start controller
     controller->loadParameter();
-//    if (name_board.compare(name_motion_control) == 0) {
-//        boost::thread* thr_stream_ = ((ROSMotionController*) controller)->run();
-//        thr_stream_->detach();
-//    }
+    signal(SIGINT, quit);
     ROS_INFO("start %s", name.c_str());
 
     ros::spin();

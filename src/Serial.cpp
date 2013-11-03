@@ -88,7 +88,9 @@ packet_t Serial::sendPacket(char header, packet_t packet) {
     }
 }
 
-//void Serial::th_decoder(const boost::function<void (packet_t)>& _callback) {
+void Serial::quit() {
+    bool_receive_pkg_ = false;
+}
 
 void Serial::th_decoder() {
     int value = 0;
@@ -140,6 +142,7 @@ void Serial::th_decoder() {
             //        std::cout << "ASYNC " << e.what() << std::endl; //print error timeout
         }
     }
+    ROS_INFO("Quit!");
 }
 
 int* Serial::getBufferArray() {

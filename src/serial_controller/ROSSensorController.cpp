@@ -170,6 +170,10 @@ void ROSSensorController::connectCallback(const ros::SingleSubscriberPublisher& 
     Serial::parsing(NULL, serial_->sendPacket(send_pkg));
 }
 
+void ROSSensorController::parser(ros::Duration time, std::list<information_packet_t> serial_packet) {
+    
+}
+
 void ROSSensorController::sendLaserSharp(infrared_t infrared) {
 
     ros::Time scan_time = ros::Time::now();

@@ -68,10 +68,10 @@ const std::string base_link_string = "base_link";
 
 class ROSMotionController : public AbstractROSController {
 public:
-    ROSMotionController(std::string name_node, const ros::NodeHandle& nh, Serial* serial, ServiceSerial* service_serial, int rate);
+    ROSMotionController(std::string name_node, const ros::NodeHandle& nh, Serial* serial, ServiceSerial* service_serial);
     virtual ~ROSMotionController();
 
-    boost::thread * run();
+//    boost::thread * run();
     void setPacketStream(packet_t packet);
     void loadParameter();
     
@@ -81,17 +81,7 @@ private:
     ros::NodeHandle nh_; //NameSpace for bridge controller
     Serial* serial_; //Serial object to communicate with PIC device
     ServiceSerial* service_serial_;
-    double rate_; //Rate to communication with device
-
-    //Thread control for streaming packets
-    boost::thread* thr_;
-    mutable boost::mutex mutex_;
-    boost::condition_variable cond;
     
-    //Rate for streaming topic
-    ros::Rate loop_rate_;
-    bool stream_exit_;
-    packet_t packet_;
     //Publisher communication
     ros::Publisher velocity_mis_pub_;
     ros::Publisher pose_pub_;
@@ -111,22 +101,18 @@ private:
     //Service
     ros::ServiceServer pid_update_srv_, parameter_update_srv_, constraint_update_srv_, process_update_srv_;
     ros::ServiceServer convert_velocity_srv_;
-    //Boolean activation send packet for topic
-    bool pose_active_, enable_active_, velocity_active_, velocity_mis_active_;
-    bool motor_left_active_, motor_right_active_;
-    bool time_process_active_;
-    bool odom_active_, joint_active_;
-    bool user_;
     //Odometry packet
     tf::TransformBroadcaster odom_broadcaster_;
     ros::Time old_time_;
     std::string tf_odometry_string_, tf_base_link_string_, tf_joint_string_;
     double positon_joint_left_, positon_joint_right_;
     std::string string_process_motion[PROCESS_MOTION_LENGTH];
-
-    bool stream_bool();
-    void th_stream();
+    
+    ros::Timer timer_;
     packet_t updatePacket();
+    void timerCallback(const ros::TimerEvent& event);
+    void parser(ros::Duration time, std::list<information_packet_t> serial_packet);
+    
     void connectCallback(const ros::SingleSubscriberPublisher& pub);
     void velocityCallback(const serial_bridge::Velocity::ConstPtr &msg);
     void enableCallback(const serial_bridge::Enable::ConstPtr &msg);

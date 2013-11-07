@@ -6,6 +6,7 @@
  */
 
 #include "ros/ros.h"
+#include <ros/callback_queue.h>
 #include "std_msgs/String.h"
 
 #include "Serial.h"

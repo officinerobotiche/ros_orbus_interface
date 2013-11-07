@@ -120,12 +120,25 @@ set(serial_SRC
     src/ServiceSerial.cpp
 )
 
+set(serial_thread_SRC
+    src/async_serial/AsyncSerial.cpp
+    src/async_serial/BufferedAsyncSerial.cpp
+    src/async_serial/PacketSerial.cpp
+    src/TimeoutSerial.cpp
+    src/ParserPacket.cpp
+    src/test_thread.cpp
+)
+
 set(drive_teleop_SRC
     src/drive_bridge_node.cpp
     src/drive_bridge/Keyboard.cpp
 )
 
 ## Declare a cpp executable
+add_executable(test_bridge_node ${serial_thread_SRC})
+target_link_libraries(test_bridge_node ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+add_dependencies(test_bridge_node serial_bridge_gencpp)
+
 add_executable(serial_bridge_node ${serial_SRC})
 target_link_libraries(serial_bridge_node ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 add_dependencies(serial_bridge_node serial_bridge_gencpp)

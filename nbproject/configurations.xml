@@ -2,10 +2,20 @@
 <configurationDescriptor version="90">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <df root="." name="0">
-      <df name="msg">
-        <in>Sensor.msg</in>
+      <df name="include">
+        <df name="async_serial">
+          <in>PacketSerial.h</in>
+        </df>
+        <in>PacketSerial.h</in>
+        <in>ServiceSerial.h</in>
+        <in>TimeoutSerial.h</in>
       </df>
       <df name="src">
+        <df name="async_serial">
+          <in>AsyncSerial.cpp</in>
+          <in>BufferedAsyncSerial.cpp</in>
+          <in>PacketSerial.cpp</in>
+        </df>
         <df name="drive_bridge">
           <in>Keyboard.cpp</in>
         </df>
@@ -13,16 +23,22 @@
           <in>ROSMotionController.cpp</in>
           <in>ROSSensorController.cpp</in>
         </df>
+        <in>ParserPacket.cpp</in>
         <in>Serial.cpp</in>
         <in>ServiceSerial.cpp</in>
+        <in>TimeoutSerial.cpp</in>
         <in>drive_bridge_node.cpp</in>
         <in>serial_bridge_node.cpp</in>
+        <in>test_thread.cpp</in>
       </df>
     </df>
     <logicalFolder name="src"
                    displayName="src"
                    projectFiles="true"
                    root="../test/src">
+      <itemPath>../learning_actionlib/src/averaging_client.cpp</itemPath>
+      <itemPath>../learning_actionlib/src/averaging_server.cpp</itemPath>
+      <itemPath>../learning_actionlib/src/fibonacci_server.cpp</itemPath>
       <itemPath>../test/src/tf_listener.cpp</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
@@ -60,7 +76,55 @@
           </ccTool>
         </makeTool>
       </makefileType>
-      <item path="../test/src/tf_listener.cpp" ex="false" tool="1" flavor2="0">
+      <item path="../learning_actionlib/src/averaging_client.cpp"
+            ex="false"
+            tool="1"
+            flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem>../../devel/include</pElem>
+            <pElem>../learning_actionlib/include</pElem>
+            <pElem>/opt/ros/groovy/include</pElem>
+            <pElem>../../build/learning_actionlib</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="../learning_actionlib/src/averaging_server.cpp"
+            ex="false"
+            tool="1"
+            flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem>../../devel/include</pElem>
+            <pElem>../learning_actionlib/include</pElem>
+            <pElem>/opt/ros/groovy/include</pElem>
+            <pElem>../../build/learning_actionlib</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="../learning_actionlib/src/fibonacci_server.cpp"
+            ex="false"
+            tool="1"
+            flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem>../../devel/include</pElem>
+            <pElem>../learning_actionlib/include</pElem>
+            <pElem>/opt/ros/groovy/include</pElem>
+            <pElem>../../build/learning_actionlib</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="../test/src/tf_listener.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem>/opt/ros/groovy/include</pElem>
+            <pElem>../../build/test</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>ROS_PACKAGE_NAME="test"</Elem>
+          </preprocessorList>
+        </ccTool>
       </item>
       <folder path="0">
         <ccTool>
@@ -74,16 +138,25 @@
       </folder>
       <folder path="src">
         <ccTool>
-          <incDir>
-            <pElem>/opt/ros/groovy/include</pElem>
-            <pElem>../../build/test</pElem>
-          </incDir>
           <preprocessorList>
-            <Elem>ROS_PACKAGE_NAME="test"</Elem>
+            <Elem>ROS_PACKAGE_NAME="learning_actionlib"</Elem>
           </preprocessorList>
         </ccTool>
       </folder>
-      <item path="msg/Sensor.msg" ex="false" tool="3" flavor2="0">
+      <item path="include/PacketSerial.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/ServiceSerial.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/TimeoutSerial.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/async_serial/PacketSerial.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="src/ParserPacket.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+        </ccTool>
       </item>
       <item path="src/Serial.cpp" ex="false" tool="1" flavor2="4">
         <ccTool>
@@ -92,6 +165,17 @@
       <item path="src/ServiceSerial.cpp" ex="false" tool="1" flavor2="4">
         <ccTool>
         </ccTool>
+      </item>
+      <item path="src/TimeoutSerial.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/async_serial/AsyncSerial.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/async_serial/BufferedAsyncSerial.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/async_serial/PacketSerial.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/drive_bridge/Keyboard.cpp" ex="false" tool="1" flavor2="4">
         <ccTool>
@@ -115,7 +199,13 @@
       <item path="src/serial_controller/ROSSensorController.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="4">
+        <ccTool>
+        </ccTool>
+      </item>
+      <item path="src/test_thread.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+        </ccTool>
       </item>
     </conf>
   </confs>

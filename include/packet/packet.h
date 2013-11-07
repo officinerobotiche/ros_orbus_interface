@@ -24,6 +24,8 @@
 #include "navigation.h"
 #endif
 
+// Define dimension buffer for packet and type of packet
+
 #define MAX_TX_BUFF 200
 #define MAX_RX_BUFF 200
 #define BUFF_SERIAL_ERROR 13

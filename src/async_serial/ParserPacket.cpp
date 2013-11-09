@@ -5,7 +5,7 @@
  * Created on 05 November 2013, 19:29
  */
 
-#include "ParserPacket.h"
+#include "async_serial/ParserPacket.h"
 
 using namespace std;
 using namespace boost;
@@ -26,13 +26,22 @@ void ParserPacket::sendAsyncPacket(packet_t packet) {
     writePacket(packet, HEADER_ASYNC);
 }
 
-packet_t ParserPacket::sendSyncPacket(packet_t packet, const boost::posix_time::millisec& wait_duration) {
+packet_t ParserPacket::sendSyncPacket(packet_t packet, const unsigned int repeat, const boost::posix_time::millisec& wait_duration) {
     lock_guard<boost::mutex> l(readPacketMutex);
     writePacket(packet);
-    return readPacket(wait_duration);
+    for (int i = 0; i <= repeat; ++i) {
+        try {
+            return readPacket(wait_duration);
+        } catch (...) {
+            //Repeat message
+        }
+    }
+    ostringstream convert; // stream used for the conversion
+    convert << repeat; // insert the textual representation of 'repeat' in the characters in the stream
+    throw (packet_exception("Timeout sync packet n: " + convert.str()));
 }
 
-list<information_packet_t>  ParserPacket::parsing(packet_t packet, ppacket send) {
+list<information_packet_t> ParserPacket::parsing(packet_t packet, ppacket send) {
     int i;
     list<information_packet_t> list_data;
     for (i = 0; i < packet.length; i++) {

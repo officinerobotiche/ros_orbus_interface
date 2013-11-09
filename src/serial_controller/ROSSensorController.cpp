@@ -7,11 +7,11 @@
 
 #include "serial_controller/ROSSensorController.h"
 
-ROSSensorController::ROSSensorController(std::string name_node, const ros::NodeHandle& nh, Serial* serial)
+ROSSensorController::ROSSensorController(std::string name_node, const ros::NodeHandle& nh, ParserPacket* serial)
 : nh_(nh) {
     name_node_ = name_node; // Initialize node name
     this->serial_ = serial; // Initialize serial port
-    serial_->asyncPacket(&ROSSensorController::actionAsync, this);
+    serial_->setAsyncPacketCallback(&ROSSensorController::actionAsync, this);
 
     //Open Publisher
     pub_laser_sharp_ = nh_.advertise<sensor_msgs::LaserScan>("/" + name_node + "/" + default_laser_sharp_string, NUMBER_PUBLISHER,
@@ -43,7 +43,33 @@ ROSSensorController::~ROSSensorController() {
 }
 
 void ROSSensorController::quit(int sig) {
-    
+
+}
+
+void ROSSensorController::actionAsync(const packet_t* packet) {
+//        ROS_INFO("ROS Sensor Controller Async");
+    std::list<information_packet_t> serial = serial_->parsing(*packet);
+    serial_bridge::Sensor sensor;
+    for (std::list<information_packet_t>::iterator list_iter = serial.begin(); list_iter != serial.end(); list_iter++) {
+        information_packet_t packet = (*list_iter);
+        if (packet.option == CHANGE) {
+            switch (packet.command) {
+                case ENABLE_SENSOR:
+                    enable_sensor_ = packet.packet.enable_sensor;
+                    ROS_INFO("Enable state: %d", packet.packet.enable_sensor);
+                    break;
+                case INFRARED:
+                    sendLaserSharp(packet.packet.infrared);
+                    break;
+                case SENSOR:
+                    sensor.current = packet.packet.sensor.current;
+                    sensor.temperature = packet.packet.sensor.temperature;
+                    sensor.voltage = packet.packet.sensor.voltage;
+                    pub_sensors_.publish(sensor);
+                    break;
+            }
+        }
+    }
 }
 
 void ROSSensorController::loadParameter() {
@@ -97,15 +123,56 @@ void ROSSensorController::loadParameter() {
     if (nh_.hasParam(name_node_ + "/" + default_parameter_string)) {
         ROS_INFO("Sync parameter %s: ROS -> ROBOT", default_parameter_string.c_str());
         parameter_sensor_t parameter = getParameter();
-        Serial::addPacket(&send_pkg, PARAMETER_SENSOR, CHANGE, (abstract_packet_t*) & parameter);
+        serial_->addPacket(&send_pkg, PARAMETER_SENSOR, CHANGE, (abstract_packet_t*) & parameter);
     } else {
         ROS_INFO("Sync parameter %s: ROBOT -> ROS", default_parameter_string.c_str());
-        Serial::addPacket(&send_pkg, PARAMETER_SENSOR, REQUEST, NULL);
+        serial_->addPacket(&send_pkg, PARAMETER_SENSOR, REQUEST, NULL);
     }
     //Read enable sensor
-    Serial::addPacket(&send_pkg, ENABLE_SENSOR, REQUEST, NULL);
-    std::list<information_packet_t> serial = Serial::parsing(NULL, serial_->sendPacket(send_pkg));
-    for (std::list<information_packet_t>::iterator list_iter = serial.begin(); list_iter != serial.end(); list_iter++) {
+    serial_->addPacket(&send_pkg, ENABLE_SENSOR, REQUEST, NULL);
+    try {
+        packet_t packet = serial_->sendSyncPacket(send_pkg, 3, boost::posix_time::millisec(200));
+        //packet_t packet = serial_->sendPacket(send_pkg);
+        double rate = ((double) packet.time) / 1000000000;
+        //Parsing packets
+        parser(ros::Duration(rate), serial_->parsing(packet));
+    } catch (std::exception& e) {
+        ROS_ERROR("%s", e.what());
+    }
+}
+
+void ROSSensorController::connectCallback(const ros::SingleSubscriberPublisher& pub) {
+    ROS_INFO("Connect: %s - %s", pub.getSubscriberName().c_str(), pub.getTopic().c_str());
+    packet_t send_pkg;
+    send_pkg.length = 0;
+    unsigned int counter = 0;
+    if (pub_laser_sharp_.getNumSubscribers() != 0) {
+        //        ROS_INFO("Infrared start");
+        autosend_.pkgs[counter++] = INFRARED;
+        enable_sensor_ = true;
+        serial_->addPacket(&send_pkg, ENABLE_SENSOR, CHANGE, (abstract_packet_t*) & enable_sensor_);
+    }
+    if (pub_sensors_.getNumSubscribers() != 0) {
+        //        ROS_INFO("Sensor start");
+        autosend_.pkgs[counter++] = SENSOR;
+    }
+    autosend_.pkgs[counter++] = '\0';
+    //    ROS_INFO("%s", autosend_.pkgs);
+    serial_->addPacket(&send_pkg, ENABLE_AUTOSEND, CHANGE, (abstract_packet_t*) & autosend_);
+    // TODO VERIFY THE PACKET
+    try {
+        packet_t packet = serial_->sendSyncPacket(send_pkg, 3, boost::posix_time::millisec(200));
+        //packet_t packet = serial_->sendPacket(send_pkg);
+        double rate = ((double) packet.time) / 1000000000;
+        //Parsing packets
+//        parser(ros::Duration(rate), serial_->parsing(packet));
+    } catch (std::exception& e) {
+        ROS_ERROR("%s", e.what());
+    }
+}
+
+void ROSSensorController::parser(ros::Duration time, std::list<information_packet_t> serial_packet) {
+    for (std::list<information_packet_t>::iterator list_iter = serial_packet.begin(); list_iter != serial_packet.end(); list_iter++) {
         information_packet_t packet = (*list_iter);
         if (packet.option == CHANGE) {
             switch (packet.command) {
@@ -124,58 +191,6 @@ void ROSSensorController::loadParameter() {
             }
         }
     }
-}
-
-void ROSSensorController::actionAsync(packet_t packet) {
-    //    ROS_INFO("ROS Sensor Controller Async");
-    std::list<information_packet_t> serial = Serial::parsing(NULL, packet);
-    serial_bridge::Sensor sensor;
-    for (std::list<information_packet_t>::iterator list_iter = serial.begin(); list_iter != serial.end(); list_iter++) {
-        information_packet_t packet = (*list_iter);
-        if (packet.option == CHANGE) {
-            switch (packet.command) {
-                case ENABLE_SENSOR:
-                    enable_sensor_ = packet.packet.enable_sensor;
-                    ROS_INFO("Enable state: %d", packet.packet.enable_sensor);
-                    break;
-                case INFRARED:
-                    sendLaserSharp(packet.packet.infrared);
-                    break;
-                case SENSOR:
-                    sensor.current = packet.packet.sensor.current;
-                    sensor.temperature = packet.packet.sensor.temperature;
-                    sensor.voltage = packet.packet.sensor.voltage;
-                    pub_sensors_.publish(sensor);
-                    break;
-            }
-        }
-    }
-}
-
-void ROSSensorController::connectCallback(const ros::SingleSubscriberPublisher& pub) {
-    ROS_INFO("Connect: %s - %s", pub.getSubscriberName().c_str(), pub.getTopic().c_str());
-    packet_t send_pkg;
-    send_pkg.length = 0;
-    unsigned int counter = 0;
-    if (pub_laser_sharp_.getNumSubscribers() != 0) {
-        //        ROS_INFO("Infrared start");
-        autosend_.pkgs[counter++] = INFRARED;
-        enable_sensor_ = true;
-        Serial::addPacket(&send_pkg, ENABLE_SENSOR, CHANGE, (abstract_packet_t*) & enable_sensor_);
-    }
-    if (pub_sensors_.getNumSubscribers() != 0) {
-        //        ROS_INFO("Sensor start");
-        autosend_.pkgs[counter++] = SENSOR;
-    }
-    autosend_.pkgs[counter++] = '\0';
-    //    ROS_INFO("%s", autosend_.pkgs);
-    Serial::addPacket(&send_pkg, ENABLE_AUTOSEND, CHANGE, (abstract_packet_t*) & autosend_);
-    // TODO VERIFY THE PACKET
-    Serial::parsing(NULL, serial_->sendPacket(send_pkg));
-}
-
-void ROSSensorController::parser(ros::Duration time, std::list<information_packet_t> serial_packet) {
-    
 }
 
 void ROSSensorController::sendLaserSharp(infrared_t infrared) {
@@ -248,17 +263,33 @@ void ROSSensorController::enableCallback(const serial_bridge::Enable::ConstPtr &
     packet_t send_pkg;
     send_pkg.length = 0;
     enable_sensor_t enable = msg->enable;
-    Serial::addPacket(&send_pkg, ENABLE_SENSOR, CHANGE, (abstract_packet_t*) & enable);
+    serial_->addPacket(&send_pkg, ENABLE_SENSOR, CHANGE, (abstract_packet_t*) & enable);
     // TODO VERIFY THE PACKET
-    Serial::parsing(NULL, serial_->sendPacket(send_pkg));
+    try {
+        packet_t packet = serial_->sendSyncPacket(send_pkg, 3, boost::posix_time::millisec(200));
+        //packet_t packet = serial_->sendPacket(send_pkg);
+        double rate = ((double) packet.time) / 1000000000;
+        //Parsing packets
+        parser(ros::Duration(rate), serial_->parsing(packet));
+    } catch (std::exception& e) {
+        ROS_ERROR("%s", e.what());
+    }
 }
 
 bool ROSSensorController::parameterCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&) {
     packet_t send_pkg;
     send_pkg.length = 0;
     parameter_sensor_t parameter = getParameter();
-    Serial::addPacket(&send_pkg, PARAMETER_SENSOR, CHANGE, (abstract_packet_t*) & parameter);
-    Serial::parsing(NULL, serial_->sendPacket(send_pkg));
+    serial_->addPacket(&send_pkg, PARAMETER_SENSOR, CHANGE, (abstract_packet_t*) & parameter);
+    try {
+        packet_t packet = serial_->sendSyncPacket(send_pkg, 3, boost::posix_time::millisec(200));
+        //packet_t packet = serial_->sendPacket(send_pkg);
+        double rate = ((double) packet.time) / 1000000000;
+        //Parsing packets
+        parser(ros::Duration(rate), serial_->parsing(packet));
+    } catch (std::exception& e) {
+        ROS_ERROR("%s", e.what());
+    }
     return true;
 }
 
@@ -280,10 +311,18 @@ void ROSSensorController::timerCallback(const ros::TimerEvent& event) {
         send_pkg.length = 0;
         unsigned int counter = 0;
         enable_sensor_ = false;
-        Serial::addPacket(&send_pkg, ENABLE_SENSOR, CHANGE, (abstract_packet_t*) & enable_sensor_);
+        serial_->addPacket(&send_pkg, ENABLE_SENSOR, CHANGE, (abstract_packet_t*) & enable_sensor_);
         autosend_.pkgs[counter++] = '\0';
-        Serial::addPacket(&send_pkg, ENABLE_AUTOSEND, CHANGE, (abstract_packet_t*) & autosend_);
+        serial_->addPacket(&send_pkg, ENABLE_AUTOSEND, CHANGE, (abstract_packet_t*) & autosend_);
         // TODO VERIFY THE PACKET
-        Serial::parsing(NULL, serial_->sendPacket(send_pkg));
+        try {
+            packet_t packet = serial_->sendSyncPacket(send_pkg, 3, boost::posix_time::millisec(200));
+            //packet_t packet = serial_->sendPacket(send_pkg);
+            double rate = ((double) packet.time) / 1000000000;
+            //Parsing packets
+            parser(ros::Duration(rate), serial_->parsing(packet));
+        } catch (std::exception& e) {
+            ROS_ERROR("%s", e.what());
+        }
     }
 }

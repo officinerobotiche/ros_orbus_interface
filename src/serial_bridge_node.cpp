@@ -10,6 +10,8 @@
 #include "std_msgs/String.h"
 
 #include "Serial.h"
+
+#include "async_serial/ParserPacket.h"
 #include "ServiceSerial.h"
 #include "serial_controller/ROSMotionController.h"
 #include "serial_controller/ROSSensorController.h"
@@ -19,7 +21,7 @@
 #include <exception>
 
 int arduino = 0;
-Serial* serial;
+ParserPacket* serial;
 AbstractROSController * controller;
 
 std::string name_node = "serial_bridge_node";
@@ -29,7 +31,7 @@ std::string name_navigation_board = "Navigation Board";
 void quit(int sig) {
     ROS_INFO("Force quit!");
     controller->quit(sig);
-    serial->quit();
+    serial->close();
     ros::shutdown();
     exit(0);
 }
@@ -56,17 +58,13 @@ int main(int argc, char** argv) {
     } else {
         nh.setParam(name + "/baud_rate", baud_rate);
     }
-    if (serial_port.compare("DEBUG") == 0) {
-        ROS_INFO("DEBUG!");
+    try {
+        serial = new ParserPacket(serial_port, baud_rate);
+        //serial = new Serial(serial_port, baud_rate);
+        ROS_INFO("Open Serial %s:%d", serial_port.c_str(), baud_rate);
+    } catch (std::exception& e) {
+        ROS_ERROR("An exception occurred. Exception: %s", e.what());
         return -1;
-    } else {
-        try {
-            serial = new Serial(serial_port, baud_rate);
-            ROS_INFO("Open Serial %s:%d", serial_port.c_str(), baud_rate);
-        } catch (std::exception& e) {
-            ROS_ERROR("An exception occurred. Exception: %s", e.what());
-            return -1;
-        }
     }
     if (arduino) {
         ROS_INFO("Wait to start Arduino (2sec) ... ");

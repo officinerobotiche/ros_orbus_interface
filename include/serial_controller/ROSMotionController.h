@@ -68,7 +68,7 @@ const std::string base_link_string = "base_link";
 
 class ROSMotionController : public AbstractROSController {
 public:
-    ROSMotionController(std::string name_node, const ros::NodeHandle& nh, Serial* serial, ServiceSerial* service_serial);
+    ROSMotionController(std::string name_node, const ros::NodeHandle& nh, ParserPacket* serial, ServiceSerial* service_serial);
     virtual ~ROSMotionController();
 
     void quit(int sig);
@@ -78,7 +78,7 @@ private:
     //Initialization object
     std::string name_node_; //Name for topics, params, services
     ros::NodeHandle nh_; //NameSpace for bridge controller
-    Serial* serial_; //Serial object to communicate with PIC device
+    ParserPacket* serial_; //Serial object to communicate with PIC device
     ServiceSerial* service_serial_;
     
     //Publisher communication

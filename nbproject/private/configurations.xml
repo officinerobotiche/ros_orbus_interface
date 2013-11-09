@@ -7,8 +7,8 @@
       <df name="include">
         <df name="async_serial">
           <in>AsyncSerial.h</in>
-          <in>BufferedAsyncSerial.h</in>
           <in>PacketSerial.h</in>
+          <in>ParserPacket.h</in>
         </df>
         <df name="drive_bridge">
           <in>Keyboard.h</in>
@@ -23,19 +23,16 @@
           <in>ROSMotionController.h</in>
           <in>ROSSensorController.h</in>
         </df>
-        <in>PacketSerial.h</in>
-        <in>ParserPacket.h</in>
         <in>Serial.h</in>
         <in>ServiceSerial.h</in>
-        <in>TimeoutSerial.h</in>
       </df>
       <df name="msg">
       </df>
       <df name="src">
         <df name="async_serial">
           <in>AsyncSerial.cpp</in>
-          <in>BufferedAsyncSerial.cpp</in>
           <in>PacketSerial.cpp</in>
+          <in>ParserPacket.cpp</in>
         </df>
         <df name="drive_bridge">
           <in>Keyboard.cpp</in>
@@ -44,10 +41,8 @@
           <in>ROSMotionController.cpp</in>
           <in>ROSSensorController.cpp</in>
         </df>
-        <in>ParserPacket.cpp</in>
         <in>Serial.cpp</in>
         <in>ServiceSerial.cpp</in>
-        <in>TimeoutSerial.cpp</in>
         <in>drive_bridge_node.cpp</in>
         <in>serial_bridge_node.cpp</in>
         <in>test_thread.cpp</in>

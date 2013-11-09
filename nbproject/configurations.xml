@@ -6,15 +6,13 @@
         <df name="async_serial">
           <in>PacketSerial.h</in>
         </df>
-        <in>PacketSerial.h</in>
         <in>ServiceSerial.h</in>
-        <in>TimeoutSerial.h</in>
       </df>
       <df name="src">
         <df name="async_serial">
           <in>AsyncSerial.cpp</in>
-          <in>BufferedAsyncSerial.cpp</in>
           <in>PacketSerial.cpp</in>
+          <in>ParserPacket.cpp</in>
         </df>
         <df name="drive_bridge">
           <in>Keyboard.cpp</in>
@@ -23,10 +21,8 @@
           <in>ROSMotionController.cpp</in>
           <in>ROSSensorController.cpp</in>
         </df>
-        <in>ParserPacket.cpp</in>
         <in>Serial.cpp</in>
         <in>ServiceSerial.cpp</in>
-        <in>TimeoutSerial.cpp</in>
         <in>drive_bridge_node.cpp</in>
         <in>serial_bridge_node.cpp</in>
         <in>test_thread.cpp</in>
@@ -143,20 +139,12 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <item path="include/PacketSerial.h" ex="false" tool="3" flavor2="0">
-      </item>
       <item path="include/ServiceSerial.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/TimeoutSerial.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/async_serial/PacketSerial.h"
             ex="false"
             tool="3"
             flavor2="0">
-      </item>
-      <item path="src/ParserPacket.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool>
-        </ccTool>
       </item>
       <item path="src/Serial.cpp" ex="false" tool="1" flavor2="4">
         <ccTool>
@@ -166,16 +154,13 @@
         <ccTool>
         </ccTool>
       </item>
-      <item path="src/TimeoutSerial.cpp" ex="false" tool="1" flavor2="0">
-      </item>
       <item path="src/async_serial/AsyncSerial.cpp" ex="false" tool="1" flavor2="0">
       </item>
-      <item path="src/async_serial/BufferedAsyncSerial.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-      </item>
       <item path="src/async_serial/PacketSerial.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/async_serial/ParserPacket.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+        </ccTool>
       </item>
       <item path="src/drive_bridge/Keyboard.cpp" ex="false" tool="1" flavor2="4">
         <ccTool>

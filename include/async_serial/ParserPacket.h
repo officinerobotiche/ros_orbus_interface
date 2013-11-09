@@ -30,7 +30,7 @@ public:
     
     void sendAsyncPacket(packet_t packet);
     
-    packet_t sendSyncPacket(packet_t packet, const boost::posix_time::millisec& wait_duration=boost::posix_time::millisec(1000));
+    packet_t sendSyncPacket(packet_t packet, const unsigned int repeat=0, const boost::posix_time::millisec& wait_duration=boost::posix_time::millisec(1000));
 
     std::list<information_packet_t> parsing(packet_t packet, ppacket send=NULL);
     information_packet_t addPacket(packet_t* send, unsigned char command, unsigned char option, abstract_packet_t * packet);

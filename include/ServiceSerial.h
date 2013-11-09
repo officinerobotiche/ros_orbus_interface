@@ -8,7 +8,7 @@
 #ifndef SERVICESERIAL_H
 #define	SERVICESERIAL_H
 
-#include "Serial.h"
+#include "async_serial/ParserPacket.h"
 #include "ros/ros.h"
 
 #include <serial_bridge/Service.h>
@@ -25,7 +25,7 @@ const std::string time_string = "time";
 
 class ServiceSerial {
 public:
-    ServiceSerial(std::string name_node, const ros::NodeHandle& nh, Serial* serial);
+    ServiceSerial(std::string name_node, const ros::NodeHandle& nh, ParserPacket* serial);
     ServiceSerial(const ServiceSerial& orig);
     virtual ~ServiceSerial();
     void resetBoard(unsigned int repeat);
@@ -38,7 +38,7 @@ public:
 private:
     std::string name_node_;
     ros::NodeHandle nh_; //NameSpace for bridge controller
-    Serial* serial_; //Serial object to communicate with PIC device
+    ParserPacket* serial_; //Serial object to communicate with PIC device
     std::string name_board, version, name_author, compiled;
     ros::ServiceServer srv_board_;
     double step_timer_, tm_mill_, k_time_;

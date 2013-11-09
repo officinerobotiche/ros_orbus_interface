@@ -8,7 +8,7 @@
 #ifndef ABSTRACTROSCONTROLLER_H
 #define	ABSTRACTROSCONTROLLER_H
 
-#include "Serial.h"
+#include "../async_serial/ParserPacket.h"
 #include "ServiceSerial.h"
 #include "ros/ros.h"
 

@@ -113,19 +113,20 @@ link_directories(${catkin_LIBRARY_DIRS})
 # )
 
 set(serial_SRC
-    src/serial_bridge_node.cpp
+    src/Serial.cpp
+    src/async_serial/AsyncSerial.cpp
+    src/async_serial/PacketSerial.cpp
+    src/async_serial/ParserPacket.cpp
+    src/ServiceSerial.cpp
     src/serial_controller/ROSMotionController.cpp
     src/serial_controller/ROSSensorController.cpp
-    src/Serial.cpp
-    src/ServiceSerial.cpp
+    src/serial_bridge_node.cpp
 )
 
 set(serial_thread_SRC
     src/async_serial/AsyncSerial.cpp
-    src/async_serial/BufferedAsyncSerial.cpp
     src/async_serial/PacketSerial.cpp
-    src/TimeoutSerial.cpp
-    src/ParserPacket.cpp
+    src/async_serial/ParserPacket.cpp
     src/test_thread.cpp
 )
 

@@ -10,12 +10,12 @@
 /*
  *
  */
-ROSMotionController::ROSMotionController(std::string name_node, const ros::NodeHandle& nh, Serial* serial, ServiceSerial* service_serial)
+ROSMotionController::ROSMotionController(std::string name_node, const ros::NodeHandle& nh, ParserPacket* serial, ServiceSerial* service_serial)
 : nh_(nh) {
     name_node_ = name_node; // Initialize node name
     this->serial_ = serial; // Initialize serial port
     service_serial_ = service_serial;
-    serial_->asyncPacket(&ROSMotionController::actionAsync, this);
+//    serial_->setAsyncPacketCallback(&ROSMotionController::actionAsync, this);
 
     //Open Publisher
     //- Measure
@@ -75,7 +75,7 @@ ROSMotionController::ROSMotionController(std::string name_node, const ros::NodeH
         ROS_INFO("Sync parameter %s: set - %f Hz", rate_update_string.c_str(), rate);
     }
     //Timer
-    timer_ = nh_.createTimer(ros::Duration(1/rate), &ROSMotionController::timerCallback, this, false, false);
+    timer_ = nh_.createTimer(ros::Duration(1 / rate), &ROSMotionController::timerCallback, this, false, false);
 }
 
 void ROSMotionController::actionAsync(packet_t packet) {
@@ -97,37 +97,37 @@ void ROSMotionController::loadParameter() {
     if (nh_.hasParam(name_node_ + "/" + joint_string + "/" + constraint_string)) {
         ROS_DEBUG("Sync parameter %s: ROS -> ROBOT", constraint_string.c_str());
         constraint_t constraint = get_constraint();
-        Serial::addPacket(&send_pkg, CONSTRAINT, CHANGE, (abstract_packet_t*) & constraint);
+        serial_->addPacket(&send_pkg, CONSTRAINT, CHANGE, (abstract_packet_t*) & constraint);
     } else {
         ROS_DEBUG("Sync parameter %s: ROBOT -> ROS", constraint_string.c_str());
-        Serial::addPacket(&send_pkg, CONSTRAINT, REQUEST, NULL);
+        serial_->addPacket(&send_pkg, CONSTRAINT, REQUEST, NULL);
     }
     //Load PID/Left
     if (nh_.hasParam(name_node_ + +"/" + pid_string + "/" + left_string)) {
         ROS_DEBUG("Sync parameter %s/%s: ROS -> ROBOT", pid_string.c_str(), left_string.c_str());
         pid_control_t pid_l = get_pid(left_string);
-        Serial::addPacket(&send_pkg, PID_CONTROL_L, CHANGE, (abstract_packet_t*) & pid_l);
+        serial_->addPacket(&send_pkg, PID_CONTROL_L, CHANGE, (abstract_packet_t*) & pid_l);
     } else {
         ROS_DEBUG("Sync parameter %s/%s: ROBOT -> ROS", pid_string.c_str(), left_string.c_str());
-        Serial::addPacket(&send_pkg, PID_CONTROL_L, REQUEST, NULL);
+        serial_->addPacket(&send_pkg, PID_CONTROL_L, REQUEST, NULL);
     }
     //Load PID/Right
     if (nh_.hasParam(name_node_ + +"/" + pid_string + "/" + right_string)) {
         ROS_DEBUG("Sync parameter %s/%s: ROS -> ROBOT", pid_string.c_str(), right_string.c_str());
         pid_control_t pid_r = get_pid(right_string);
-        Serial::addPacket(&send_pkg, PID_CONTROL_R, CHANGE, (abstract_packet_t*) & pid_r);
+        serial_->addPacket(&send_pkg, PID_CONTROL_R, CHANGE, (abstract_packet_t*) & pid_r);
     } else {
         ROS_DEBUG("Sync parameter %s/%s: ROBOT -> ROS", pid_string.c_str(), right_string.c_str());
-        Serial::addPacket(&send_pkg, PID_CONTROL_R, REQUEST, NULL);
+        serial_->addPacket(&send_pkg, PID_CONTROL_R, REQUEST, NULL);
     }
     //Parameter motors
     if (nh_.hasParam(name_node_ + "/" + structure_string)) {
         ROS_DEBUG("Sync parameter %s: ROS -> ROBOT", structure_string.c_str());
         parameter_motors_t parameter_motors = get_parameter();
-        Serial::addPacket(&send_pkg, PARAMETER_MOTORS, CHANGE, (abstract_packet_t*) & parameter_motors);
+        serial_->addPacket(&send_pkg, PARAMETER_MOTORS, CHANGE, (abstract_packet_t*) & parameter_motors);
     } else {
         ROS_DEBUG("Sync parameter %s: ROBOT -> ROS", structure_string.c_str());
-        Serial::addPacket(&send_pkg, PARAMETER_MOTORS, REQUEST, NULL);
+        serial_->addPacket(&send_pkg, PARAMETER_MOTORS, REQUEST, NULL);
     }
     //Parameter frequency
     if (nh_.hasParam(name_node_ + "/" + frequency_string)) {
@@ -135,7 +135,7 @@ void ROSMotionController::loadParameter() {
         ROS_INFO("TODO Sync %s", frequency_string.c_str());
     } else {
         ROS_DEBUG("Sync parameter %s: ROBOT -> ROS", frequency_string.c_str());
-        Serial::addPacket(&send_pkg, FRQ_PROCESS, REQUEST, NULL);
+        serial_->addPacket(&send_pkg, FRQ_PROCESS, REQUEST, NULL);
     }
     //Parameter priority
     if (nh_.hasParam(name_node_ + "/" + priority_string)) {
@@ -143,7 +143,7 @@ void ROSMotionController::loadParameter() {
         ROS_INFO("TODO Sync %s", priority_string.c_str());
     } else {
         ROS_DEBUG("Sync parameter %s: ROBOT -> ROS", priority_string.c_str());
-        Serial::addPacket(&send_pkg, PRIORITY_PROCESS, REQUEST, NULL);
+        serial_->addPacket(&send_pkg, PRIORITY_PROCESS, REQUEST, NULL);
     }
     //Names TF
     if (nh_.hasParam(name_node_ + "/" + tf_string)) {
@@ -173,27 +173,35 @@ void ROSMotionController::loadParameter() {
     nh_.setParam("/" + name_node_ + "/" + space_robot_string, 0);
 
     if (send_pkg.length > 0) {
-        packet_t packet = serial_->sendPacket(send_pkg);
-        double rate = ((double) packet.time) / 1000000000;
-        //Parsing packets
-        parser(ros::Duration(rate), Serial::parsing(NULL, packet));
+        try {
+            packet_t packet = serial_->sendSyncPacket(send_pkg, 3, boost::posix_time::millisec(200));
+            double rate = ((double) packet.time) / 1000000000;
+            //Parsing packets
+            parser(ros::Duration(rate), serial_->parsing(packet));
+        } catch (std::exception& e) {
+            ROS_ERROR("%s", e.what());
+        }
     }
 }
 
 void ROSMotionController::timerCallback(const ros::TimerEvent& event) {
-    packet_t send_packet = updatePacket();
+    packet_t packet = updatePacket();
     double rate = 1;
     nh_.getParam("/" + name_node_ + "/" + rate_update_string, rate);
-    timer_.setPeriod(ros::Duration(1/rate));
-    if (send_packet.length == 0) {
+    timer_.setPeriod(ros::Duration(1 / rate));
+    if (packet.length == 0) {
         ROS_INFO("Wait user");
         timer_.stop();
     } else {
         //ROS_INFO("Start streaming");
-        packet_t receive_packet = serial_->sendPacket(send_packet);
-        double rate = ((double) receive_packet.time) / 1000000000;
-        //Parsing packets
-        parser(ros::Duration(rate), Serial::parsing(NULL, receive_packet));
+        try {
+            packet = serial_->sendSyncPacket(packet, 3, boost::posix_time::millisec(200));
+            double rate = ((double) packet.time) / 1000000000;
+            //Parsing packets
+            parser(ros::Duration(rate), serial_->parsing(packet));
+        } catch (std::exception& e) {
+            ROS_ERROR("%s", e.what());
+        }
     }
 }
 
@@ -203,31 +211,31 @@ packet_t ROSMotionController::updatePacket() {
     std::string packet_string;
     if ((pose_pub_.getNumSubscribers() >= 1) || (odom_pub_.getNumSubscribers() >= 1)) {
         packet_string += "Odo ";
-        Serial::addPacket(&packet, COORDINATE, REQUEST, NULL);
+        serial_->addPacket(&packet, COORDINATE, REQUEST, NULL);
     }
     if (velocity_pub_.getNumSubscribers() >= 1) {
         packet_string += "Vel ";
-        Serial::addPacket(&packet, VELOCITY, REQUEST, NULL);
+        serial_->addPacket(&packet, VELOCITY, REQUEST, NULL);
     }
     if (enable_pub_.getNumSubscribers() >= 1) {
         packet_string += "Ena ";
-        Serial::addPacket(&packet, ENABLE, REQUEST, NULL);
+        serial_->addPacket(&packet, ENABLE, REQUEST, NULL);
     }
     if ((velocity_mis_pub_.getNumSubscribers() >= 1) || (odom_pub_.getNumSubscribers() >= 1)) {
         packet_string += "VelMis ";
-        Serial::addPacket(&packet, VELOCITY_MIS, REQUEST, NULL);
+        serial_->addPacket(&packet, VELOCITY_MIS, REQUEST, NULL);
     }
     if ((motor_left_pub_.getNumSubscribers() >= 1) || (joint_pub_.getNumSubscribers() >= 1)) {
         packet_string += "MotL ";
-        Serial::addPacket(&packet, MOTOR_L, REQUEST, NULL);
+        serial_->addPacket(&packet, MOTOR_L, REQUEST, NULL);
     }
     if ((motor_right_pub_.getNumSubscribers() >= 1) || (joint_pub_.getNumSubscribers() >= 1)) {
         packet_string += "MotR ";
-        Serial::addPacket(&packet, MOTOR_R, REQUEST, NULL);
+        serial_->addPacket(&packet, MOTOR_R, REQUEST, NULL);
     }
     if (time_process_pub_.getNumSubscribers() >= 1) {
         packet_string += "Proc ";
-        Serial::addPacket(&packet, TIME_PROCESS, REQUEST, NULL);
+        serial_->addPacket(&packet, TIME_PROCESS, REQUEST, NULL);
     }
     //ROS_INFO("[ %s]", packet_string.c_str());
     return packet;
@@ -245,37 +253,39 @@ void ROSMotionController::velocityCallback(const serial_bridge::Velocity::ConstP
     velocity_t velocity;
     velocity.v = msg->lin_vel;
     velocity.w = msg->ang_vel;
-    Serial::addPacket(&send_pkg, VELOCITY, CHANGE, (abstract_packet_t*) & velocity);
+    serial_->addPacket(&send_pkg, VELOCITY, CHANGE, (abstract_packet_t*) & velocity);
     // TODO VERIFY THE PACKET
-    Serial::parsing(NULL, serial_->sendPacket(send_pkg));
+    try {
+        packet_t packet = serial_->sendSyncPacket(send_pkg, 3, boost::posix_time::millisec(200));
+        //packet_t packet = serial_->sendPacket(send_pkg);
+        double rate = ((double) packet.time) / 1000000000;
+        //Parsing packets
+//        parser(ros::Duration(rate), serial_->parsing(packet));
+    } catch (std::exception& e) {
+        ROS_ERROR("%s", e.what());
+    }
 }
 
 void ROSMotionController::enableCallback(const serial_bridge::Enable::ConstPtr &msg) {
     packet_t send_pkg;
     send_pkg.length = 0;
     enable_motor_t enable = msg->enable;
-    Serial::addPacket(&send_pkg, ENABLE, CHANGE, (abstract_packet_t*) & enable);
+    serial_->addPacket(&send_pkg, ENABLE, CHANGE, (abstract_packet_t*) & enable);
     // TODO VERIFY THE PACKET
-    Serial::parsing(NULL, serial_->sendPacket(send_pkg));
+    try {
+        packet_t packet = serial_->sendSyncPacket(send_pkg, 3, boost::posix_time::millisec(200));
+        //packet_t packet = serial_->sendPacket(send_pkg);
+        double rate = ((double) packet.time) / 1000000000;
+        //Parsing packets
+//        parser(ros::Duration(rate), serial_->parsing(packet));
+    } catch (std::exception& e) {
+        ROS_ERROR("%s", e.what());
+    }
 }
 
 void ROSMotionController::updateOdom(const serial_bridge::Pose* pose) {
-    float space;
-    packet_t packet;
-    packet.length = 0;
-    Serial::addPacket(&packet, COORDINATE, REQUEST, NULL);
-    std::list<information_packet_t> configuration_robot;
-    configuration_robot = Serial::parsing(NULL, serial_->sendPacket(packet));
-    for (std::list<information_packet_t>::iterator list_iter = configuration_robot.begin(); list_iter != configuration_robot.end(); list_iter++) {
-        information_packet_t packet = (*list_iter);
-        if (packet.option == CHANGE) {
-            switch (packet.command) {
-                case COORDINATE:
-                    space = packet.packet.coordinate.space;
-                    break;
-            }
-        }
-    }
+    double space;
+    nh_.getParam(name_node_ + "/" + space_robot_string, space);
     positon_joint_left_ = 0;
     positon_joint_right_ = 0;
     packet_t send_pkg;
@@ -285,9 +295,17 @@ void ROSMotionController::updateOdom(const serial_bridge::Pose* pose) {
     coordinate.y = pose->y;
     coordinate.theta = pose->theta;
     coordinate.space = space;
-    Serial::addPacket(&send_pkg, COORDINATE, CHANGE, (abstract_packet_t*) & coordinate);
+    serial_->addPacket(&send_pkg, COORDINATE, CHANGE, (abstract_packet_t*) & coordinate);
     // TODO VERIFY THE PACKET
-    Serial::parsing(NULL, serial_->sendPacket(send_pkg));
+    try {
+        packet_t packet = serial_->sendSyncPacket(send_pkg, 3, boost::posix_time::millisec(200));
+        //packet_t packet = serial_->sendPacket(send_pkg);
+        double rate = ((double) packet.time) / 1000000000;
+        //Parsing packets
+//        parser(ros::Duration(rate), serial_->parsing(packet));
+    } catch (std::exception& e) {
+        ROS_ERROR("%s", e.what());
+    }
 }
 
 void ROSMotionController::pose_tf_Callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg) {
@@ -373,8 +391,16 @@ bool ROSMotionController::parameter_update_Callback(std_srvs::Empty::Request&, s
     packet_t send_pkg;
     send_pkg.length = 0;
     parameter_motors_t parameter = get_parameter();
-    Serial::addPacket(&send_pkg, PARAMETER_MOTORS, CHANGE, (abstract_packet_t*) & parameter);
-    Serial::parsing(NULL, serial_->sendPacket(send_pkg));
+    serial_->addPacket(&send_pkg, PARAMETER_MOTORS, CHANGE, (abstract_packet_t*) & parameter);
+    try {
+        packet_t packet = serial_->sendSyncPacket(send_pkg, 3, boost::posix_time::millisec(200));
+        //packet_t packet = serial_->sendPacket(send_pkg);
+        double rate = ((double) packet.time) / 1000000000;
+        //Parsing packets
+        parser(ros::Duration(rate), serial_->parsing(packet));
+    } catch (std::exception& e) {
+        ROS_ERROR("%s", e.what());
+    }
     return true;
 }
 
@@ -386,15 +412,23 @@ bool ROSMotionController::process_update_Callback(serial_bridge::Update::Request
     ROS_INFO("PROCESS UPDATE");
     if ((name.compare(priority_string) == 0) || (name.compare(all_string) == 0)) {
         process = get_process(priority_string);
-        Serial::addPacket(&send_pkg, PRIORITY_PROCESS, CHANGE, (abstract_packet_t*) & process);
+        serial_->addPacket(&send_pkg, PRIORITY_PROCESS, CHANGE, (abstract_packet_t*) & process);
     }
     if ((name.compare(frequency_string) == 0) || (name.compare(all_string) == 0)) {
         process = get_process(frequency_string);
-        Serial::addPacket(&send_pkg, FRQ_PROCESS, CHANGE, (abstract_packet_t*) & process);
+        serial_->addPacket(&send_pkg, FRQ_PROCESS, CHANGE, (abstract_packet_t*) & process);
     }
     if (send_pkg.length != 0) {
         // TODO VERIFY THE PACKET
-        Serial::parsing(NULL, serial_->sendPacket(send_pkg));
+        try {
+            packet_t packet = serial_->sendSyncPacket(send_pkg, 3, boost::posix_time::millisec(200));
+            //packet_t packet = serial_->sendPacket(send_pkg);
+            double rate = ((double) packet.time) / 1000000000;
+            //Parsing packets
+            parser(ros::Duration(rate), serial_->parsing(packet));
+        } catch (std::exception& e) {
+            ROS_ERROR("%s", e.what());
+        }
         return true;
     } else {
         ROS_ERROR("PROCESS ERROR UPDATE");
@@ -410,15 +444,23 @@ bool ROSMotionController::pid_update_Callback(serial_bridge::Update::Request &re
     ROS_INFO("PID UPDATE");
     if ((name.compare(left_string) == 0) || (name.compare(all_string) == 0)) {
         pid = get_pid(left_string);
-        Serial::addPacket(&send_pkg, PID_CONTROL_L, CHANGE, (abstract_packet_t*) & pid);
+        serial_->addPacket(&send_pkg, PID_CONTROL_L, CHANGE, (abstract_packet_t*) & pid);
     }
     if ((name.compare(right_string) == 0) || (name.compare(all_string) == 0)) {
         pid = get_pid(right_string);
-        Serial::addPacket(&send_pkg, PID_CONTROL_R, CHANGE, (abstract_packet_t*) & pid);
+        serial_->addPacket(&send_pkg, PID_CONTROL_R, CHANGE, (abstract_packet_t*) & pid);
     }
     if (send_pkg.length != 0) {
         // TODO VERIFY THE PACKET
-        Serial::parsing(NULL, serial_->sendPacket(send_pkg));
+        try {
+            packet_t packet = serial_->sendSyncPacket(send_pkg, 3, boost::posix_time::millisec(200));
+            //packet_t packet = serial_->sendPacket(send_pkg);
+            double rate = ((double) packet.time) / 1000000000;
+            //Parsing packets
+            parser(ros::Duration(rate), serial_->parsing(packet));
+        } catch (std::exception& e) {
+            ROS_ERROR("%s", e.what());
+        }
         return true;
     } else {
         ROS_ERROR("PID ERROR UPDATE");
@@ -430,8 +472,16 @@ bool ROSMotionController::constraint_update_Callback(std_srvs::Empty::Request&, 
     packet_t send_pkg;
     send_pkg.length = 0;
     constraint_t constraint = get_constraint();
-    Serial::addPacket(&send_pkg, CONSTRAINT, CHANGE, (abstract_packet_t*) & constraint);
-    Serial::parsing(NULL, serial_->sendPacket(send_pkg));
+    serial_->addPacket(&send_pkg, CONSTRAINT, CHANGE, (abstract_packet_t*) & constraint);
+    try {
+        packet_t packet = serial_->sendSyncPacket(send_pkg, 3, boost::posix_time::millisec(200));
+        //packet_t packet = serial_->sendPacket(send_pkg);
+        double rate = ((double) packet.time) / 1000000000;
+        //Parsing packets
+        parser(ros::Duration(rate), serial_->parsing(packet));
+    } catch (std::exception& e) {
+        ROS_ERROR("%s", e.what());
+    }
     return true;
 }
 

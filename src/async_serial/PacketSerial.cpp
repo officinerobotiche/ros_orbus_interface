@@ -109,7 +109,8 @@ void PacketSerial::readCallback(const char *data, size_t len) {
                     readPacketCond.notify_one();
                 }
             }
-        } catch (...) {
+        } catch (std::exception& e) {
+            cout << e.what() << endl;
             //TODO Save name of error
             //Restart to find header
             pkg_parse = &PacketSerial::pkg_header;
@@ -121,15 +122,11 @@ packet_t PacketSerial::readPacket(const boost::posix_time::millisec& wait_durati
     unique_lock<boost::mutex> l(readQueueMutex);
     const boost::system_time timeout = boost::get_system_time() + wait_duration;
     while (!data_ready) {
-        if(!readPacketCond.timed_wait(l, timeout))
+        if (!readPacketCond.timed_wait(l, timeout))
             throw (packet_exception("Timeout sync packet"));
     }
+    data_ready = false;
     return receive_pkg;
-}
-
-template <class T> void PacketSerial::setAsyncPacketCallback(void(T::*fp)(packet_t), T* obj) {
-    const boost::function<void (packet_t*) >& callback = boost::bind(fp, obj, _1);
-    pkgimpl->addAsyncCallback(callback);
 }
 
 void PacketSerial::setAsyncPacketCallback(const boost::function<void (const packet_t*) >& callback) {
@@ -147,12 +144,10 @@ bool PacketSerial::decode_pkgs(unsigned char rxchar) {
 bool PacketSerial::pkg_header(unsigned char rxchar) {
     if (rxchar == HEADER_SYNC) {
         async = false;
-        data_ready = false;
         pkg_parse = &PacketSerial::pkg_length;
         return false;
     } else if (rxchar == HEADER_ASYNC) {
         async = true;
-        data_ready = false;
         pkg_parse = &PacketSerial::pkg_length;
         return false;
     } else {

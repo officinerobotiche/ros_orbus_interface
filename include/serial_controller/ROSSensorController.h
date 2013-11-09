@@ -29,7 +29,7 @@ const std::string enable_autosend = "enable_autosend";
 
 class ROSSensorController : public AbstractROSController {
 public:
-    ROSSensorController(std::string name_node, const ros::NodeHandle& nh, Serial* serial);
+    ROSSensorController(std::string name_node, const ros::NodeHandle& nh, ParserPacket* serial);
     ROSSensorController(const ROSSensorController& orig);
     virtual ~ROSSensorController();
 
@@ -39,7 +39,7 @@ private:
     //Initialization object
     std::string name_node_; //Name for topics, params, services
     ros::NodeHandle nh_; //NameSpace for bridge controller
-    Serial* serial_; //Serial object to comunicate with PIC device
+    ParserPacket* serial_; //Serial object to comunicate with PIC device
 
     autosend_t autosend_;
     ros::Publisher pub_laser_sharp_;
@@ -59,7 +59,7 @@ private:
     void parser(ros::Duration time, std::list<information_packet_t> serial_packet);
     
     parameter_sensor_t getParameter();
-    void actionAsync(packet_t packet);
+    void actionAsync(const packet_t* packet);
     void connectCallback(const ros::SingleSubscriberPublisher& pub);
     void enableCallback(const serial_bridge::Enable::ConstPtr &msg);
     void enableAutoSendCallback(const serial_bridge::Enable::ConstPtr &msg);

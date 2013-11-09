@@ -76,7 +76,9 @@ public:
     /**
      * To allow derived classes to set a read callback
      */
-    template <class T> void setAsyncPacketCallback(void(T::*fp)(packet_t), T* obj);
+    template <class T> void setAsyncPacketCallback(void(T::*fp)(const packet_t*), T* obj) {
+        setAsyncPacketCallback(boost::bind(fp, obj, _1));
+    }
 
     /**
      * To allow derived classes to set a read callback
@@ -90,7 +92,7 @@ public:
      * base class destructor
      */
     void clearAsyncPacketCallback();
-    
+
 private:
 
     /**

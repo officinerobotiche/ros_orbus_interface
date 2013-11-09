@@ -197,28 +197,28 @@ void ROSSensorController::sendLaserSharp(infrared_t infrared) {
 
     ros::Time scan_time = ros::Time::now();
 
-    //Update information position laser sharp
-    double x, y, z, theta;
-    nh_.getParam(name_node_ + "/tf/" + laser_sharp_position_string + "/x", x);
-    nh_.getParam(name_node_ + "/tf/" + laser_sharp_position_string + "/y", y);
-    nh_.getParam(name_node_ + "/tf/" + laser_sharp_position_string + "/z", z);
-    nh_.getParam(name_node_ + "/tf/" + laser_sharp_position_string + "/theta", theta);
-    pose_laser_sharp_ = tf::Vector3(x, y, z);
-    angle_laser_sharp_ = tf::createQuaternionFromYaw(theta);
+//    //Update information position laser sharp
+//    double x, y, z, theta;
+//    nh_.getParam(name_node_ + "/tf/" + laser_sharp_position_string + "/x", x);
+//    nh_.getParam(name_node_ + "/tf/" + laser_sharp_position_string + "/y", y);
+//    nh_.getParam(name_node_ + "/tf/" + laser_sharp_position_string + "/z", z);
+//    nh_.getParam(name_node_ + "/tf/" + laser_sharp_position_string + "/theta", theta);
+//    pose_laser_sharp_ = tf::Vector3(x, y, z);
+//    angle_laser_sharp_ = tf::createQuaternionFromYaw(theta);
 
     broadcaster_.sendTransform(
             tf::StampedTransform(
             tf::Transform(angle_laser_sharp_, pose_laser_sharp_),
             scan_time, base_link_string_, laser_sharp_string_));
 
-    //Update information laser sharp
-    nh_.getParam(name_node_ + "/" + default_laser_sharp_string + "/angle/min", sharp_angle_min_);
-    nh_.getParam(name_node_ + "/" + default_laser_sharp_string + "/angle/max", sharp_angle_max_);
-    nh_.getParam(name_node_ + "/" + default_laser_sharp_string + "/angle/increment", sharp_angle_increment_);
-    nh_.getParam(name_node_ + "/" + default_laser_sharp_string + "/time/increment", sharp_time_increment_);
-    nh_.getParam(name_node_ + "/" + default_laser_sharp_string + "/range/min", sharp_range_min_);
-    nh_.getParam(name_node_ + "/" + default_laser_sharp_string + "/range/max", sharp_range_max_);
-    nh_.getParam(name_node_ + "/" + default_laser_sharp_string + "/distance_center", sharp_distance_center_);
+//    //Update information laser sharp
+//    nh_.getParam(name_node_ + "/" + default_laser_sharp_string + "/angle/min", sharp_angle_min_);
+//    nh_.getParam(name_node_ + "/" + default_laser_sharp_string + "/angle/max", sharp_angle_max_);
+//    nh_.getParam(name_node_ + "/" + default_laser_sharp_string + "/angle/increment", sharp_angle_increment_);
+//    nh_.getParam(name_node_ + "/" + default_laser_sharp_string + "/time/increment", sharp_time_increment_);
+//    nh_.getParam(name_node_ + "/" + default_laser_sharp_string + "/range/min", sharp_range_min_);
+//    nh_.getParam(name_node_ + "/" + default_laser_sharp_string + "/range/max", sharp_range_max_);
+//    nh_.getParam(name_node_ + "/" + default_laser_sharp_string + "/distance_center", sharp_distance_center_);
 
     //populate the LaserScan message
     sensor_msgs::LaserScan scan;

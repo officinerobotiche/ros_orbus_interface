@@ -41,6 +41,7 @@ private:
     ros::NodeHandle nh_; //NameSpace for bridge controller
     ParserPacket* serial_; //Serial object to comunicate with PIC device
 
+    bool dynamic_update_;
     autosend_t autosend_;
     ros::Publisher pub_laser_sharp_;
     tf::TransformBroadcaster broadcaster_;

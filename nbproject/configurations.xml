@@ -21,7 +21,6 @@
           <in>ROSMotionController.cpp</in>
           <in>ROSSensorController.cpp</in>
         </df>
-        <in>Serial.cpp</in>
         <in>ServiceSerial.cpp</in>
         <in>drive_bridge_node.cpp</in>
         <in>serial_bridge_node.cpp</in>
@@ -145,10 +144,6 @@
             ex="false"
             tool="3"
             flavor2="0">
-      </item>
-      <item path="src/Serial.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool>
-        </ccTool>
       </item>
       <item path="src/ServiceSerial.cpp" ex="false" tool="1" flavor2="4">
         <ccTool>

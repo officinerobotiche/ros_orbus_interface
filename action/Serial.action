@@ -1,8 +1,0 @@
-#goal definition
-string order
----
-#result definition
-string sequence
----
-#feedback
-string sequence

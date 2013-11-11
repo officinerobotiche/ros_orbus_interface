@@ -9,8 +9,6 @@
 #include <ros/callback_queue.h>
 #include "std_msgs/String.h"
 
-#include "Serial.h"
-
 #include "async_serial/ParserPacket.h"
 #include "ServiceSerial.h"
 #include "serial_controller/ROSMotionController.h"
@@ -31,7 +29,11 @@ std::string name_navigation_board = "Navigation Board";
 void quit(int sig) {
     ROS_INFO("Force quit!");
     controller->quit(sig);
-    serial->close();
+    try {
+        serial->close();
+    } catch (...) {
+
+    }
     ros::shutdown();
     exit(0);
 }

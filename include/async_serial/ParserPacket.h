@@ -10,6 +10,12 @@
 
 #include "async_serial/PacketSerial.h"
 
+
+/**
+ * Used internally (pkgimpl)
+ */
+class ParserPacketImpl;
+
 class ParserPacket : public PacketSerial {
 public:
 
@@ -28,27 +34,41 @@ public:
             boost::asio::serial_port_base::stop_bits(
             boost::asio::serial_port_base::stop_bits::one));
     
-    void sendAsyncPacket(packet_t packet);
-    
-    packet_t sendSyncPacket(packet_t packet, const unsigned int repeat=0, const boost::posix_time::millisec& wait_duration=boost::posix_time::millisec(1000));
+    virtual ~ParserPacket();
 
-    std::vector<information_packet_t> matching(std::vector<information_packet_t> list_send, const unsigned int repeat=0, const boost::posix_time::millisec& wait_duration=boost::posix_time::millisec(1000));
+    void sendAsyncPacket(packet_t packet);
+
+    packet_t sendSyncPacket(packet_t packet, const unsigned int repeat = 0, const boost::posix_time::millisec& wait_duration = boost::posix_time::millisec(1000));
+    void parserSendPacket(std::vector<information_packet_t> list_send, const unsigned int repeat = 0, const boost::posix_time::millisec& wait_duration = boost::posix_time::millisec(1000));
+
     std::vector<information_packet_t> parsing(packet_t packet_receive);
     packet_t encoder(std::vector<information_packet_t> list_send);
     packet_t encoder(information_packet_t *list_send, size_t len);
     packet_t encoder(information_packet_t list_send);
-    
-    information_packet_t createPacket(unsigned char command, unsigned char option, unsigned char type=HASHMAP_DEFAULT, abstract_packet_t * packet=NULL);
+
+    information_packet_t createPacket(unsigned char command, unsigned char option, unsigned char type = HASHMAP_DEFAULT, abstract_packet_t * packet = NULL);
     information_packet_t createDataPacket(unsigned char command, unsigned char type, abstract_packet_t * packet);
+
+    void addCallback(const boost::function<void (const unsigned char&, const abstract_packet_t*) >& callback, unsigned char type=HASHMAP_DEFAULT);
+    void addErrorCallback(const boost::function<void (const unsigned char&, const abstract_packet_t*) >& callback);
+
+    template <class T> void addDefaultCallback(void(T::*fp)(const unsigned char&, const abstract_packet_t*), T* obj, unsigned char type=HASHMAP_DEFAULT) {
+        addCallback(boost::bind(fp, obj, _1, _2), type);
+    }
     
+    template <class T> void addErrorCallback(void(T::*fp)(const unsigned char&, const abstract_packet_t*), T* obj) {
+        addErrorCallback(boost::bind(fp, obj, _1, _2));
+    }
+
+    void clearCallback(unsigned char type=HASHMAP_DEFAULT);
+    void clearErrorCallback();
+
 private:
-//    information_packet_t addChangePacket(packet_t* send, char command, unsigned char* Buffer, unsigned int position, unsigned int length, abstract_packet_t * packet);
-//    information_packet_t addInformationPacket(packet_t* send, unsigned char command, unsigned char option);
-//    information_packet_t decode_pkg(packet_t* send, char command, unsigned char* Buffer, unsigned int position);
-//    information_packet_t addRequestPacket(packet_t* send, unsigned char command, abstract_packet_t * packet);
-//    information_packet_t buildRequestPacket(ppacket send, unsigned char command, const unsigned int length, abstract_packet_t * packet);
+
+    void actionAsync(const packet_t* packet);
 
     boost::mutex readPacketMutex;
+    boost::shared_ptr<ParserPacketImpl> parser_impl;
 };
 
 #endif	/* PARSERPACKET_H */

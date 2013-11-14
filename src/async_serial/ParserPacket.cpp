@@ -10,10 +10,99 @@
 using namespace std;
 using namespace boost;
 
-ParserPacket::ParserPacket() : PacketSerial() {
+#define NUMBER_CALLBACK 3
+
+class ParserPacketImpl {
+public:
+
+    ParserPacketImpl() : counter_default(0), counter_error(0) {
+    }
+
+    void sendPacket(std::vector<information_packet_t> list_packet) {
+        for (vector<information_packet_t>::iterator list_iter = list_packet.begin(); list_iter != list_packet.end(); ++list_iter) {
+            information_packet_t packet = (*list_iter);
+            switch (packet.option) {
+                case NACK:
+                    sendDataCallBack(counter_error, packet.command, &packet.packet, data_error_packet_functions);
+                    break;
+                case DATA:
+                    sendToCallback(&packet);
+                    break;
+            }
+        }
+    }
+
+    void addCallback(const boost::function<void (const unsigned char&, const abstract_packet_t*) >& callback, unsigned char type) {
+        if (type == HASHMAP_DEFAULT)
+            addCallBack("Default", &counter_default, data_default_packet_functions, callback);
+        else {
+            this->type = type;
+            data_other_packet_callback = callback;
+        }
+    }
+
+    void addErrorCallback(const boost::function<void (const unsigned char&, const abstract_packet_t*) >& callback) {
+        addCallBack("Error", &counter_error, data_error_packet_functions, callback);
+    }
+
+    void clearCallback(unsigned char type) {
+        if (type == HASHMAP_DEFAULT)
+            clearCallback(&counter_default, data_default_packet_functions);
+        else
+            data_other_packet_callback.clear();
+    }
+
+    void clearErrorCallback() {
+        clearCallback(&counter_error, data_error_packet_functions);
+    }
+
+private:
+
+    /// Read complete callback - Array of callback
+    typedef boost::function<void (const unsigned char&, const abstract_packet_t*) > callback_data_packet_t;
+
+    void clearCallback(unsigned int* counter, boost::array<callback_data_packet_t, NUMBER_CALLBACK >& array) {
+        for (int i = 0; i < (*counter); ++i) {
+            callback_data_packet_t callback = array[i];
+            callback.clear();
+        }
+        counter = 0;
+    }
+
+    void addCallBack(string name, unsigned int* counter, boost::array<callback_data_packet_t, NUMBER_CALLBACK >& array, const boost::function<void (const unsigned char&, const abstract_packet_t*) >& callback) {
+        if (*counter == 10)
+            throw (packet_exception("Max callback packet " + name));
+        else {
+            array[(*counter)++] = callback;
+        }
+    }
+
+    void sendToCallback(information_packet_t* packet) {
+        if (packet->type == HASHMAP_DEFAULT)
+            sendDataCallBack(counter_default, packet->command, &packet->packet, data_default_packet_functions);
+        else if (packet->type == type)
+            if (data_other_packet_callback) data_other_packet_callback(packet->command, &packet->packet);
+    }
+
+    void sendDataCallBack(unsigned int counter, unsigned char& command, abstract_packet_t* packet, boost::array<callback_data_packet_t, NUMBER_CALLBACK > array) {
+        for (int i = 0; i < counter; ++i) {
+            callback_data_packet_t callback = array[i];
+            if (callback)
+                callback(command, packet);
+        }
+    }
+    unsigned char type;
+    unsigned int counter_default, counter_error;
+    callback_data_packet_t data_other_packet_callback;
+    boost::array<callback_data_packet_t, NUMBER_CALLBACK > data_default_packet_functions;
+    boost::array<callback_data_packet_t, NUMBER_CALLBACK > data_error_packet_functions;
+};
+
+ParserPacket::ParserPacket() : PacketSerial(), parser_impl(new ParserPacketImpl) {
     INITIALIZE_HASHMAP_DEFAULT
     INITIALIZE_HASHMAP_MOTION
     INITIALIZE_HASHMAP_NAVIGATION
+    setAsyncPacketCallback(&ParserPacket::actionAsync, this);
 }
 
 ParserPacket::ParserPacket(const std::string& devname,
@@ -22,10 +111,11 @@ ParserPacket::ParserPacket(const std::string& devname,
         asio::serial_port_base::character_size opt_csize,
         asio::serial_port_base::flow_control opt_flow,
         asio::serial_port_base::stop_bits opt_stop)
-: PacketSerial(devname, baud_rate, opt_parity, opt_csize, opt_flow, opt_stop) {
+: PacketSerial(devname, baud_rate, opt_parity, opt_csize, opt_flow, opt_stop), parser_impl(new ParserPacketImpl) {
     INITIALIZE_HASHMAP_DEFAULT
     INITIALIZE_HASHMAP_MOTION
     INITIALIZE_HASHMAP_NAVIGATION
+    setAsyncPacketCallback(&ParserPacket::actionAsync, this);
 }
 
 void ParserPacket::sendAsyncPacket(packet_t packet) {
@@ -47,31 +137,20 @@ packet_t ParserPacket::sendSyncPacket(packet_t packet, const unsigned int repeat
     throw (packet_exception("Timeout sync packet n: " + convert.str()));
 }
 
-std::vector<information_packet_t> ParserPacket::matching(std::vector<information_packet_t> list_send, const unsigned int repeat, const boost::posix_time::millisec& wait_duration) {
-    packet_t pkg_send = encoder(list_send);
-    packet_t pkg_return = sendSyncPacket(pkg_send, repeat, wait_duration);
-    vector<information_packet_t> list_temp = parsing(pkg_return);
-    vector<information_packet_t> list_return;
-    for(int i = 0; i < list_temp.size(); ++i) {
-        information_packet_t info_send = list_send[i];
-        information_packet_t info_receive = list_temp[i];
-        if((info_send.command == info_receive.command) && (info_send.type == info_receive.type)) {
-            if((info_send.option == REQUEST) && (info_receive.option == DATA)) {
-                list_return.push_back(info_receive);
-            } else if (info_receive.option != ACK && info_receive.option != DATA ) {
-//                string information = "Error packet send: " + info_send.option;
-//                information += " receive: " + info_receive.option;
-                throw (packet_exception("ERROR"));
-            }
-        }
-    }
-    return list_return;
+void ParserPacket::actionAsync(const packet_t* packet) {
+    parser_impl->sendPacket(parsing(*packet));
+}
+
+void ParserPacket::parserSendPacket(vector<information_packet_t> list_send, const unsigned int repeat, const boost::posix_time::millisec& wait_duration) {
+    packet_t packet = encoder(list_send);
+    packet_t receive = sendSyncPacket(packet, repeat, wait_duration);
+    parser_impl->sendPacket(parsing(receive));
 }
 
 vector<information_packet_t> ParserPacket::parsing(packet_t packet_receive) {
     int i;
     vector<information_packet_t> list_data;
-    for (i = 0; i < packet_receive.length; ) {
+    for (i = 0; i < packet_receive.length;) {
         buffer_packet_u buffer_packet;
         memcpy(&buffer_packet.buffer, &packet_receive.buffer[i], packet_receive.buffer[i]);
         list_data.push_back(buffer_packet.information_packet);
@@ -149,187 +228,22 @@ information_packet_t ParserPacket::createDataPacket(unsigned char command, unsig
     return createPacket(command, DATA, type, packet);
 }
 
-//information_packet_t ParserPacket::addChangePacket(packet_t* send, char command, unsigned char* Buffer, unsigned int position, unsigned int length, abstract_packet_t * packet) {
-//    information_packet_t packet_temp;
-//    packet_temp.command = command;
-//    packet_temp.option = CHANGE;
-//    memcpy(packet_temp.packet.buffer, Buffer + (position * sizeof (unsigned char)), length);
-//    if (send != NULL)
-//        addPacket(send, command, ACK, NULL);
-//    return packet_temp;
-//}
-//
-//information_packet_t ParserPacket::addPacket(packet_t* send, unsigned char command, unsigned char option, abstract_packet_t * packet) {
-//    switch (option) {
-//        case REQUEST:
-//        case CHANGE:
-//            return addRequestPacket(send, command, packet);
-//            break;
-//        case ACK:
-//        case NACK:
-//            return addInformationPacket(send, command, option);
-//            break;
-//        default:
-//            throw ERROR_OPTION;
-//            //pkg_error(ERROR_OPTION);
-//            break;
-//    }
-//}
-//
-//information_packet_t ParserPacket::addInformationPacket(packet_t* send, unsigned char command, unsigned char option) {
-//    if (send != NULL) {
-//        send->buffer[send->length] = 1;
-//        send->buffer[send->length + 1] = command;
-//        send->buffer[send->length + 2] = option;
-//        send->length += 3;
-//        information_packet_t option_pkg;
-//        option_pkg.command = command;
-//        option_pkg.option = option;
-//        return option_pkg;
-//    }
-//}
-//
-//information_packet_t ParserPacket::decode_pkg(packet_t* send, char command, unsigned char* Buffer, unsigned int position) {
-//    switch (command) {
-//        case MOTOR_L:
-//        case MOTOR_R:
-//            return addChangePacket(send, command, Buffer, position, LNG_MOTOR, NULL);
-//            break;
-//        case PID_CONTROL_L:
-//        case PID_CONTROL_R:
-//            return addChangePacket(send, command, Buffer, position, LNG_PID_CONTROL, NULL);
-//            break;
-//        case COORDINATE:
-//            return addChangePacket(send, command, Buffer, position, LNG_COORDINATE, NULL);
-//            break;
-//        case PARAMETER_SYSTEM:
-//            return addChangePacket(send, command, Buffer, position, LNG_PARAMETER_SYSTEM, NULL);
-//            break;
-//        case PARAMETER_MOTORS:
-//            return addChangePacket(send, command, Buffer, position, LNG_PARAMETER_MOTORS, NULL);
-//            break;
-//        case PARAMETER_SENSOR:
-//            return addChangePacket(send, command, Buffer, position, LNG_PARAMETER_SENSOR, NULL);
-//            break;
-//        case CONSTRAINT:
-//            return addChangePacket(send, command, Buffer, position, LNG_CONSTRAINT, NULL);
-//            break;
-//        case VELOCITY:
-//        case VELOCITY_MIS:
-//            return addChangePacket(send, command, Buffer, position, LNG_VELOCITY, NULL);
-//            break;
-//        case ENABLE:
-//        case ENABLE_SENSOR:
-//            return addChangePacket(send, command, Buffer, position, LNG_ENABLE, NULL);
-//            break;
-//        case TIME_PROCESS:
-//        case PRIORITY_PROCESS:
-//        case FRQ_PROCESS:
-//            return addChangePacket(send, command, Buffer, position, LNG_PROCESS, NULL);
-//            break;
-//        case SERVICES:
-//            return addChangePacket(send, command, Buffer, position, LNG_SERVICES, NULL);
-//            break;
-//        case ERROR_SERIAL:
-//            return addChangePacket(send, command, Buffer, position, LNG_ERROR_PKG, NULL);
-//            break;
-//        case ENABLE_AUTOSEND:
-//            return addChangePacket(send, command, Buffer, position, LNG_AUTOSEND, NULL);
-//            break;
-//        case SENSOR:
-//            return addChangePacket(send, command, Buffer, position, LNG_SENSOR, NULL);
-//            break;
-//        case HUMIDITY:
-//            return addChangePacket(send, command, Buffer, position, LNG_HUMIDITY, NULL);
-//            break;
-//        case INFRARED:
-//            return addChangePacket(send, command, Buffer, position, LNG_INFRARED, NULL);
-//            break;
-//        default:
-//            throw ERROR_PKG;
-//            //pkg_error(ERROR_PKG);
-//            break;
-//    }
-//}
-//
-//information_packet_t ParserPacket::addRequestPacket(packet_t* send, unsigned char command, abstract_packet_t * packet) {
-//    switch (command) {
-//        case MOTOR_L:
-//        case MOTOR_R:
-//            return buildRequestPacket(send, command, LNG_MOTOR, packet);
-//            break;
-//        case PID_CONTROL_L:
-//        case PID_CONTROL_R:
-//            return buildRequestPacket(send, command, LNG_PID_CONTROL, packet);
-//            break;
-//        case COORDINATE:
-//            return buildRequestPacket(send, command, LNG_COORDINATE, packet);
-//            break;
-//        case PARAMETER_SYSTEM:
-//            return buildRequestPacket(send, command, LNG_PARAMETER_SYSTEM, packet);
-//            break;
-//        case PARAMETER_MOTORS:
-//            return buildRequestPacket(send, command, LNG_PARAMETER_MOTORS, packet);
-//            break;
-//        case PARAMETER_SENSOR:
-//            return buildRequestPacket(send, command, LNG_PARAMETER_SENSOR, packet);
-//            break;
-//        case CONSTRAINT:
-//            return buildRequestPacket(send, command, LNG_CONSTRAINT, packet);
-//            break;
-//        case VELOCITY:
-//        case VELOCITY_MIS:
-//            return buildRequestPacket(send, command, LNG_VELOCITY, packet);
-//            break;
-//        case ENABLE:
-//        case ENABLE_SENSOR:
-//            return buildRequestPacket(send, command, LNG_ENABLE, packet);
-//            break;
-//        case TIME_PROCESS:
-//        case PRIORITY_PROCESS:
-//        case FRQ_PROCESS:
-//            return buildRequestPacket(send, command, LNG_PROCESS, packet);
-//            break;
-//        case SERVICES:
-//            return buildRequestPacket(send, command, LNG_SERVICES, packet);
-//            break;
-//        case ERROR_SERIAL:
-//            return buildRequestPacket(send, command, LNG_ERROR_PKG, packet);
-//            break;
-//        case ENABLE_AUTOSEND:
-//            return buildRequestPacket(send, command, LNG_AUTOSEND, packet);
-//            break;
-//        case SENSOR:
-//            return buildRequestPacket(send, command, LNG_SENSOR, packet);
-//            break;
-//        case HUMIDITY:
-//            return buildRequestPacket(send, command, LNG_HUMIDITY, packet);
-//            break;
-//        case INFRARED:
-//            return buildRequestPacket(send, command, LNG_INFRARED, packet);
-//            break;
-//        default:
-//            throw ERROR_CREATE_PKG;
-//            //pkg_error(ERROR_CREATE_PKG);
-//            break;
-//    }
-//}
-//
-//information_packet_t ParserPacket::buildRequestPacket(ppacket send, unsigned char command, const unsigned int length, abstract_packet_t * packet) {
-//    if (send != NULL) {
-//        if (packet != NULL) {
-//            information_packet_t request_packet;
-//            send->buffer[send->length] = length;
-//            send->buffer[send->length + 1] = command;
-//            memcpy(send->buffer + (send->length + 2) * sizeof (unsigned char), packet->buffer, length);
-//            send->length += length + 2;
-//            request_packet.command = command;
-//            request_packet.option = REQUEST;
-//            memcpy(&request_packet.packet.buffer, packet->buffer, length);
-//            return request_packet;
-//        } else {
-//            return addInformationPacket(send, command, REQUEST);
-//        }
-//    }
-//}
-//
+void ParserPacket::addCallback(const boost::function<void (const unsigned char&, const abstract_packet_t*) >& callback, unsigned char type) {
+    parser_impl->addCallback(callback, type);
+}
+
+void ParserPacket::addErrorCallback(const boost::function<void (const unsigned char&, const abstract_packet_t*) >& callback) {
+    parser_impl->addErrorCallback(callback);
+}
+
+void ParserPacket::clearCallback(unsigned char type) {
+    parser_impl->clearCallback(type);
+}
+
+void ParserPacket::clearErrorCallback() {
+    parser_impl->clearErrorCallback();
+}
+
+ParserPacket::~ParserPacket() {
+    clearAsyncPacketCallback();
+}

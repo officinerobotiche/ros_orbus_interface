@@ -60,6 +60,7 @@ typedef struct services {
 #define LNG_SERVICES sizeof(services_t)
 
 typedef struct process {
+    int16_t length;
     int16_t idle;
     int16_t parse_packet;
     int16_t process[BUFF_ALL_PROCESS];

@@ -234,7 +234,7 @@ packet_t ROSMotionController::updatePacket() {
     }
     if (time_process_pub_.getNumSubscribers() >= 1) {
         packet_string += "Proc ";
-        list_send.push_back(serial_->createPacket(TIME_PROCESS, REQUEST, HASHMAP_MOTION));
+        list_send.push_back(serial_->createPacket(TIME_PROCESS, REQUEST));
     }
 //    ROS_INFO("[ %s]", packet_string.c_str());
     return serial_->encoder(list_send);

@@ -26,42 +26,36 @@ int main(int argc, char **argv) {
 
     ParserPacket serial("/dev/ttyUSB0", 115200);
 
-    packet_t packet;
     std::vector<information_packet_t> list_send, list_return;
-    services_t version, author, name_board, date;
-    version.command = VERSION_CODE;
-//    list_send.push_back(serial.createPacket(SERVICES, HASHMAP_DEFAULT, (abstract_packet_t*) & version));
-//
-//    packet = serial.sendSyncPacket(packet);
-//
-//    for (std::vector<information_packet_t>::iterator list_iter = list_send.begin(); list_iter != list_send.end(); list_iter++) {
-//        information_packet_t packet = (*list_iter);
-//        ROS_INFO("packet: %c, %c", packet.command, packet.option);
-//        //ROS_INFO("packet: %d, %d", packet.command, packet.option); 
-//    }
 
-    //    packet.length = 0;
-    //    serial.addPacket(&packet, CONSTRAINT, REQUEST, NULL);
-    //
-    //    enable_motor_t enable = false;
-    //    serial.addPacket(&packet, ENABLE, CHANGE, (abstract_packet_t*) & enable);
+    velocity_t velocity;
+    velocity.v = 0;
+    velocity.w = 0.2;
 
-    //    packet = serial.sendSyncPacket(packet);
-    //
-    //    ROS_INFO("length: %d", packet.length);
-    //    
-    //    std::list<information_packet_t> serial_packet = serial.parsing(packet);
-    //    for (std::list<information_packet_t>::iterator list_iter = serial_packet.begin(); list_iter != serial_packet.end(); list_iter++) {
-    //        information_packet_t packet = (*list_iter);
-    //        ROS_INFO("packet: %c, %c", packet.command, packet.option);
-    //        //ROS_INFO("packet: %d, %d", packet.command, packet.option); 
-    //    }
-    //
-    //    ROSController controller("test", nh, &serial);
-    //
-    //    test<std::list<information_packet_t> > testa();
-    //    test* tst = new test<int>();
-    //    tst->number = 1;
+    list_send.push_back(serial.createPacket(VELOCITY, REQUEST, HASHMAP_MOTION));
+    list_send.push_back(serial.createDataPacket(VELOCITY, HASHMAP_MOTION, (abstract_packet_t*) & velocity));
+    list_send.push_back(serial.createPacket(VELOCITY, REQUEST, HASHMAP_MOTION));
+    list_send.push_back(serial.createPacket(120, REQUEST, HASHMAP_MOTION));
 
-    //    ros::spin();
+    packet_t send = serial.encoder(list_send);
+
+    packet_t receive = serial.sendSyncPacket(send);
+
+    ROS_INFO("Send");
+    for (std::vector<information_packet_t>::iterator list_iter = list_send.begin(); list_iter != list_send.end(); ++list_iter) {
+        information_packet_t packet = (*list_iter);
+        ROS_INFO("Cmd: %d - Type: %c - Option: %c - lng: %d", packet.command, packet.type, packet.option, packet.length);
+    }
+
+    list_return = serial.parsing(receive);
+
+    ROS_INFO("Return");
+    for (std::vector<information_packet_t>::iterator list_iter = list_return.begin(); list_iter != list_return.end(); ++list_iter) {
+        information_packet_t packet = (*list_iter);
+        ROS_INFO("Cmd: %d - Type: %c - Option: %c - lng: %d", packet.command, packet.type, packet.option, packet.length);
+    }
+
+    ROSController controller("test", nh, &serial);
+
+    ros::spin();
 }

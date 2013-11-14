@@ -110,7 +110,7 @@ private:
     ros::Timer timer_;
     packet_t updatePacket();
     void timerCallback(const ros::TimerEvent& event);
-    void parser(ros::Duration time, std::list<information_packet_t> serial_packet);
+    void parser(ros::Duration time, std::vector<information_packet_t> serial_packet);
     
     void connectCallback(const ros::SingleSubscriberPublisher& pub);
     void velocityCallback(const serial_bridge::Velocity::ConstPtr &msg);

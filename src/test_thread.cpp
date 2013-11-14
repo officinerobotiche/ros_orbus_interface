@@ -1,15 +1,20 @@
+
 #include <ros/ros.h>
-#include <ros/callback_queue.h>
-
-//messages
-#include <std_msgs/String.h>
-
-//services
-#include <std_srvs/Empty.h>
-
 #include "async_serial/ParserPacket.h"
+#include "serial_controller/ROSController.h"
 
 using namespace std;
+
+template<class T = packet_t, int N = 10 >
+class test {
+public:
+
+    test() {
+    };
+
+    typedef boost::function<void (const T*) > callback_t;
+    boost::array<callback_t, N > async_functions;
+};
 
 int main(int argc, char **argv) {
 
@@ -20,38 +25,43 @@ int main(int argc, char **argv) {
     ROS_INFO("Start");
 
     ParserPacket serial("/dev/ttyUSB0", 115200);
-    
-    sleep(2);
 
-    ROS_INFO("Running");
+    packet_t packet;
+    std::vector<information_packet_t> list_send, list_return;
+    services_t version, author, name_board, date;
+    version.command = VERSION_CODE;
+//    list_send.push_back(serial.createPacket(SERVICES, HASHMAP_DEFAULT, (abstract_packet_t*) & version));
+//
+//    packet = serial.sendSyncPacket(packet);
+//
+//    for (std::vector<information_packet_t>::iterator list_iter = list_send.begin(); list_iter != list_send.end(); list_iter++) {
+//        information_packet_t packet = (*list_iter);
+//        ROS_INFO("packet: %c, %c", packet.command, packet.option);
+//        //ROS_INFO("packet: %d, %d", packet.command, packet.option); 
+//    }
 
-    packet_t packet_send;
-    packet_send.length = 0;
+    //    packet.length = 0;
+    //    serial.addPacket(&packet, CONSTRAINT, REQUEST, NULL);
+    //
+    //    enable_motor_t enable = false;
+    //    serial.addPacket(&packet, ENABLE, CHANGE, (abstract_packet_t*) & enable);
 
-    serial.addPacket(&packet_send, VELOCITY, REQUEST, NULL);
-    serial.addPacket(&packet_send, VELOCITY_MIS, REQUEST, NULL);
+    //    packet = serial.sendSyncPacket(packet);
+    //
+    //    ROS_INFO("length: %d", packet.length);
+    //    
+    //    std::list<information_packet_t> serial_packet = serial.parsing(packet);
+    //    for (std::list<information_packet_t>::iterator list_iter = serial_packet.begin(); list_iter != serial_packet.end(); list_iter++) {
+    //        information_packet_t packet = (*list_iter);
+    //        ROS_INFO("packet: %c, %c", packet.command, packet.option);
+    //        //ROS_INFO("packet: %d, %d", packet.command, packet.option); 
+    //    }
+    //
+    //    ROSController controller("test", nh, &serial);
+    //
+    //    test<std::list<information_packet_t> > testa();
+    //    test* tst = new test<int>();
+    //    tst->number = 1;
 
-    string data_send(reinterpret_cast<const char*> (packet_send.buffer), packet_send.length);
-
-    ROS_INFO("Send data: %s - length: %d", data_send.c_str(), packet_send.length);
-
-    for (int i = 0; i < 10; ++i)
-        try {
-            packet_t packet;
-            packet = serial.sendSyncPacket(packet_send, 3, boost::posix_time::millisec(200));
-            string data_return(reinterpret_cast<const char*> (packet.buffer), packet.length);
-            ROS_INFO("n: %d - Receive data %s - length: %d", i, data_return.c_str(), packet.length);
-
-            list<information_packet_t> list_data = serial.parsing(packet);
-            for (std::list<information_packet_t>::iterator list_iter = list_data.begin(); list_iter != list_data.end(); list_iter++) {
-                information_packet_t packet = (*list_iter);
-                ROS_INFO("Command: %c - Option: %c", packet.command, packet.option);
-            }
-        } catch (exception& e) {
-            ROS_ERROR("%s", e.what());
-        }
-
-    ROS_INFO("Close");
-
-    serial.close();
+    //    ros::spin();
 }

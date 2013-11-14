@@ -15,7 +15,7 @@ ROSMotionController::ROSMotionController(std::string name_node, const ros::NodeH
     name_node_ = name_node; // Initialize node name
     this->serial_ = serial; // Initialize serial port
     service_serial_ = service_serial;
-//    serial_->setAsyncPacketCallback(&ROSMotionController::actionAsync, this);
+    //    serial_->setAsyncPacketCallback(&ROSMotionController::actionAsync, this);
 
     //Open Publisher
     //- Measure
@@ -91,43 +91,42 @@ void ROSMotionController::quit(int sig) {
 }
 
 void ROSMotionController::loadParameter() {
-    packet_t send_pkg;
-    send_pkg.length = 0;
+    std::vector<information_packet_t> list_send;
     //Constraint
     if (nh_.hasParam(name_node_ + "/" + joint_string + "/" + constraint_string)) {
         ROS_DEBUG("Sync parameter %s: ROS -> ROBOT", constraint_string.c_str());
         constraint_t constraint = get_constraint();
-        serial_->addPacket(&send_pkg, CONSTRAINT, CHANGE, (abstract_packet_t*) & constraint);
+        list_send.push_back(serial_->createDataPacket(CONSTRAINT, HASHMAP_MOTION, (abstract_packet_t*) & constraint));
     } else {
         ROS_DEBUG("Sync parameter %s: ROBOT -> ROS", constraint_string.c_str());
-        serial_->addPacket(&send_pkg, CONSTRAINT, REQUEST, NULL);
+        list_send.push_back(serial_->createPacket(CONSTRAINT, REQUEST, HASHMAP_MOTION));
     }
     //Load PID/Left
     if (nh_.hasParam(name_node_ + +"/" + pid_string + "/" + left_string)) {
         ROS_DEBUG("Sync parameter %s/%s: ROS -> ROBOT", pid_string.c_str(), left_string.c_str());
         pid_control_t pid_l = get_pid(left_string);
-        serial_->addPacket(&send_pkg, PID_CONTROL_L, CHANGE, (abstract_packet_t*) & pid_l);
+        list_send.push_back(serial_->createDataPacket(PID_CONTROL_L, HASHMAP_MOTION, (abstract_packet_t*) & pid_l));
     } else {
         ROS_DEBUG("Sync parameter %s/%s: ROBOT -> ROS", pid_string.c_str(), left_string.c_str());
-        serial_->addPacket(&send_pkg, PID_CONTROL_L, REQUEST, NULL);
+        list_send.push_back(serial_->createPacket(PID_CONTROL_L, REQUEST, HASHMAP_MOTION));
     }
     //Load PID/Right
     if (nh_.hasParam(name_node_ + +"/" + pid_string + "/" + right_string)) {
         ROS_DEBUG("Sync parameter %s/%s: ROS -> ROBOT", pid_string.c_str(), right_string.c_str());
         pid_control_t pid_r = get_pid(right_string);
-        serial_->addPacket(&send_pkg, PID_CONTROL_R, CHANGE, (abstract_packet_t*) & pid_r);
+        list_send.push_back(serial_->createDataPacket(PID_CONTROL_R, HASHMAP_MOTION, (abstract_packet_t*) & pid_r));
     } else {
         ROS_DEBUG("Sync parameter %s/%s: ROBOT -> ROS", pid_string.c_str(), right_string.c_str());
-        serial_->addPacket(&send_pkg, PID_CONTROL_R, REQUEST, NULL);
+        list_send.push_back(serial_->createPacket(PID_CONTROL_R, REQUEST, HASHMAP_MOTION));
     }
     //Parameter motors
     if (nh_.hasParam(name_node_ + "/" + structure_string)) {
         ROS_DEBUG("Sync parameter %s: ROS -> ROBOT", structure_string.c_str());
         parameter_motors_t parameter_motors = get_parameter();
-        serial_->addPacket(&send_pkg, PARAMETER_MOTORS, CHANGE, (abstract_packet_t*) & parameter_motors);
+        list_send.push_back(serial_->createDataPacket(PARAMETER_MOTORS, HASHMAP_MOTION, (abstract_packet_t*) & parameter_motors));
     } else {
         ROS_DEBUG("Sync parameter %s: ROBOT -> ROS", structure_string.c_str());
-        serial_->addPacket(&send_pkg, PARAMETER_MOTORS, REQUEST, NULL);
+        list_send.push_back(serial_->createPacket(PARAMETER_MOTORS, REQUEST, HASHMAP_MOTION));
     }
     //Parameter frequency
     if (nh_.hasParam(name_node_ + "/" + frequency_string)) {
@@ -135,7 +134,7 @@ void ROSMotionController::loadParameter() {
         ROS_INFO("TODO Sync %s", frequency_string.c_str());
     } else {
         ROS_DEBUG("Sync parameter %s: ROBOT -> ROS", frequency_string.c_str());
-        serial_->addPacket(&send_pkg, FRQ_PROCESS, REQUEST, NULL);
+        list_send.push_back(serial_->createPacket(FRQ_PROCESS, REQUEST));
     }
     //Parameter priority
     if (nh_.hasParam(name_node_ + "/" + priority_string)) {
@@ -143,7 +142,7 @@ void ROSMotionController::loadParameter() {
         ROS_INFO("TODO Sync %s", priority_string.c_str());
     } else {
         ROS_DEBUG("Sync parameter %s: ROBOT -> ROS", priority_string.c_str());
-        serial_->addPacket(&send_pkg, PRIORITY_PROCESS, REQUEST, NULL);
+        list_send.push_back(serial_->createPacket(PRIORITY_PROCESS, REQUEST));
     }
     //Names TF
     if (nh_.hasParam(name_node_ + "/" + tf_string)) {
@@ -172,6 +171,7 @@ void ROSMotionController::loadParameter() {
     // total space move robot
     nh_.setParam("/" + name_node_ + "/" + space_robot_string, 0);
 
+    packet_t send_pkg = serial_->encoder(list_send);
     if (send_pkg.length > 0) {
         try {
             packet_t packet = serial_->sendSyncPacket(send_pkg, 3, boost::posix_time::millisec(200));
@@ -206,39 +206,38 @@ void ROSMotionController::timerCallback(const ros::TimerEvent& event) {
 }
 
 packet_t ROSMotionController::updatePacket() {
-    packet_t packet;
-    packet.length = 0;
+    std::vector<information_packet_t> list_send;
     std::string packet_string;
     if ((pose_pub_.getNumSubscribers() >= 1) || (odom_pub_.getNumSubscribers() >= 1)) {
         packet_string += "Odo ";
-        serial_->addPacket(&packet, COORDINATE, REQUEST, NULL);
+        list_send.push_back(serial_->createPacket(COORDINATE, REQUEST, HASHMAP_MOTION));
     }
     if (velocity_pub_.getNumSubscribers() >= 1) {
         packet_string += "Vel ";
-        serial_->addPacket(&packet, VELOCITY, REQUEST, NULL);
+        list_send.push_back(serial_->createPacket(VELOCITY, REQUEST, HASHMAP_MOTION));
     }
     if (enable_pub_.getNumSubscribers() >= 1) {
         packet_string += "Ena ";
-        serial_->addPacket(&packet, ENABLE, REQUEST, NULL);
+        list_send.push_back(serial_->createPacket(ENABLE, REQUEST, HASHMAP_MOTION));
     }
     if ((velocity_mis_pub_.getNumSubscribers() >= 1) || (odom_pub_.getNumSubscribers() >= 1)) {
         packet_string += "VelMis ";
-        serial_->addPacket(&packet, VELOCITY_MIS, REQUEST, NULL);
+        list_send.push_back(serial_->createPacket(VELOCITY_MIS, REQUEST, HASHMAP_MOTION));
     }
     if ((motor_left_pub_.getNumSubscribers() >= 1) || (joint_pub_.getNumSubscribers() >= 1)) {
         packet_string += "MotL ";
-        serial_->addPacket(&packet, MOTOR_L, REQUEST, NULL);
+        list_send.push_back(serial_->createPacket(MOTOR_L, REQUEST, HASHMAP_MOTION));
     }
     if ((motor_right_pub_.getNumSubscribers() >= 1) || (joint_pub_.getNumSubscribers() >= 1)) {
         packet_string += "MotR ";
-        serial_->addPacket(&packet, MOTOR_R, REQUEST, NULL);
+        list_send.push_back(serial_->createPacket(MOTOR_R, REQUEST, HASHMAP_MOTION));
     }
     if (time_process_pub_.getNumSubscribers() >= 1) {
         packet_string += "Proc ";
-        serial_->addPacket(&packet, TIME_PROCESS, REQUEST, NULL);
+        list_send.push_back(serial_->createPacket(TIME_PROCESS, REQUEST, HASHMAP_MOTION));
     }
-    //ROS_INFO("[ %s]", packet_string.c_str());
-    return packet;
+//    ROS_INFO("[ %s]", packet_string.c_str());
+    return serial_->encoder(list_send);
 }
 
 void ROSMotionController::connectCallback(const ros::SingleSubscriberPublisher& pub) {
@@ -248,36 +247,32 @@ void ROSMotionController::connectCallback(const ros::SingleSubscriberPublisher& 
 
 void ROSMotionController::velocityCallback(const serial_bridge::Velocity::ConstPtr &msg) {
     //  ROS_INFO("VELOCITY CALLBACK");
-    packet_t send_pkg;
-    send_pkg.length = 0;
     velocity_t velocity;
     velocity.v = msg->lin_vel;
     velocity.w = msg->ang_vel;
-    serial_->addPacket(&send_pkg, VELOCITY, CHANGE, (abstract_packet_t*) & velocity);
+    packet_t send_pkg = serial_->encoder(serial_->createDataPacket(VELOCITY, HASHMAP_MOTION, (abstract_packet_t*) & velocity));
     // TODO VERIFY THE PACKET
     try {
         packet_t packet = serial_->sendSyncPacket(send_pkg, 3, boost::posix_time::millisec(200));
         //packet_t packet = serial_->sendPacket(send_pkg);
         double rate = ((double) packet.time) / 1000000000;
         //Parsing packets
-//        parser(ros::Duration(rate), serial_->parsing(packet));
+        //        parser(ros::Duration(rate), serial_->parsing(packet));
     } catch (std::exception& e) {
         ROS_ERROR("%s", e.what());
     }
 }
 
 void ROSMotionController::enableCallback(const serial_bridge::Enable::ConstPtr &msg) {
-    packet_t send_pkg;
-    send_pkg.length = 0;
     enable_motor_t enable = msg->enable;
-    serial_->addPacket(&send_pkg, ENABLE, CHANGE, (abstract_packet_t*) & enable);
+    packet_t send_pkg = serial_->encoder(serial_->createDataPacket(ENABLE, HASHMAP_MOTION, (abstract_packet_t*) & enable));
     // TODO VERIFY THE PACKET
     try {
         packet_t packet = serial_->sendSyncPacket(send_pkg, 3, boost::posix_time::millisec(200));
         //packet_t packet = serial_->sendPacket(send_pkg);
         double rate = ((double) packet.time) / 1000000000;
         //Parsing packets
-//        parser(ros::Duration(rate), serial_->parsing(packet));
+        //        parser(ros::Duration(rate), serial_->parsing(packet));
     } catch (std::exception& e) {
         ROS_ERROR("%s", e.what());
     }
@@ -288,21 +283,19 @@ void ROSMotionController::updateOdom(const serial_bridge::Pose* pose) {
     nh_.getParam(name_node_ + "/" + space_robot_string, space);
     positon_joint_left_ = 0;
     positon_joint_right_ = 0;
-    packet_t send_pkg;
-    send_pkg.length = 0;
     coordinate_t coordinate;
     coordinate.x = pose->x;
     coordinate.y = pose->y;
     coordinate.theta = pose->theta;
     coordinate.space = space;
-    serial_->addPacket(&send_pkg, COORDINATE, CHANGE, (abstract_packet_t*) & coordinate);
+    packet_t send_pkg = serial_->encoder(serial_->createDataPacket(COORDINATE, HASHMAP_MOTION, (abstract_packet_t*) & coordinate));
     // TODO VERIFY THE PACKET
     try {
         packet_t packet = serial_->sendSyncPacket(send_pkg, 3, boost::posix_time::millisec(200));
         //packet_t packet = serial_->sendPacket(send_pkg);
         double rate = ((double) packet.time) / 1000000000;
         //Parsing packets
-//        parser(ros::Duration(rate), serial_->parsing(packet));
+        //        parser(ros::Duration(rate), serial_->parsing(packet));
     } catch (std::exception& e) {
         ROS_ERROR("%s", e.what());
     }
@@ -388,10 +381,8 @@ process_t ROSMotionController::get_process(std::string name) {
 }
 
 bool ROSMotionController::parameter_update_Callback(std_srvs::Empty::Request&, std_srvs::Empty::Response&) {
-    packet_t send_pkg;
-    send_pkg.length = 0;
     parameter_motors_t parameter = get_parameter();
-    serial_->addPacket(&send_pkg, PARAMETER_MOTORS, CHANGE, (abstract_packet_t*) & parameter);
+    packet_t send_pkg = serial_->encoder(serial_->createDataPacket(PARAMETER_MOTORS, HASHMAP_MOTION, (abstract_packet_t*) & parameter));
     try {
         packet_t packet = serial_->sendSyncPacket(send_pkg, 3, boost::posix_time::millisec(200));
         //packet_t packet = serial_->sendPacket(send_pkg);
@@ -407,17 +398,17 @@ bool ROSMotionController::parameter_update_Callback(std_srvs::Empty::Request&, s
 bool ROSMotionController::process_update_Callback(serial_bridge::Update::Request &req, serial_bridge::Update::Response&) {
     std::string name = req.name;
     process_t process;
-    packet_t send_pkg;
-    send_pkg.length = 0;
+    std::vector<information_packet_t> list_send;
     ROS_INFO("PROCESS UPDATE");
     if ((name.compare(priority_string) == 0) || (name.compare(all_string) == 0)) {
         process = get_process(priority_string);
-        serial_->addPacket(&send_pkg, PRIORITY_PROCESS, CHANGE, (abstract_packet_t*) & process);
+        list_send.push_back(serial_->createDataPacket(PRIORITY_PROCESS, HASHMAP_MOTION, (abstract_packet_t*) & process));
     }
     if ((name.compare(frequency_string) == 0) || (name.compare(all_string) == 0)) {
         process = get_process(frequency_string);
-        serial_->addPacket(&send_pkg, FRQ_PROCESS, CHANGE, (abstract_packet_t*) & process);
+        list_send.push_back(serial_->createDataPacket(FRQ_PROCESS, HASHMAP_MOTION, (abstract_packet_t*) & process));
     }
+    packet_t send_pkg = serial_->encoder(list_send);
     if (send_pkg.length != 0) {
         // TODO VERIFY THE PACKET
         try {
@@ -439,17 +430,17 @@ bool ROSMotionController::process_update_Callback(serial_bridge::Update::Request
 bool ROSMotionController::pid_update_Callback(serial_bridge::Update::Request &req, serial_bridge::Update::Response&) {
     std::string name = req.name;
     pid_control_t pid;
-    packet_t send_pkg;
-    send_pkg.length = 0;
+    std::vector<information_packet_t> list_send;
     ROS_INFO("PID UPDATE");
     if ((name.compare(left_string) == 0) || (name.compare(all_string) == 0)) {
         pid = get_pid(left_string);
-        serial_->addPacket(&send_pkg, PID_CONTROL_L, CHANGE, (abstract_packet_t*) & pid);
+        list_send.push_back(serial_->createDataPacket(PID_CONTROL_L, HASHMAP_MOTION, (abstract_packet_t*) & pid));
     }
     if ((name.compare(right_string) == 0) || (name.compare(all_string) == 0)) {
         pid = get_pid(right_string);
-        serial_->addPacket(&send_pkg, PID_CONTROL_R, CHANGE, (abstract_packet_t*) & pid);
+        list_send.push_back(serial_->createDataPacket(PID_CONTROL_R, HASHMAP_MOTION, (abstract_packet_t*) & pid));
     }
+    packet_t send_pkg = serial_->encoder(list_send);
     if (send_pkg.length != 0) {
         // TODO VERIFY THE PACKET
         try {
@@ -469,10 +460,8 @@ bool ROSMotionController::pid_update_Callback(serial_bridge::Update::Request &re
 }
 
 bool ROSMotionController::constraint_update_Callback(std_srvs::Empty::Request&, std_srvs::Empty::Response&) {
-    packet_t send_pkg;
-    send_pkg.length = 0;
     constraint_t constraint = get_constraint();
-    serial_->addPacket(&send_pkg, CONSTRAINT, CHANGE, (abstract_packet_t*) & constraint);
+    packet_t send_pkg = serial_->encoder(serial_->createDataPacket(CONSTRAINT, HASHMAP_MOTION, (abstract_packet_t*) & constraint));
     try {
         packet_t packet = serial_->sendSyncPacket(send_pkg, 3, boost::posix_time::millisec(200));
         //packet_t packet = serial_->sendPacket(send_pkg);
@@ -502,7 +491,7 @@ bool ROSMotionController::convert_Callback(serial_bridge::Convert::Request &req,
 
 }
 
-void ROSMotionController::parser(ros::Duration duration, std::list<information_packet_t> serial_packet) {
+void ROSMotionController::parser(ros::Duration duration, std::vector<information_packet_t> serial_packet) {
     serial_bridge::Pose pose;
     serial_bridge::Velocity velocity;
     serial_bridge::Motor motor_left, motor_right;
@@ -511,107 +500,112 @@ void ROSMotionController::parser(ros::Duration duration, std::list<information_p
     std::string name_pid;
     int pwm_motor = 0;
     nh_.getParam("/" + name_node_ + "/" + joint_string + "/" + pwm_string, pwm_motor);
-    for (std::list<information_packet_t>::iterator list_iter = serial_packet.begin(); list_iter != serial_packet.end(); list_iter++) {
+    for (std::vector<information_packet_t>::iterator list_iter = serial_packet.begin(); list_iter != serial_packet.end(); list_iter++) {
         information_packet_t packet = (*list_iter);
         //ROS_INFO("Command %c - Option %c", packet.command, packet.option);
-        if (packet.option == CHANGE) {
+        if (packet.option == DATA) {
             //ROS publish packets
             ros::spinOnce();
             //Decode commands
-            switch (packet.command) {
-                case PRIORITY_PROCESS:
-                    for (int i = 0; i < PROCESS_MOTION_LENGTH; i++) {
-                        nh_.setParam("/" + name_node_ + "/" + priority_string + "/" + string_process_motion[i], packet.packet.process.process[i]);
-                    }
-                    nh_.setParam("/" + name_node_ + "/" + priority_string + "/" + parse_string, packet.packet.process.parse_packet);
-                    break;
-                case FRQ_PROCESS:
-                    for (int i = 0; i < PROCESS_MOTION_LENGTH; i++) {
-                        nh_.setParam("/" + name_node_ + "/" + frequency_string + "/" + string_process_motion[i], packet.packet.process.process[i]);
-                    }
-                    break;
-                case CONSTRAINT:
-                    nh_.setParam("/" + name_node_ + "/" + joint_string + "/" + constraint_string + "/" + right_string, packet.packet.constraint.max_right);
-                    nh_.setParam("/" + name_node_ + "/" + joint_string + "/" + constraint_string + "/" + left_string, packet.packet.constraint.max_left);
-                    break;
-                case PARAMETER_MOTORS:
-                    nh_.setParam("/" + name_node_ + "/" + structure_string + "/" + wheelbase_string, packet.packet.parameter_motors.wheelbase);
-                    nh_.setParam("/" + name_node_ + "/" + structure_string + "/" + radius_string + "/" + right_string, packet.packet.parameter_motors.radius_r);
-                    nh_.setParam("/" + name_node_ + "/" + structure_string + "/" + radius_string + "/" + left_string, packet.packet.parameter_motors.radius_l);
-                    nh_.setParam("/" + name_node_ + "/" + joint_string + "/" + k_vel_string + "/" + right_string, packet.packet.parameter_motors.k_vel_r);
-                    nh_.setParam("/" + name_node_ + "/" + joint_string + "/" + k_vel_string + "/" + left_string, packet.packet.parameter_motors.k_vel_l);
-                    nh_.setParam("/" + name_node_ + "/" + joint_string + "/" + k_ang_string + "/" + right_string, packet.packet.parameter_motors.k_ang_r);
-                    nh_.setParam("/" + name_node_ + "/" + joint_string + "/" + k_ang_string + "/" + left_string, packet.packet.parameter_motors.k_ang_l);
-                    nh_.setParam("/" + name_node_ + "/" + joint_string + "/" + pwm_string, packet.packet.parameter_motors.pwm_step);
-                    nh_.setParam("/" + name_node_ + "/" + sp_min_string, packet.packet.parameter_motors.sp_min);
-                    break;
-                case PID_CONTROL_L:
-                    name_pid = "/" + name_node_ + "/" + pid_string + "/" + left_string + "/";
-                    nh_.setParam(name_pid + "P", packet.packet.pid.kp);
-                    nh_.setParam(name_pid + "I", packet.packet.pid.ki);
-                    nh_.setParam(name_pid + "D", packet.packet.pid.kd);
-                    break;
-                case PID_CONTROL_R:
-                    name_pid = "/" + name_node_ + "/" + pid_string + "/" + right_string + "/";
-                    nh_.setParam(name_pid + "P", packet.packet.pid.kp);
-                    nh_.setParam(name_pid + "I", packet.packet.pid.ki);
-                    nh_.setParam(name_pid + "D", packet.packet.pid.kd);
-                    break;
-                case TIME_PROCESS:
-                    time_process.time = duration;
-                    time_process.idle = service_serial_->getTimeProcess(packet.packet.process.idle);
-                    time_process.parse_packet = service_serial_->getTimeProcess(packet.packet.process.parse_packet);
-                    time_process.pid_l = service_serial_->getTimeProcess(packet.packet.process.process[0]);
-                    time_process.pid_r = service_serial_->getTimeProcess(packet.packet.process.process[1]);
-                    time_process.velocity = service_serial_->getTimeProcess(packet.packet.process.process[2]);
-                    time_process.dead_reckoning = service_serial_->getTimeProcess(packet.packet.process.process[3]);
-                    time_process_pub_.publish(time_process);
-                    break;
-                case MOTOR_L:
-                    motor_left.time = duration;
-                    motor_left.rifer_vel = ((double) packet.packet.motor.rifer_vel) / 1000;
-                    motor_left.control_vel = -((double) packet.packet.motor.control_vel - ((double) pwm_motor) / 2) / (((double) pwm_motor) / 2);
-                    motor_left.measure_vel = ((double) packet.packet.motor.measure_vel) / 1000;
-                    motor_left.current = ((double) packet.packet.motor.current) / 1000;
-                    motor_left_pub_.publish(motor_left);
-                    break;
-                case MOTOR_R:
-                    motor_right.time = duration;
-                    motor_right.rifer_vel = ((double) packet.packet.motor.rifer_vel) / 1000;
-                    motor_right.control_vel = ((double) packet.packet.motor.control_vel - ((double) pwm_motor) / 2) / (((double) pwm_motor) / 2);
-                    motor_right.measure_vel = ((double) packet.packet.motor.measure_vel) / 1000;
-                    motor_right.current = ((double) packet.packet.motor.current) / 1000;
-                    motor_right_pub_.publish(motor_right);
-                    break;
-                case COORDINATE:
-                    pose.time = duration;
-                    pose.x = packet.packet.coordinate.x;
-                    pose.y = packet.packet.coordinate.y;
-                    pose.theta = packet.packet.coordinate.theta;
-                    nh_.setParam("/" + name_node_ + "/" + space_robot_string, packet.packet.coordinate.space);
-                    //              ROS_INFO("COORDINATE");
-                    pose_pub_.publish(pose);
-                    break;
-                case VELOCITY:
-                    velocity.time = duration;
-                    velocity.lin_vel = packet.packet.velocity.v;
-                    velocity.ang_vel = packet.packet.velocity.w;
-                    //              ROS_INFO("VELOCITY");
-                    velocity_pub_.publish(velocity);
-                    break;
-                case VELOCITY_MIS:
-                    velocity.time = duration;
-                    velocity.lin_vel = packet.packet.velocity.v;
-                    velocity.ang_vel = packet.packet.velocity.w;
-                    //              ROS_INFO("VELOCITY_MIS");
-                    velocity_mis_pub_.publish(velocity);
-                    break;
-                case ENABLE:
-                    enable_motors.time = duration;
-                    enable_motors.enable = packet.packet.enable;
-                    //ROS_INFO("ENABLE");
-                    enable_pub_.publish(enable_motors);
-                    break;
+            if (packet.type == HASHMAP_DEFAULT) {
+                switch (packet.command) {
+                    case PRIORITY_PROCESS:
+                        for (int i = 0; i < PROCESS_MOTION_LENGTH; i++) {
+                            nh_.setParam("/" + name_node_ + "/" + priority_string + "/" + string_process_motion[i], packet.packet.process.process[i]);
+                        }
+                        nh_.setParam("/" + name_node_ + "/" + priority_string + "/" + parse_string, packet.packet.process.parse_packet);
+                        break;
+                    case FRQ_PROCESS:
+                        for (int i = 0; i < PROCESS_MOTION_LENGTH; i++) {
+                            nh_.setParam("/" + name_node_ + "/" + frequency_string + "/" + string_process_motion[i], packet.packet.process.process[i]);
+                        }
+                        break;
+                    case TIME_PROCESS:
+                        time_process.time = duration;
+                        time_process.idle = service_serial_->getTimeProcess(packet.packet.process.idle);
+                        time_process.parse_packet = service_serial_->getTimeProcess(packet.packet.process.parse_packet);
+                        time_process.pid_l = service_serial_->getTimeProcess(packet.packet.process.process[0]);
+                        time_process.pid_r = service_serial_->getTimeProcess(packet.packet.process.process[1]);
+                        time_process.velocity = service_serial_->getTimeProcess(packet.packet.process.process[2]);
+                        time_process.dead_reckoning = service_serial_->getTimeProcess(packet.packet.process.process[3]);
+                        time_process_pub_.publish(time_process);
+                        break;
+                }
+            } else if (packet.type == HASHMAP_MOTION) {
+                switch (packet.command) {
+                    case CONSTRAINT:
+                        nh_.setParam("/" + name_node_ + "/" + joint_string + "/" + constraint_string + "/" + right_string, packet.packet.constraint.max_right);
+                        nh_.setParam("/" + name_node_ + "/" + joint_string + "/" + constraint_string + "/" + left_string, packet.packet.constraint.max_left);
+                        break;
+                    case PARAMETER_MOTORS:
+                        nh_.setParam("/" + name_node_ + "/" + structure_string + "/" + wheelbase_string, packet.packet.parameter_motors.wheelbase);
+                        nh_.setParam("/" + name_node_ + "/" + structure_string + "/" + radius_string + "/" + right_string, packet.packet.parameter_motors.radius_r);
+                        nh_.setParam("/" + name_node_ + "/" + structure_string + "/" + radius_string + "/" + left_string, packet.packet.parameter_motors.radius_l);
+                        nh_.setParam("/" + name_node_ + "/" + joint_string + "/" + k_vel_string + "/" + right_string, packet.packet.parameter_motors.k_vel_r);
+                        nh_.setParam("/" + name_node_ + "/" + joint_string + "/" + k_vel_string + "/" + left_string, packet.packet.parameter_motors.k_vel_l);
+                        nh_.setParam("/" + name_node_ + "/" + joint_string + "/" + k_ang_string + "/" + right_string, packet.packet.parameter_motors.k_ang_r);
+                        nh_.setParam("/" + name_node_ + "/" + joint_string + "/" + k_ang_string + "/" + left_string, packet.packet.parameter_motors.k_ang_l);
+                        nh_.setParam("/" + name_node_ + "/" + joint_string + "/" + pwm_string, packet.packet.parameter_motors.pwm_step);
+                        nh_.setParam("/" + name_node_ + "/" + sp_min_string, packet.packet.parameter_motors.sp_min);
+                        break;
+                    case PID_CONTROL_L:
+                        name_pid = "/" + name_node_ + "/" + pid_string + "/" + left_string + "/";
+                        nh_.setParam(name_pid + "P", packet.packet.pid.kp);
+                        nh_.setParam(name_pid + "I", packet.packet.pid.ki);
+                        nh_.setParam(name_pid + "D", packet.packet.pid.kd);
+                        break;
+                    case PID_CONTROL_R:
+                        name_pid = "/" + name_node_ + "/" + pid_string + "/" + right_string + "/";
+                        nh_.setParam(name_pid + "P", packet.packet.pid.kp);
+                        nh_.setParam(name_pid + "I", packet.packet.pid.ki);
+                        nh_.setParam(name_pid + "D", packet.packet.pid.kd);
+                        break;
+                    case MOTOR_L:
+                        motor_left.time = duration;
+                        motor_left.rifer_vel = ((double) packet.packet.motor.rifer_vel) / 1000;
+                        motor_left.control_vel = -((double) packet.packet.motor.control_vel - ((double) pwm_motor) / 2) / (((double) pwm_motor) / 2);
+                        motor_left.measure_vel = ((double) packet.packet.motor.measure_vel) / 1000;
+                        motor_left.current = ((double) packet.packet.motor.current) / 1000;
+                        motor_left_pub_.publish(motor_left);
+                        break;
+                    case MOTOR_R:
+                        motor_right.time = duration;
+                        motor_right.rifer_vel = ((double) packet.packet.motor.rifer_vel) / 1000;
+                        motor_right.control_vel = ((double) packet.packet.motor.control_vel - ((double) pwm_motor) / 2) / (((double) pwm_motor) / 2);
+                        motor_right.measure_vel = ((double) packet.packet.motor.measure_vel) / 1000;
+                        motor_right.current = ((double) packet.packet.motor.current) / 1000;
+                        motor_right_pub_.publish(motor_right);
+                        break;
+                    case COORDINATE:
+                        pose.time = duration;
+                        pose.x = packet.packet.coordinate.x;
+                        pose.y = packet.packet.coordinate.y;
+                        pose.theta = packet.packet.coordinate.theta;
+                        nh_.setParam("/" + name_node_ + "/" + space_robot_string, packet.packet.coordinate.space);
+                        //              ROS_INFO("COORDINATE");
+                        pose_pub_.publish(pose);
+                        break;
+                    case VELOCITY:
+                        velocity.time = duration;
+                        velocity.lin_vel = packet.packet.velocity.v;
+                        velocity.ang_vel = packet.packet.velocity.w;
+                        //              ROS_INFO("VELOCITY");
+                        velocity_pub_.publish(velocity);
+                        break;
+                    case VELOCITY_MIS:
+                        velocity.time = duration;
+                        velocity.lin_vel = packet.packet.velocity.v;
+                        velocity.ang_vel = packet.packet.velocity.w;
+                        //              ROS_INFO("VELOCITY_MIS");
+                        velocity_mis_pub_.publish(velocity);
+                        break;
+                    case ENABLE:
+                        enable_motors.time = duration;
+                        enable_motors.enable = packet.packet.enable;
+                        //ROS_INFO("ENABLE");
+                        enable_pub_.publish(enable_motors);
+                        break;
+                }
             }
         }
     }

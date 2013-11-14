@@ -8,27 +8,6 @@
 #ifndef MOTION_H
 #define	MOTION_H
 
-#define PID_CONTROL_L 'A'
-#define PID_CONTROL_R 'B'
-#define MOTOR_L 'a'
-#define MOTOR_R 'b'
-#define COORDINATE 'C'
-#define PARAMETER_MOTORS 'P'
-#define CONSTRAINT 'T'
-#define VELOCITY 'V'
-#define VELOCITY_MIS 'M'
-#define ENABLE 'E'
-
-#define PROCESS_MOTION_LENGTH 4
-#define PROCESS_PID_LEFT 0
-#define PID_LEFT_STRING "PID/Left"
-#define PROCESS_PID_RIGHT 1
-#define PID_RIGHT_STRING "PID/Right"
-#define PROCESS_VELOCITY 2
-#define VELOCITY_STRING "Velocity"
-#define PROCESS_ODOMETRY 3
-#define ODOMETRY_STRING "Odometry"
-
 typedef struct constraint {
     float max_left;
     float max_right;
@@ -78,6 +57,7 @@ typedef struct velocity {
 #define LNG_VELOCITY sizeof(velocity_t)
 
 typedef uint8_t enable_motor_t;
+#define LNG_ENABLE_MOTOR sizeof(enable_motor_t)
 
 #define ABSTRACT_PACKET_MOTION                  \
         pid_control_t pid;                      \
@@ -88,6 +68,40 @@ typedef uint8_t enable_motor_t;
         motor_t motor;                          \
         constraint_t constraint;                \
 
+#define PID_CONTROL_L 0
+#define PID_CONTROL_R 1
+#define MOTOR_L 2
+#define MOTOR_R 3
+#define COORDINATE 4
+#define PARAMETER_MOTORS 5
+#define CONSTRAINT 6
+#define VELOCITY 7
+#define VELOCITY_MIS 8
+#define ENABLE 9
+
+#define PROCESS_MOTION_LENGTH 4
+#define PROCESS_PID_LEFT 0
+#define PID_LEFT_STRING "PID/Left"
+#define PROCESS_PID_RIGHT 1
+#define PID_RIGHT_STRING "PID/Right"
+#define PROCESS_VELOCITY 2
+#define VELOCITY_STRING "Velocity"
+#define PROCESS_ODOMETRY 3
+#define ODOMETRY_STRING "Odometry"
+
+#define HASHMAP_MOTION 'M'
+static unsigned int hashmap_motion[10];
+
+#define INITIALIZE_HASHMAP_MOTION hashmap_motion[PID_CONTROL_L] = LNG_PID_CONTROL;    \
+                                  hashmap_motion[PID_CONTROL_R] = LNG_PID_CONTROL; \
+                                  hashmap_motion[MOTOR_L] = LNG_MOTOR; \
+                                  hashmap_motion[MOTOR_R] = LNG_MOTOR; \
+                                  hashmap_motion[COORDINATE] = LNG_COORDINATE; \
+                                  hashmap_motion[PARAMETER_MOTORS] = LNG_PARAMETER_MOTORS; \
+                                  hashmap_motion[CONSTRAINT] = LNG_CONSTRAINT; \
+                                  hashmap_motion[VELOCITY] = LNG_VELOCITY; \
+                                  hashmap_motion[VELOCITY_MIS] = LNG_VELOCITY; \
+                                  hashmap_motion[ENABLE] = LNG_ENABLE_MOTOR;
 
 #endif	/* MOTION_H */
 

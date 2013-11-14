@@ -57,7 +57,7 @@ private:
     double sharp_angle_min_, sharp_angle_max_, sharp_angle_increment_,
     sharp_time_increment_, sharp_range_min_, sharp_range_max_, sharp_distance_center_;
 
-    void parser(ros::Duration time, std::list<information_packet_t> serial_packet);
+    void parser(ros::Duration time, std::vector<information_packet_t> serial_packet);
     
     parameter_sensor_t getParameter();
     void actionAsync(const packet_t* packet);

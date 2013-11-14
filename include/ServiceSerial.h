@@ -43,7 +43,7 @@ private:
     ros::ServiceServer srv_board_;
     double step_timer_, tm_mill_, k_time_;
     
-    abstract_packet_t getServiceSerial(std::list<information_packet_t> configuration, unsigned char command, unsigned char service_command);
+    abstract_packet_t getServiceSerial(std::vector<information_packet_t> configuration, unsigned char command, unsigned char service_command);
     void actionAsync(packet_t packet);
     bool service_Callback(serial_bridge::Service::Request &req, serial_bridge::Service::Response &msg);
 };

@@ -32,27 +32,14 @@
 #define BUFF_ALL_PROCESS 10
 
 #define REQUEST 'R'
-#define CHANGE 'C'
+#define DATA 'D'
 #define ACK 'K'
 #define NACK 'N'
+#define LNG_HEAD_INFORMATION_PACKET 4
 
 //
 
-#define TIME_PROCESS 't'
-#define PARAMETER_SYSTEM 'm'
-#define PRIORITY_PROCESS 'p'
-#define FRQ_PROCESS 'f'
-#define ERROR_SERIAL 'e'
-
-#define SERVICES 's'
-#define SERVICE_BUFF 20
-#define RESET '*'
-#define DATE_CODE 'd'
-#define NAME_BOARD 'n'
-#define VERSION_CODE 'v'
-#define AUTHOR_CODE 'a'
-
-#define LNG_ENABLE 2
+//#define LNG_ENABLE 2
 
 typedef struct parameter_system {
     int16_t step_timer;
@@ -65,6 +52,7 @@ typedef struct error_pkg {
 } error_pkg_t;
 #define LNG_ERROR_PKG sizeof(error_pkg_t)
 
+#define SERVICE_BUFF 20
 typedef struct services {
     char command;
     unsigned char buffer[SERVICE_BUFF];
@@ -85,7 +73,7 @@ typedef struct packet_data {
 } packet_t;
 
 typedef union abstract_packet {
-    unsigned char buffer[MAX_RX_BUFF];
+    //unsigned char buffer[MAX_RX_BUFF];
     process_t process;
     services_t services;
     error_pkg_t error_pkg;
@@ -97,15 +85,44 @@ typedef union abstract_packet {
     ABSTRACT_PACKET_NAVIGATION
 #endif
 } abstract_packet_t;
-typedef abstract_packet_t* Ptr_abstract_packet;
 
 typedef struct information_packet {
-    unsigned char command;
+    unsigned char length;
     unsigned char option;
+    unsigned char type;
+    unsigned char command;
     abstract_packet_t packet;
 } information_packet_t;
 
-typedef packet_t* ppacket;
+typedef union buffer_packet {
+    information_packet_t information_packet;
+    unsigned char buffer[MAX_RX_BUFF];
+} buffer_packet_u;
+
+#define SERVICES 0
+#define TIME_PROCESS 1
+#define PRIORITY_PROCESS 2
+#define FRQ_PROCESS 3
+#define PARAMETER_SYSTEM 4
+#define ERROR_SERIAL 5
+
+//For Services
+#define RESET '*'
+#define DATE_CODE 'd'
+#define NAME_BOARD 'n'
+#define VERSION_CODE 'v'
+#define AUTHOR_CODE 'a'
+
+#define HASHMAP_DEFAULT 'D'
+static unsigned int hashmap_default[10];
+
+#define INITIALIZE_HASHMAP_DEFAULT hashmap_default[SERVICES] = LNG_SERVICES;    \
+                                   hashmap_default[TIME_PROCESS] = LNG_PROCESS; \
+                                   hashmap_default[PRIORITY_PROCESS] = LNG_PROCESS; \
+                                   hashmap_default[FRQ_PROCESS] = LNG_PROCESS; \
+                                   hashmap_default[PARAMETER_SYSTEM] = LNG_PARAMETER_SYSTEM; \
+                                   hashmap_default[ERROR_SERIAL] = LNG_ERROR_PKG;
+
 
 #endif	/* PACKET_H */
 

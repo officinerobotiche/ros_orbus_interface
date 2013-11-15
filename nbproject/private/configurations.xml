@@ -21,6 +21,7 @@
           <in>ROSController.h</in>
           <in>ROSMotionController.h</in>
           <in>ROSSensorController.h</in>
+          <in>ROSTempMotionController.h</in>
         </df>
         <in>ServiceSerial.h</in>
       </df>
@@ -39,6 +40,7 @@
           <in>ROSController.cpp</in>
           <in>ROSMotionController.cpp</in>
           <in>ROSSensorController.cpp</in>
+          <in>ROSTempMotionController.cpp</in>
         </df>
         <in>ServiceSerial.cpp</in>
         <in>drive_bridge_node.cpp</in>

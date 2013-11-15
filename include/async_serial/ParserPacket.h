@@ -40,6 +40,7 @@ public:
 
     packet_t sendSyncPacket(packet_t packet, const unsigned int repeat = 0, const boost::posix_time::millisec& wait_duration = boost::posix_time::millisec(1000));
     void parserSendPacket(std::vector<information_packet_t> list_send, const unsigned int repeat = 0, const boost::posix_time::millisec& wait_duration = boost::posix_time::millisec(1000));
+    void parserSendPacket(information_packet_t send, const unsigned int repeat = 0, const boost::posix_time::millisec& wait_duration = boost::posix_time::millisec(1000));
 
     std::vector<information_packet_t> parsing(packet_t packet_receive);
     packet_t encoder(std::vector<information_packet_t> list_send);
@@ -52,7 +53,7 @@ public:
     void addCallback(const boost::function<void (const unsigned char&, const abstract_packet_t*) >& callback, unsigned char type=HASHMAP_DEFAULT);
     void addErrorCallback(const boost::function<void (const unsigned char&, const abstract_packet_t*) >& callback);
 
-    template <class T> void addDefaultCallback(void(T::*fp)(const unsigned char&, const abstract_packet_t*), T* obj, unsigned char type=HASHMAP_DEFAULT) {
+    template <class T> void addCallback(void(T::*fp)(const unsigned char&, const abstract_packet_t*), T* obj, unsigned char type=HASHMAP_DEFAULT) {
         addCallback(boost::bind(fp, obj, _1, _2), type);
     }
     

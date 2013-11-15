@@ -47,22 +47,22 @@ void Keyboard::arrows(char c)
   {
     case KEYCODE_L:
       ROS_DEBUG("LEFT");
-      velocity.ang_vel += step_.step_ang;
+      velocity.angular += step_.step_ang;
       receive_command_ = true;
       break;
     case KEYCODE_R:
       ROS_DEBUG("RIGHT");
-      velocity.ang_vel -= step_.step_ang;
+      velocity.angular -= step_.step_ang;
       receive_command_ = true;
       break;
     case KEYCODE_U:
       ROS_DEBUG("UP");
-      velocity.lin_vel += step_.step_lin;
+      velocity.linear += step_.step_lin;
       receive_command_ = true;
       break;
     case KEYCODE_D:
       ROS_DEBUG("DOWN");
-      velocity.lin_vel -= step_.step_lin;
+      velocity.linear -= step_.step_lin;
       receive_command_ = true;
       break;
   }
@@ -74,22 +74,22 @@ void Keyboard::letters(char c)
   {
     case 'a':
       ROS_DEBUG("LEFT");
-      velocity.ang_vel += step_.step_ang;
+      velocity.angular += step_.step_ang;
       receive_command_ = true;
       break;
     case 'd':
       ROS_DEBUG("RIGHT");
-      velocity.ang_vel -= step_.step_ang;
+      velocity.angular -= step_.step_ang;
       receive_command_ = true;
       break;
     case 'w':
       ROS_DEBUG("UP");
-      velocity.lin_vel += step_.step_lin;
+      velocity.linear += step_.step_lin;
       receive_command_ = true;
       break;
     case 's':
       ROS_DEBUG("DOWN");
-      velocity.lin_vel -= step_.step_lin;
+      velocity.linear -= step_.step_lin;
       receive_command_ = true;
       break;
   }
@@ -159,15 +159,15 @@ void Keyboard::read_keyboard()
       case ' ':
       case '*':
         ROS_DEBUG("SPACE");
-        velocity.lin_vel = 0;
-        velocity.ang_vel = 0;
+        velocity.linear = 0;
+        velocity.angular = 0;
         receive_command_ = true;
         break;
     }
 
     if (receive_command_)
     {
-      ROS_INFO("Command [%f, %f]", velocity.lin_vel, velocity.ang_vel);
+      ROS_INFO("Command [%f, %f]", velocity.linear, velocity.angular);
       pub_vel_control_.publish(velocity);
       receive_command_ = false;
     }

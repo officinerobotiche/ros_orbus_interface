@@ -1,5 +1,4 @@
-duration time
-float32 rifer_vel
-float32 control_vel
-float32 measure_vel
+float32 reference
+float32 control
+float32 measure
 float32 current

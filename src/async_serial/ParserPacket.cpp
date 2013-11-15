@@ -33,9 +33,9 @@ public:
     }
 
     void addCallback(const boost::function<void (const unsigned char&, const abstract_packet_t*) >& callback, unsigned char type) {
-        if (type == HASHMAP_DEFAULT)
+        if (type == HASHMAP_DEFAULT) {
             addCallBack("Default", &counter_default, data_default_packet_functions, callback);
-        else {
+        } else {
             this->type = type;
             data_other_packet_callback = callback;
         }
@@ -78,9 +78,9 @@ private:
     }
 
     void sendToCallback(information_packet_t* packet) {
-        if (packet->type == HASHMAP_DEFAULT)
+        if (packet->type == HASHMAP_DEFAULT) {
             sendDataCallBack(counter_default, packet->command, &packet->packet, data_default_packet_functions);
-        else if (packet->type == type)
+        } else if (packet->type == type)
             if (data_other_packet_callback) data_other_packet_callback(packet->command, &packet->packet);
     }
 
@@ -142,7 +142,15 @@ void ParserPacket::actionAsync(const packet_t* packet) {
 }
 
 void ParserPacket::parserSendPacket(vector<information_packet_t> list_send, const unsigned int repeat, const boost::posix_time::millisec& wait_duration) {
-    packet_t packet = encoder(list_send);
+    if (!list_send.empty()) {
+        packet_t packet = encoder(list_send);
+        packet_t receive = sendSyncPacket(packet, repeat, wait_duration);
+        parser_impl->sendPacket(parsing(receive));
+    }
+}
+
+void ParserPacket::parserSendPacket(information_packet_t send, const unsigned int repeat, const boost::posix_time::millisec& wait_duration) {
+    packet_t packet = encoder(send);
     packet_t receive = sendSyncPacket(packet, repeat, wait_duration);
     parser_impl->sendPacket(parsing(receive));
 }

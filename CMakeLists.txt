@@ -127,6 +127,7 @@ set(serial_thread_SRC
     src/async_serial/PacketSerial.cpp
     src/async_serial/ParserPacket.cpp
     src/serial_controller/ROSController.cpp
+    src/serial_controller/ROSTempMotionController.cpp
     src/test_thread.cpp
 )
 

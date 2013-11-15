@@ -30,6 +30,7 @@
 #define MAX_RX_BUFF 200
 #define BUFF_SERIAL_ERROR 13
 #define BUFF_ALL_PROCESS 10
+#define BUFF_NAME_PROCESS 20
 
 #define REQUEST 'R'
 #define DATA 'D'
@@ -59,6 +60,12 @@ typedef struct services {
 } services_t;
 #define LNG_SERVICES sizeof(services_t)
 
+typedef struct process_buffer {
+    int16_t name;
+    char buffer[BUFF_NAME_PROCESS];
+} process_buffer_t;
+#define LNG_NAME_PROCESS sizeof(process_buffer_t)
+
 typedef struct process {
     int16_t length;
     int16_t idle;
@@ -79,6 +86,7 @@ typedef union abstract_packet {
     services_t services;
     error_pkg_t error_pkg;
     parameter_system_t parameter_system;
+    process_buffer_t process_name;
 #ifdef MOTION_CONTROL
     ABSTRACT_PACKET_MOTION
 #endif
@@ -106,6 +114,7 @@ typedef union buffer_packet {
 #define FRQ_PROCESS 3
 #define PARAMETER_SYSTEM 4
 #define ERROR_SERIAL 5
+#define NAME_PROCESS 6
 
 //For Services
 #define RESET '*'
@@ -122,7 +131,8 @@ static unsigned int hashmap_default[10];
                                    hashmap_default[PRIORITY_PROCESS] = LNG_PROCESS; \
                                    hashmap_default[FRQ_PROCESS] = LNG_PROCESS; \
                                    hashmap_default[PARAMETER_SYSTEM] = LNG_PARAMETER_SYSTEM; \
-                                   hashmap_default[ERROR_SERIAL] = LNG_ERROR_PKG;
+                                   hashmap_default[ERROR_SERIAL] = LNG_ERROR_PKG;       \
+                                   hashmap_default[NAME_PROCESS] = LNG_NAME_PROCESS;
 
 
 #endif	/* PACKET_H */

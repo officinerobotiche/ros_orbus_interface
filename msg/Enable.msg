@@ -1,2 +1,1 @@
-duration time
 bool enable

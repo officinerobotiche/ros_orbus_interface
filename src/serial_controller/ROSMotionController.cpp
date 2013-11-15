@@ -248,8 +248,8 @@ void ROSMotionController::connectCallback(const ros::SingleSubscriberPublisher& 
 void ROSMotionController::velocityCallback(const serial_bridge::Velocity::ConstPtr &msg) {
     //  ROS_INFO("VELOCITY CALLBACK");
     velocity_t velocity;
-    velocity.v = msg->lin_vel;
-    velocity.w = msg->ang_vel;
+    velocity.v = msg->linear;
+    velocity.w = msg->angular;
     packet_t send_pkg = serial_->encoder(serial_->createDataPacket(VELOCITY, HASHMAP_MOTION, (abstract_packet_t*) & velocity));
     // TODO VERIFY THE PACKET
     try {
@@ -523,11 +523,11 @@ void ROSMotionController::parser(ros::Duration duration, std::vector<information
                     case TIME_PROCESS:
                         time_process.time = duration;
                         time_process.idle = service_serial_->getTimeProcess(packet.packet.process.idle);
-                        time_process.parse_packet = service_serial_->getTimeProcess(packet.packet.process.parse_packet);
-                        time_process.pid_l = service_serial_->getTimeProcess(packet.packet.process.process[0]);
-                        time_process.pid_r = service_serial_->getTimeProcess(packet.packet.process.process[1]);
-                        time_process.velocity = service_serial_->getTimeProcess(packet.packet.process.process[2]);
-                        time_process.dead_reckoning = service_serial_->getTimeProcess(packet.packet.process.process[3]);
+//                        time_process.parse_packet = service_serial_->getTimeProcess(packet.packet.process.parse_packet);
+//                        time_process.pid_l = service_serial_->getTimeProcess(packet.packet.process.process[0]);
+//                        time_process.pid_r = service_serial_->getTimeProcess(packet.packet.process.process[1]);
+//                        time_process.velocity = service_serial_->getTimeProcess(packet.packet.process.process[2]);
+//                        time_process.dead_reckoning = service_serial_->getTimeProcess(packet.packet.process.process[3]);
                         time_process_pub_.publish(time_process);
                         break;
                 }
@@ -561,23 +561,23 @@ void ROSMotionController::parser(ros::Duration duration, std::vector<information
                         nh_.setParam(name_pid + "D", packet.packet.pid.kd);
                         break;
                     case MOTOR_L:
-                        motor_left.time = duration;
-                        motor_left.rifer_vel = ((double) packet.packet.motor.rifer_vel) / 1000;
-                        motor_left.control_vel = -((double) packet.packet.motor.control_vel - ((double) pwm_motor) / 2) / (((double) pwm_motor) / 2);
-                        motor_left.measure_vel = ((double) packet.packet.motor.measure_vel) / 1000;
+//                        motor_left.time = duration;
+                        motor_left.reference = ((double) packet.packet.motor.rifer_vel) / 1000;
+                        motor_left.control = -((double) packet.packet.motor.control_vel - ((double) pwm_motor) / 2) / (((double) pwm_motor) / 2);
+                        motor_left.measure = ((double) packet.packet.motor.measure_vel) / 1000;
                         motor_left.current = ((double) packet.packet.motor.current) / 1000;
                         motor_left_pub_.publish(motor_left);
                         break;
                     case MOTOR_R:
-                        motor_right.time = duration;
-                        motor_right.rifer_vel = ((double) packet.packet.motor.rifer_vel) / 1000;
-                        motor_right.control_vel = ((double) packet.packet.motor.control_vel - ((double) pwm_motor) / 2) / (((double) pwm_motor) / 2);
-                        motor_right.measure_vel = ((double) packet.packet.motor.measure_vel) / 1000;
+//                        motor_right.time = duration;
+                        motor_right.reference = ((double) packet.packet.motor.rifer_vel) / 1000;
+                        motor_right.control = ((double) packet.packet.motor.control_vel - ((double) pwm_motor) / 2) / (((double) pwm_motor) / 2);
+                        motor_right.measure = ((double) packet.packet.motor.measure_vel) / 1000;
                         motor_right.current = ((double) packet.packet.motor.current) / 1000;
                         motor_right_pub_.publish(motor_right);
                         break;
                     case COORDINATE:
-                        pose.time = duration;
+//                        pose.time = duration;
                         pose.x = packet.packet.coordinate.x;
                         pose.y = packet.packet.coordinate.y;
                         pose.theta = packet.packet.coordinate.theta;
@@ -586,21 +586,21 @@ void ROSMotionController::parser(ros::Duration duration, std::vector<information
                         pose_pub_.publish(pose);
                         break;
                     case VELOCITY:
-                        velocity.time = duration;
-                        velocity.lin_vel = packet.packet.velocity.v;
-                        velocity.ang_vel = packet.packet.velocity.w;
+//                        velocity.time = duration;
+                        velocity.linear = packet.packet.velocity.v;
+                        velocity.angular = packet.packet.velocity.w;
                         //              ROS_INFO("VELOCITY");
                         velocity_pub_.publish(velocity);
                         break;
                     case VELOCITY_MIS:
-                        velocity.time = duration;
-                        velocity.lin_vel = packet.packet.velocity.v;
-                        velocity.ang_vel = packet.packet.velocity.w;
+//                        velocity.time = duration;
+                        velocity.linear = packet.packet.velocity.v;
+                        velocity.angular = packet.packet.velocity.w;
                         //              ROS_INFO("VELOCITY_MIS");
                         velocity_mis_pub_.publish(velocity);
                         break;
                     case ENABLE:
-                        enable_motors.time = duration;
+//                        enable_motors.time = duration;
                         enable_motors.enable = packet.packet.enable;
                         //ROS_INFO("ENABLE");
                         enable_pub_.publish(enable_motors);
@@ -640,8 +640,8 @@ void ROSMotionController::sendJoint(serial_bridge::Motor motor_left, serial_brid
     joint.position.resize(2);
     joint.name[0] = left_string;
     joint.name[1] = right_string;
-    joint.velocity[0] = motor_left.measure_vel;
-    joint.velocity[1] = motor_right.measure_vel;
+    joint.velocity[0] = motor_left.measure;
+    joint.velocity[1] = motor_right.measure;
     positon_joint_left_ = fmod(positon_joint_left_ + (joint.velocity[0] * rate), 2 * M_PI);
     positon_joint_right_ = fmod(positon_joint_right_ + (joint.velocity[1] * rate), 2 * M_PI);
     joint.position[0] = positon_joint_left_;
@@ -683,9 +683,9 @@ void ROSMotionController::sendOdom(serial_bridge::Velocity velocity, serial_brid
 
     //set the velocity
     odom.child_frame_id = tf_base_link_string_;
-    odom.twist.twist.linear.x = velocity.lin_vel * cos(pose.theta);
-    odom.twist.twist.linear.y = velocity.lin_vel * sin(pose.theta);
-    odom.twist.twist.angular.z = velocity.ang_vel;
+    odom.twist.twist.linear.x = velocity.linear * cos(pose.theta);
+    odom.twist.twist.linear.y = velocity.linear * sin(pose.theta);
+    odom.twist.twist.angular.z = velocity.angular;
 
     //publish the message
     odom_pub_.publish(odom);

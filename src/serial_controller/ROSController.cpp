@@ -31,6 +31,9 @@ ROSController::ROSController(std::string name_node, const ros::NodeHandle& nh, P
     list_packet.push_back(encodeServices(NAME_BOARD));
     list_packet.push_back(encodeServices(DATE_CODE));
     serial->parserSendPacket(list_packet);
+    
+    if (!nh.hasParam(name_node + "/name_board"))
+        nh_.setParam(name_node + "/name_board", name_board);
 }
 
 ROSController::~ROSController() {
@@ -120,6 +123,10 @@ void ROSController::addTimerEvent(const boost::function<void (const ros::TimerEv
 
 void ROSController::clearTimerEvent() {
     callback_timer_event.clear();
+}
+
+std::string ROSController::getNameBoard() {
+    return name_board;
 }
 
 std::vector<information_packet_t> ROSController::updatePacket() {

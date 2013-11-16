@@ -60,6 +60,8 @@ public:
         addTimerEvent(boost::bind(fp, obj, _1));
     }
     void clearTimerEvent();
+    
+    std::string getNameBoard();
 
     //Initialization object
     std::string name_node_; //Name for topics, params, services

@@ -16,6 +16,7 @@
 #include <serial_bridge/Motor.h>
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/JointState.h>
+#include <geometry_msgs/Twist.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <tf/transform_broadcaster.h>
 
@@ -36,12 +37,12 @@ private:
     //TF transform
     tf::TransformBroadcaster odom_broadcaster;
     //Publisher communication
-    ros::Publisher pub_velocity_mis, pub_pose, pub_velocity;
+    ros::Publisher pub_velocity_meas, pub_pose, pub_velocity;
     ros::Publisher pub_enable, pub_motor_left, pub_motor_right;
     //-Standard ROS publisher
-    ros::Publisher pub_odom, pub_joint;
+    ros::Publisher pub_twist, pub_odom, pub_joint;
     //Subscriber
-    ros::Subscriber sub_velocity, sub_pose, sub_enable;
+    ros::Subscriber sub_twist, sub_velocity, sub_pose, sub_enable;
     //-Standard ROS subscriber
     ros::Subscriber sub_pose_estimate;
     //Service
@@ -50,8 +51,9 @@ private:
     double pwm_motor;
     std::string tf_odometry_string_, tf_base_link_string_, tf_joint_string_;
 
+    geometry_msgs::Twist twist;
+    serial_bridge::Velocity cmd_velocity, meas_velocity;
     serial_bridge::Pose pose;
-    serial_bridge::Velocity velocity;
     serial_bridge::Motor motor_left, motor_right;
     serial_bridge::Enable enable_motors;
     std::string name_pid;
@@ -63,6 +65,7 @@ private:
 
     void timerEvent(const ros::TimerEvent& event);
 
+    void twistCallback(const geometry_msgs::Twist::ConstPtr &msg);
     void velocityCallback(const serial_bridge::Velocity::ConstPtr &msg);
     void enableCallback(const serial_bridge::Enable::ConstPtr &msg);
     void poseCallback(const serial_bridge::Pose::ConstPtr &msg);

@@ -16,6 +16,16 @@
  */
 class ParserPacketImpl;
 
+/**
+ * Thrown if timeout occurs
+ */
+class parser_exception : public std::runtime_error {
+public:
+
+    parser_exception(const std::string& arg) : runtime_error(arg) {
+    }
+};
+
 class ParserPacket : public PacketSerial {
 public:
 

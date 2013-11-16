@@ -63,11 +63,13 @@ public:
     
     std::string getNameBoard();
 
+protected:
     //Initialization object
     std::string name_node_; //Name for topics, params, services
     ros::NodeHandle nh_; //NameSpace for bridge controller
     ParserPacket* serial_; //Serial object to comunicate with PIC device
     std::string name_board, version, name_author, compiled;
+    bool stop_timer;
 private:
 
     typedef boost::function<void (std::vector<information_packet_t>*) > callback_add_packet_t;

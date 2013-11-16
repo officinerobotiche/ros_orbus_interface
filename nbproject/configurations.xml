@@ -9,9 +9,8 @@
         <df name="serial_controller">
           <in>ROSController.h</in>
           <in>ROSMotionController.h</in>
-          <in>ROSTempSensorController.h</in>
+          <in>ROSSensorController.h</in>
         </df>
-        <in>ServiceSerial.h</in>
       </df>
       <df name="src">
         <df name="async_serial">
@@ -25,14 +24,10 @@
         <df name="serial_controller">
           <in>ROSController.cpp</in>
           <in>ROSMotionController.cpp</in>
-          <in>ROSMotionController2.cpp</in>
           <in>ROSSensorController.cpp</in>
-          <in>ROSTempSensorController.cpp</in>
         </df>
-        <in>ServiceSerial.cpp</in>
         <in>drive_bridge_node.cpp</in>
         <in>serial_bridge_node.cpp</in>
-        <in>test_thread.cpp</in>
       </df>
     </df>
     <logicalFolder name="src"
@@ -146,8 +141,6 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <item path="include/ServiceSerial.h" ex="false" tool="3" flavor2="0">
-      </item>
       <item path="include/async_serial/PacketSerial.h"
             ex="false"
             tool="3"
@@ -163,14 +156,10 @@
             tool="3"
             flavor2="0">
       </item>
-      <item path="include/serial_controller/ROSTempSensorController.h"
+      <item path="include/serial_controller/ROSSensorController.h"
             ex="false"
             tool="3"
             flavor2="0">
-      </item>
-      <item path="src/ServiceSerial.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool>
-        </ccTool>
       </item>
       <item path="src/async_serial/AsyncSerial.cpp" ex="false" tool="1" flavor2="0">
       </item>
@@ -202,28 +191,10 @@
             tool="1"
             flavor2="0">
       </item>
-      <item path="src/serial_controller/ROSMotionController2.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool>
-        </ccTool>
-      </item>
       <item path="src/serial_controller/ROSSensorController.cpp"
             ex="false"
             tool="1"
-            flavor2="4">
-        <ccTool>
-        </ccTool>
-      </item>
-      <item path="src/serial_controller/ROSTempSensorController.cpp"
-            ex="false"
-            tool="1"
             flavor2="0">
-      </item>
-      <item path="src/test_thread.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool>
-        </ccTool>
       </item>
     </conf>
   </confs>

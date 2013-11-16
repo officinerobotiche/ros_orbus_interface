@@ -116,20 +116,10 @@ set(serial_SRC
     src/async_serial/AsyncSerial.cpp
     src/async_serial/PacketSerial.cpp
     src/async_serial/ParserPacket.cpp
-    src/ServiceSerial.cpp
-    src/serial_controller/ROSMotionController2.cpp
-    src/serial_controller/ROSSensorController.cpp
-    src/serial_bridge_node.cpp
-)
-
-set(serial_thread_SRC
-    src/async_serial/AsyncSerial.cpp
-    src/async_serial/PacketSerial.cpp
-    src/async_serial/ParserPacket.cpp
     src/serial_controller/ROSController.cpp
     src/serial_controller/ROSMotionController.cpp
-    src/serial_controller/ROSTempSensorController.cpp
-    src/test_thread.cpp
+    src/serial_controller/ROSSensorController.cpp
+    src/serial_bridge_node.cpp
 )
 
 set(drive_teleop_SRC
@@ -138,10 +128,6 @@ set(drive_teleop_SRC
 )
 
 ## Declare a cpp executable
-add_executable(test_bridge_node ${serial_thread_SRC})
-target_link_libraries(test_bridge_node ${catkin_LIBRARIES} ${Boost_LIBRARIES})
-add_dependencies(test_bridge_node serial_bridge_gencpp)
-
 add_executable(serial_bridge_node ${serial_SRC})
 target_link_libraries(serial_bridge_node ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 add_dependencies(serial_bridge_node serial_bridge_gencpp)

@@ -71,7 +71,7 @@ private:
 
     void addCallBack(string name, unsigned int* counter, boost::array<callback_data_packet_t, NUMBER_CALLBACK >& array, const boost::function<void (const unsigned char&, const abstract_packet_t*) >& callback) {
         if (*counter == 10)
-            throw (packet_exception("Max callback packet " + name));
+            throw (parser_exception("Max callback packet " + name));
         else {
             array[(*counter)++] = callback;
         }
@@ -134,7 +134,7 @@ packet_t ParserPacket::sendSyncPacket(packet_t packet, const unsigned int repeat
     }
     ostringstream convert; // stream used for the conversion
     convert << repeat; // insert the textual representation of 'repeat' in the characters in the stream
-    throw (packet_exception("Timeout sync packet n: " + convert.str()));
+    throw (parser_exception("Timeout sync packet n: " + convert.str()));
 }
 
 void ParserPacket::actionAsync(const packet_t* packet) {

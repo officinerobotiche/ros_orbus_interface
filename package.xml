@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
     <name>serial_bridge</name>
-    <version>1.0.0</version>
+    <version>2.0.0</version>
     <description>The serial_bridge package</description>
 
     <!-- One maintainer tag required, multiple allowed, one person per tag --> 
@@ -20,7 +20,7 @@
     <!-- Optional attribute type can be: website, bugtracker, or repository -->
     <!-- Example: -->
     <!-- <url type="website">http://ros.org/wiki/serial_bridge</url> -->
-
+    <url type="website">http://www.officinerobotiche.it</url>
 
     <!-- Author tags are optional, mutiple are allowed, one per tag -->
     <!-- Authors do not have to be maintianers, but could be -->

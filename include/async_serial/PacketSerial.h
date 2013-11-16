@@ -25,6 +25,8 @@
 #define ERROR_PKG -10
 #define ERROR_CREATE_PKG -11
 
+#define ERROR_TIMEOUT_SYNC_PACKET -12
+#define ERROR_MAX_ASYNC_CALLBACK -15
 /**
  * Used internally (pkgimpl)
  */
@@ -36,8 +38,11 @@ class AsyncPacketImpl;
 class packet_exception : public std::runtime_error {
 public:
 
-    packet_exception(const std::string& arg) : runtime_error(arg) {
+    packet_exception(const std::string& arg, int number) : runtime_error(arg) {
+        this->number = number;
     }
+    
+    int number;
 };
 
 class PacketSerial : public AsyncSerial {
@@ -92,6 +97,13 @@ public:
      * base class destructor
      */
     void clearAsyncPacketCallback();
+    
+    /**
+     * 
+     * @param data
+     * @param len
+     */
+    std::map<std::string, int> getMapError();
 
 private:
 
@@ -106,7 +118,8 @@ private:
     bool pkg_data(unsigned char rxchar);
     unsigned char pkg_checksum(volatile unsigned char* Buffer, int FirstIndx, int LastIndx);
 
-
+    std::map<std::string, int> map_error;
+    
     bool async, data_ready;
     packet_t receive_pkg;
     unsigned short index_data;

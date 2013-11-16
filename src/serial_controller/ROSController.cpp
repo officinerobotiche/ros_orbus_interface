@@ -12,7 +12,7 @@ using namespace std;
 #define NUMBER_PUB 10
 
 ROSController::ROSController(std::string name_node, const ros::NodeHandle& nh, ParserPacket* serial)
-: nh_(nh), name_node_(name_node), serial_(serial), init_number_process(false) {
+: nh_(nh), name_node_(name_node), serial_(serial), init_number_process(false), stop_timer(true) {
     serial_->addCallback(&ROSController::defaultPacket, this);
 
     //Publisher
@@ -31,9 +31,9 @@ ROSController::ROSController(std::string name_node, const ros::NodeHandle& nh, P
     list_packet.push_back(encodeServices(NAME_BOARD));
     list_packet.push_back(encodeServices(DATE_CODE));
     serial->parserSendPacket(list_packet);
-    
-    if (!nh.hasParam(name_node + "/name_board"))
-        nh_.setParam(name_node + "/name_board", name_board);
+
+    if (!nh.hasParam(name_node + "/info/name_board"))
+        nh_.setParam(name_node + "/info/name_board", name_board);
 }
 
 ROSController::~ROSController() {
@@ -144,9 +144,11 @@ void ROSController::timerCallback(const ros::TimerEvent& event) {
     double rate = 1;
     nh_.getParam(name_node_ + "/rate_timer", rate);
     timer_.setPeriod(ros::Duration(1 / rate));
-    if (list_packet.size() == 0) {
-        ROS_INFO("Wait user");
-        timer_.stop();
+    if ((list_packet.size() == 0)) {
+        if (stop_timer) {
+            ROS_INFO("Wait user");
+            timer_.stop();
+        }
     } else {
         //ROS_INFO("Start streaming");
         try {
@@ -283,6 +285,7 @@ bool ROSController::service_Callback(serial_bridge::Service::Request &req, seria
                 name_author + " - Build in: " + compiled + "\n";
         msg.name = information_string;
     } else if (req.name.compare("serial_info") == 0) {
+        map<string, int> map_error = serial_->getMapError();
         stringstream service_str;
         service_str << "Error list:" << endl;
         for (int i = 0; i < BUFF_SERIAL_ERROR; i++) {

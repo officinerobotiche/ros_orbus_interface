@@ -30,7 +30,7 @@ public:
 
     void addAsyncCallback(const boost::function<void (const packet_t*) >& callback) {
         if (count == 10)
-            throw (packet_exception("Max async callback"));
+            throw (packet_exception("Max async callback", ERROR_MAX_ASYNC_CALLBACK));
         else
             async_functions[count++] = callback;
     }
@@ -109,9 +109,8 @@ void PacketSerial::readCallback(const char *data, size_t len) {
                     readPacketCond.notify_one();
                 }
             }
-        } catch (std::exception& e) {
-            cout << e.what() << endl;
-            //TODO Save name of error
+        } catch (packet_exception& e) {
+//            map_error[e.what()] = map_error[e.what()] + 1;
             //Restart to find header
             pkg_parse = &PacketSerial::pkg_header;
         }
@@ -123,7 +122,7 @@ packet_t PacketSerial::readPacket(const boost::posix_time::millisec& wait_durati
     const boost::system_time timeout = boost::get_system_time() + wait_duration;
     while (!data_ready) {
         if (!readPacketCond.timed_wait(l, timeout))
-            throw (packet_exception("Timeout sync packet"));
+            throw (packet_exception("Timeout sync packet", ERROR_TIMEOUT_SYNC_PACKET));
     }
     data_ready = false;
     return receive_pkg;
@@ -135,6 +134,10 @@ void PacketSerial::setAsyncPacketCallback(const boost::function<void (const pack
 
 void PacketSerial::clearAsyncPacketCallback() {
     pkgimpl->clearAllAsyncCallback();
+}
+
+std::map<std::string, int> PacketSerial::getMapError() {
+    return map_error;
 }
 
 bool PacketSerial::decode_pkgs(unsigned char rxchar) {
@@ -151,13 +154,13 @@ bool PacketSerial::pkg_header(unsigned char rxchar) {
         pkg_parse = &PacketSerial::pkg_length;
         return false;
     } else {
-        throw (packet_exception("Error Header"));
+        throw (packet_exception("Error Header", ERROR_HEADER));
     }
 }
 
 bool PacketSerial::pkg_length(unsigned char rxchar) {
     if (rxchar > MAX_RX_BUFF) {
-        throw (packet_exception("Error length"));
+        throw (packet_exception("Error length", ERROR_LENGTH));
     } else {
         pkg_parse = &PacketSerial::pkg_data;
         index_data = 0;
@@ -176,7 +179,7 @@ bool PacketSerial::pkg_data(unsigned char rxchar) {
             return true;
         } else {
             //      std::cerr << "CKS ric: " << rxchar << " - " << "calc: " << cks_clc << std::endl;
-            throw (packet_exception("Error Checksum"));
+            throw (packet_exception("Error Checksum", ERROR_CKS));
         }
     } else {
         receive_pkg.buffer[index_data] = rxchar;

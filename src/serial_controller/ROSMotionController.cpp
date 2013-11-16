@@ -12,11 +12,11 @@
 using namespace std;
 
 ROSMotionController::ROSMotionController(std::string name_node, const ros::NodeHandle& nh, ParserPacket* serial)
-: ROSController(name_node, nh, serial) {
+: ROSController(name_node, nh, serial), positon_joint_left(0), positon_joint_right(0) {
 
     string param_name_board = "Motion Control";
     if (name_board.compare(param_name_board) == 0) {
-        nh_.setParam(name_node + "/name_board", name_board);
+        nh_.setParam(name_node + "/info/name_board", name_board);
     } else {
         throw (controller_exception("Other board: " + name_board));
     }
@@ -294,6 +294,8 @@ void ROSMotionController::poseTFCallback(const geometry_msgs::PoseWithCovariance
 }
 
 void ROSMotionController::saveOdometry(const serial_bridge::Pose* pose) {
+    positon_joint_left = 0;
+    positon_joint_right = 0;
     coordinate_t coordinate;
     coordinate.x = pose->x;
     coordinate.y = pose->y;

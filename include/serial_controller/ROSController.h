@@ -22,6 +22,16 @@ const std::string right_string = "Right";
 const std::string all_string = "all";
 const std::string tf_string = "tf";
 
+/**
+ * Thrown if timeout occurs
+ */
+class controller_exception : public std::runtime_error {
+public:
+
+    controller_exception(const std::string& arg) : runtime_error(arg) {
+    }
+};
+
 class ROSController {
 public:
     ROSController(std::string name_node, const ros::NodeHandle& nh, ParserPacket* serial);
@@ -54,7 +64,8 @@ public:
     //Initialization object
     std::string name_node_; //Name for topics, params, services
     ros::NodeHandle nh_; //NameSpace for bridge controller
-    ParserPacket* serial_; //Serial object to comunicate with PIC device   
+    ParserPacket* serial_; //Serial object to comunicate with PIC device
+    std::string name_board, version, name_author, compiled;
 private:
 
     typedef boost::function<void (std::vector<information_packet_t>*) > callback_add_packet_t;
@@ -67,7 +78,6 @@ private:
     ros::ServiceServer srv_board, srv_process;
     ros::Publisher pub_time_process;
 
-    std::string name_board, version, name_author, compiled;
     serial_bridge::Process time_process;
     double step_timer, tm_mill, k_time;
     error_pkg_t error_serial;

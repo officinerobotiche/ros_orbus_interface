@@ -117,7 +117,7 @@ set(serial_SRC
     src/async_serial/PacketSerial.cpp
     src/async_serial/ParserPacket.cpp
     src/ServiceSerial.cpp
-    src/serial_controller/ROSMotionController.cpp
+    src/serial_controller/ROSMotionController2.cpp
     src/serial_controller/ROSSensorController.cpp
     src/serial_bridge_node.cpp
 )
@@ -127,7 +127,8 @@ set(serial_thread_SRC
     src/async_serial/PacketSerial.cpp
     src/async_serial/ParserPacket.cpp
     src/serial_controller/ROSController.cpp
-    src/serial_controller/ROSTempMotionController.cpp
+    src/serial_controller/ROSMotionController.cpp
+    src/serial_controller/ROSTempSensorController.cpp
     src/test_thread.cpp
 )
 

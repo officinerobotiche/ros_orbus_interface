@@ -8,7 +8,8 @@
         </df>
         <df name="serial_controller">
           <in>ROSController.h</in>
-          <in>ROSTempMotionController.h</in>
+          <in>ROSMotionController.h</in>
+          <in>ROSTempSensorController.h</in>
         </df>
         <in>ServiceSerial.h</in>
       </df>
@@ -24,8 +25,9 @@
         <df name="serial_controller">
           <in>ROSController.cpp</in>
           <in>ROSMotionController.cpp</in>
+          <in>ROSMotionController2.cpp</in>
           <in>ROSSensorController.cpp</in>
-          <in>ROSTempMotionController.cpp</in>
+          <in>ROSTempSensorController.cpp</in>
         </df>
         <in>ServiceSerial.cpp</in>
         <in>drive_bridge_node.cpp</in>
@@ -156,7 +158,12 @@
             tool="3"
             flavor2="0">
       </item>
-      <item path="include/serial_controller/ROSTempMotionController.h"
+      <item path="include/serial_controller/ROSMotionController.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/serial_controller/ROSTempSensorController.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -193,6 +200,11 @@
       <item path="src/serial_controller/ROSMotionController.cpp"
             ex="false"
             tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/serial_controller/ROSMotionController2.cpp"
+            ex="false"
+            tool="1"
             flavor2="4">
         <ccTool>
         </ccTool>
@@ -204,7 +216,7 @@
         <ccTool>
         </ccTool>
       </item>
-      <item path="src/serial_controller/ROSTempMotionController.cpp"
+      <item path="src/serial_controller/ROSTempSensorController.cpp"
             ex="false"
             tool="1"
             flavor2="0">

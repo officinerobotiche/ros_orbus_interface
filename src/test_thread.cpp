@@ -2,20 +2,9 @@
 #include <ros/ros.h>
 #include "async_serial/ParserPacket.h"
 #include "serial_controller/ROSController.h"
-#include "serial_controller/ROSTempMotionController.h"
+#include "serial_controller/ROSMotionController.h"
 
 using namespace std;
-
-template<class T = packet_t, int N = 10 >
-class test {
-public:
-
-    test() {
-    };
-
-    typedef boost::function<void (const T*) > callback_t;
-    boost::array<callback_t, N > async_functions;
-};
 
 int main(int argc, char **argv) {
 
@@ -27,43 +16,22 @@ int main(int argc, char **argv) {
 
     ParserPacket serial("/dev/ttyUSB0", 115200);
 
-//    std::vector<information_packet_t> list_send, list_return;
-//
-//    velocity_t velocity;
-//    velocity.v = 0;
-//    velocity.w = 0.2;
-//
-//    list_send.push_back(serial.createPacket(VELOCITY, REQUEST, HASHMAP_MOTION));
-//    list_send.push_back(serial.createDataPacket(VELOCITY, HASHMAP_MOTION, (abstract_packet_t*) & velocity));
-//    list_send.push_back(serial.createPacket(VELOCITY, REQUEST, HASHMAP_MOTION));
-//    list_send.push_back(serial.createPacket(120, REQUEST, HASHMAP_MOTION));
-//
-//    packet_t send = serial.encoder(list_send);
-//
-//    packet_t receive = serial.sendSyncPacket(send);
-//
-//    ROS_INFO("Send");
-//    for (std::vector<information_packet_t>::iterator list_iter = list_send.begin(); list_iter != list_send.end(); ++list_iter) {
-//        information_packet_t packet = (*list_iter);
-//        ROS_INFO("Cmd: %d - Type: %c - Option: %c - lng: %d", packet.command, packet.type, packet.option, packet.length);
-//    }
-//
-//    list_return = serial.parsing(receive);
-//
-//    ROS_INFO("Return");
-//    for (std::vector<information_packet_t>::iterator list_iter = list_return.begin(); list_iter != list_return.end(); ++list_iter) {
-//        information_packet_t packet = (*list_iter);
-//        ROS_INFO("Cmd: %d - Type: %c - Option: %c - lng: %d", packet.command, packet.type, packet.option, packet.length);
-//    }
+    string name_node = "test";
 
-//    ROSController controller("test", nh, &serial);
-    
-    ROSTempMotionController controller("test", nh, &serial);
-    
-    controller.loadParameter();
+    if (nh.hasParam(name_node + "/name_board")) {
+        //TODO
+        string param_name_board;
+        nh.getParam(name_node + "/name_board", param_name_board);
+        if (param_name_board.compare("Motion Control") == 0) {
+            ROSMotionController controller(name_node, nh, &serial);
+            controller.loadParameter();
+        }
+    } else {
+        ROSController controller(name_node, nh, &serial);
+        controller.loadParameter();
+    }
 
-    
     ros::spin();
-    
+
     serial.close();
 }

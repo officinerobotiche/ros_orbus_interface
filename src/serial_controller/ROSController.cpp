@@ -22,30 +22,15 @@ ROSController::ROSController(std::string name_node, const ros::NodeHandle& nh, P
     srv_board = nh_.advertiseService(name_node + "/service_serial", &ROSController::service_Callback, this);
     srv_process = nh_.advertiseService(name_node + "/process", &ROSController::processServiceCallback, this);
 
+    //Timer
+    timer_ = nh_.createTimer(ros::Duration(1), &ROSController::timerCallback, this, false, false);
+
     vector<information_packet_t> list_packet;
     list_packet.push_back(encodeServices(VERSION_CODE));
     list_packet.push_back(encodeServices(AUTHOR_CODE));
     list_packet.push_back(encodeServices(NAME_BOARD));
     list_packet.push_back(encodeServices(DATE_CODE));
     serial->parserSendPacket(list_packet);
-
-    if (nh_.hasParam(name_node_ + "/name_board")) {
-        //TODO
-        string param_name_board;
-        nh_.getParam(name_node_ + "/name_board", param_name_board);
-    }
-    
-    double rate = 1;
-    if (nh_.hasParam(name_node_ + "/rate_timer")) {
-        nh_.getParam(name_node_ + "/rate_timer", rate);
-        ROS_INFO("Sync parameter /rate_timer: load - %f Hz", rate);
-    } else {
-        nh_.setParam(name_node_ + "/rate_timer", rate);
-        ROS_INFO("Sync parameter /rate_timer: set - %f Hz", rate);
-    }
-
-    //Timer
-    timer_ = nh_.createTimer(ros::Duration(1 / rate), &ROSController::timerCallback, this, false, false);
 }
 
 ROSController::~ROSController() {
@@ -92,6 +77,16 @@ void ROSController::loadParameter() {
         ROS_DEBUG("Sync parameter /priority: ROBOT -> ROS");
         list_packet.push_back(serial_->createPacket(PRIORITY_PROCESS, REQUEST));
     }
+    //Set timer rate
+    double rate = 1;
+    if (nh_.hasParam(name_node_ + "/rate_timer")) {
+        nh_.getParam(name_node_ + "/rate_timer", rate);
+        ROS_INFO("Sync parameter /rate_timer: load - %f Hz", rate);
+    } else {
+        nh_.setParam(name_node_ + "/rate_timer", rate);
+        ROS_INFO("Sync parameter /rate_timer: set - %f Hz", rate);
+    }
+    timer_.setPeriod(ros::Duration(1 / rate));
     //Add other parameter request
     if (callback_add_parameter)
         callback_add_parameter(&list_packet);

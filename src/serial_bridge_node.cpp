@@ -11,7 +11,7 @@
 
 #include "async_serial/ParserPacket.h"
 #include "ServiceSerial.h"
-#include "serial_controller/ROSMotionController.h"
+#include "serial_controller/ROSMotionController2.h"
 #include "serial_controller/ROSSensorController.h"
 
 #include <signal.h>
@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
     }
     //Start bridge
     if (name_board.compare(name_motion_control) == 0) {
-        controller = new ROSMotionController(name, nh, serial, service_serial);
+        controller = new ROSMotionController2(name, nh, serial, service_serial);
     } else if (name_board.compare(name_navigation_board) == 0) {
         controller = new ROSSensorController(name, nh, serial);
     } else {

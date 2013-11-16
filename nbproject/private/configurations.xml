@@ -20,8 +20,9 @@
           <in>AbstractROSController.h</in>
           <in>ROSController.h</in>
           <in>ROSMotionController.h</in>
+          <in>ROSMotionController2.h</in>
           <in>ROSSensorController.h</in>
-          <in>ROSTempMotionController.h</in>
+          <in>ROSTempSensorController.h</in>
         </df>
         <in>ServiceSerial.h</in>
       </df>
@@ -39,8 +40,9 @@
         <df name="serial_controller">
           <in>ROSController.cpp</in>
           <in>ROSMotionController.cpp</in>
+          <in>ROSMotionController2.cpp</in>
           <in>ROSSensorController.cpp</in>
-          <in>ROSTempMotionController.cpp</in>
+          <in>ROSTempSensorController.cpp</in>
         </df>
         <in>ServiceSerial.cpp</in>
         <in>drive_bridge_node.cpp</in>

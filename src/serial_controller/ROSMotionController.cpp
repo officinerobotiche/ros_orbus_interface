@@ -237,9 +237,9 @@ void ROSMotionController::timerStopCallback(const ros::TimerEvent& event) {
 
 bool ROSMotionController::aliveOperation(const ros::TimerEvent& event, std::vector<information_packet_t>* list_send) {
     if (sub_twist.getNumPublishers() >= 1) {
-        delay_timer_.stop();
         if (!alive_operation) {
             ROS_DEBUG("Start operation");
+            delay_timer_.stop();
             enable_motor_t enable = true;
             serial_->parserSendPacket(serial_->createDataPacket(ENABLE, HASHMAP_MOTION, (abstract_packet_t*) & enable), 3, boost::posix_time::millisec(200));
             alive_operation = true;

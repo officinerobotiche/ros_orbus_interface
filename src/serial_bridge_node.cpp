@@ -25,7 +25,6 @@ serial_port_t GetSerialPort(char *c_port) {
     size_t last_index = port.find_last_not_of("0123456789");
     serial_port.name = port.substr(0, last_index + 1);
     istringstream(port.substr(last_index + 1)) >> serial_port.number;
-    //    ROS_INFO("Part: %s - number: %d", serial_port.name.c_str(), serial_port.number);
     return serial_port;
 }
 

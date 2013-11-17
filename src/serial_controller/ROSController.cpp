@@ -12,8 +12,9 @@ using namespace std;
 #define NUMBER_PUB 10
 
 ROSController::ROSController(std::string name_node, const ros::NodeHandle& nh, ParserPacket* serial)
-: nh_(nh), name_node_(name_node), serial_(serial), init_number_process(false), stop_timer(true) {
+: nh_(nh), name_node_(name_node), serial_(serial), init_number_process(false) {
     serial_->addCallback(&ROSController::defaultPacket, this);
+    //    serial_->addErrorCallback(&ROSController::errorPacket, this);
 
     //Publisher
     pub_time_process = nh_.advertise<serial_bridge::Process>(name_node + "/process", NUMBER_PUB,
@@ -24,6 +25,9 @@ ROSController::ROSController(std::string name_node, const ros::NodeHandle& nh, P
 
     //Timer
     timer_ = nh_.createTimer(ros::Duration(1), &ROSController::timerCallback, this, false, false);
+
+    map_error_serial[ERROR_TIMEOUT_SYNC_PACKET_STRING] = 0;
+    map_error_serial[ERROR_MAX_ASYNC_CALLBACK_STRING] = 0;
 
     vector<information_packet_t> list_packet;
     list_packet.push_back(encodeServices(VERSION_CODE));
@@ -38,6 +42,7 @@ ROSController::ROSController(std::string name_node, const ros::NodeHandle& nh, P
 
 ROSController::~ROSController() {
     serial_->clearCallback();
+    //    serial_->clearErrorCallback();
 }
 
 void ROSController::loadParameter() {
@@ -56,18 +61,20 @@ void ROSController::loadParameter() {
     }
     vector<information_packet_t> list_packet;
     if (nh_.hasParam(name_node_ + "/time")) {
-        ROS_INFO("Sync parameter /time: load");
+        ROS_DEBUG("Sync parameter /time: load");
         nh_.getParam(name_node_ + "/time/step", step_timer);
         nh_.getParam(name_node_ + "/time/tm_mill", tm_mill);
         nh_.getParam(name_node_ + "/time/k_time", k_time);
     } else {
-        ROS_INFO("Sync parameter /time: ROBOT -> ROS");
+        ROS_DEBUG("Sync parameter /time: ROBOT -> ROS");
         list_packet.push_back(serial_->createPacket(PARAMETER_SYSTEM, REQUEST));
     }
     //Parameter frequency
     if (nh_.hasParam(name_node_ + "/frequency")) {
         ROS_DEBUG("Sync parameter /frequency: ROS -> ROBOT");
         ROS_INFO("TODO Sync /frequency");
+        //        process_t process = get_process("frequency");
+        //        list_packet.push_back(serial_->createDataPacket(FRQ_PROCESS, HASHMAP_DEFAULT, (abstract_packet_t*) & process));
     } else {
         ROS_DEBUG("Sync parameter /frequency: ROBOT -> ROS");
         list_packet.push_back(serial_->createPacket(FRQ_PROCESS, REQUEST));
@@ -76,6 +83,8 @@ void ROSController::loadParameter() {
     if (nh_.hasParam(name_node_ + "/priority")) {
         ROS_DEBUG("Sync parameter /priority: ROS -> ROBOT");
         ROS_INFO("TODO Sync /priority");
+        //        process_t process = get_process("priority");
+        //        list_packet.push_back(serial_->createDataPacket(PRIORITY_PROCESS, HASHMAP_DEFAULT, (abstract_packet_t*) & process));
     } else {
         ROS_DEBUG("Sync parameter /priority: ROBOT -> ROS");
         list_packet.push_back(serial_->createPacket(PRIORITY_PROCESS, REQUEST));
@@ -84,10 +93,10 @@ void ROSController::loadParameter() {
     double rate = 1;
     if (nh_.hasParam(name_node_ + "/rate_timer")) {
         nh_.getParam(name_node_ + "/rate_timer", rate);
-        ROS_INFO("Sync parameter /rate_timer: load - %f Hz", rate);
+        ROS_DEBUG("Sync parameter /rate_timer: load - %f Hz", rate);
     } else {
         nh_.setParam(name_node_ + "/rate_timer", rate);
-        ROS_INFO("Sync parameter /rate_timer: set - %f Hz", rate);
+        ROS_DEBUG("Sync parameter /rate_timer: set - %f Hz", rate);
     }
     timer_.setPeriod(ros::Duration(1 / rate));
     //Add other parameter request
@@ -117,6 +126,16 @@ void ROSController::clearParameterPacketRequest() {
     callback_add_parameter.clear();
 }
 
+void ROSController::addAliveOperation(const boost::function<bool (const ros::TimerEvent&, std::vector<information_packet_t>*) >& callback, bool start) {
+    callback_alive_event = callback;
+    if (start)
+        timer_.start();
+}
+
+void ROSController::clearAliveOperation() {
+    callback_alive_event.clear();
+}
+
 void ROSController::addTimerEvent(const boost::function<void (const ros::TimerEvent&) >& callback) {
     callback_timer_event = callback;
 }
@@ -139,25 +158,31 @@ std::vector<information_packet_t> ROSController::updatePacket() {
     return list_packet;
 }
 
+bool ROSController::aliveOperation(const ros::TimerEvent& event, std::vector<information_packet_t>* list_packet) {
+    if (callback_alive_event) {
+        return callback_alive_event(event, list_packet);
+    } else if (list_packet->size() != 0) {
+        return true;
+    } else return false;
+}
+
 void ROSController::timerCallback(const ros::TimerEvent& event) {
     vector<information_packet_t> list_packet = updatePacket();
     double rate = 1;
     nh_.getParam(name_node_ + "/rate_timer", rate);
     timer_.setPeriod(ros::Duration(1 / rate));
-    if ((list_packet.size() == 0)) {
-        if (stop_timer) {
-            ROS_INFO("Wait user");
-            timer_.stop();
-        }
-    } else {
+    if (aliveOperation(event, &list_packet)) {
         //ROS_INFO("Start streaming");
         try {
             serial_->parserSendPacket(list_packet, 3, boost::posix_time::millisec(200));
+            if (callback_timer_event)
+                callback_timer_event(event);
         } catch (std::exception& e) {
             ROS_ERROR("%s", e.what());
         }
-        if (callback_timer_event)
-            callback_timer_event(event);
+    } else {
+        ROS_INFO("Wait user");
+        timer_.stop();
     }
 }
 
@@ -175,6 +200,10 @@ float ROSController::getTimeProcess(float process_time) {
         return k_time * (step_timer + process_time);
     }
     return k_time*process_time;
+}
+
+void ROSController::errorPacket(const unsigned char& command, const abstract_packet_t* packet) {
+    ROS_ERROR("Error on command: %d", command);
 }
 
 void ROSController::defaultPacket(const unsigned char& command, const abstract_packet_t* packet) {
@@ -210,7 +239,11 @@ void ROSController::defaultPacket(const unsigned char& command, const abstract_p
             nh_.setParam(name_node_ + "/time/k_time", k_time);
             break;
         case ERROR_SERIAL:
-            error_serial = packet->error_pkg;
+            for (int i = 0; i < BUFF_SERIAL_ERROR; ++i) {
+                string name = getNameError(-(i + 1));
+                if (name.compare(" ") != 0)
+                    map_error_serial[name] = packet->error_pkg.number[i];
+            }
             break;
         case NAME_PROCESS:
             if (init_number_process) {
@@ -226,6 +259,37 @@ void ROSController::defaultPacket(const unsigned char& command, const abstract_p
                 convert << packet->process_name.name; // insert the textual representation of 'repeat' in the characters in the stream
                 nh_.setParam(name_node_ + "/process/" + convert.str(), name);
             }
+            break;
+    }
+}
+
+std::string ROSController::getNameError(int number) {
+    switch (number) {
+        case ERROR_FRAMMING:
+            return ERROR_FRAMMING_STRING;
+            break;
+        case ERROR_OVERRUN:
+            return ERROR_OVERRUN_STRING;
+        case ERROR_HEADER:
+            return ERROR_HEADER_STRING;
+        case ERROR_LENGTH:
+            return ERROR_LENGTH_STRING;
+        case ERROR_DATA:
+            return ERROR_DATA_STRING;
+        case ERROR_CKS:
+            return ERROR_CKS_STRING;
+        case ERROR_CMD:
+            return ERROR_CMD_STRING;
+        case ERROR_NACK:
+            return ERROR_NACK_STRING;
+        case ERROR_OPTION:
+            return ERROR_OPTION_STRING;
+        case ERROR_PKG:
+            return ERROR_PKG_STRING;
+        case ERROR_CREATE_PKG:
+            return ERROR_CREATE_PKG_STRING;
+        default:
+            return " ";
             break;
     }
 }
@@ -276,6 +340,31 @@ void ROSController::decodeServices(const char command, const unsigned char* buff
     }
 }
 
+std::string ROSController::getBoardSerialError() {
+    try {
+        serial_->parserSendPacket(serial_->createPacket(ERROR_SERIAL, REQUEST), 3, boost::posix_time::millisec(200));
+    } catch (std::exception& e) {
+        ROS_ERROR("%s", e.what());
+    }
+    stringstream service_str;
+    service_str << "Error list:" << endl;
+    // map_error_serial
+    map<string, int> map_error = serial_->getMapError();
+    map<string, int>::iterator map_error_i = map_error_serial.begin();
+    for (map<string, int>::iterator ii = map_error.begin(); ii != map_error.end(); ++ii) {
+        string name = (*ii).first;
+        service_str << "Type: " << (*ii).first;
+        service_str << " - PC: " << (*ii).second;
+        if (map_error_i != map_error_serial.end()) {
+            service_str << " - PIC: " << (*map_error_i).second << endl;
+            ++map_error_i;
+        } else {
+            service_str << endl;
+        }
+    }
+    return service_str.str();
+}
+
 bool ROSController::service_Callback(serial_bridge::Service::Request &req, serial_bridge::Service::Response & msg) {
     if (req.name.compare("reset") == 0) {
         resetBoard();
@@ -285,14 +374,7 @@ bool ROSController::service_Callback(serial_bridge::Service::Request &req, seria
                 name_author + " - Build in: " + compiled + "\n";
         msg.name = information_string;
     } else if (req.name.compare("serial_info") == 0) {
-        map<string, int> map_error = serial_->getMapError();
-        stringstream service_str;
-        service_str << "Error list:" << endl;
-        for (int i = 0; i < BUFF_SERIAL_ERROR; i++) {
-            //service_str << "Type: -" << (i + 1) << " - PC n: " << serial_->getBufferArray()[i] << " - PIC n: " << error_serial[i] << std::endl;
-            service_str << "Type: -" << (i + 1) << " - PIC n: " << error_serial.number[i] << endl;
-        }
-        msg.name = service_str.str();
+        msg.name = getBoardSerialError();
     } else {
         msg.name = "help";
     }
@@ -321,11 +403,11 @@ bool ROSController::processServiceCallback(serial_bridge::Update::Request &req, 
     ROS_INFO("PROCESS UPDATE");
     if ((name.compare("priority") == 0) || (name.compare(all_string) == 0)) {
         process = get_process("priority");
-        list_send.push_back(serial_->createDataPacket(PRIORITY_PROCESS, HASHMAP_MOTION, (abstract_packet_t*) & process));
+        list_send.push_back(serial_->createDataPacket(PRIORITY_PROCESS, HASHMAP_DEFAULT, (abstract_packet_t*) & process));
     }
     if ((name.compare("frequency") == 0) || (name.compare(all_string) == 0)) {
         process = get_process("frequency");
-        list_send.push_back(serial_->createDataPacket(FRQ_PROCESS, HASHMAP_MOTION, (abstract_packet_t*) & process));
+        list_send.push_back(serial_->createDataPacket(FRQ_PROCESS, HASHMAP_DEFAULT, (abstract_packet_t*) & process));
     }
     try {
         serial_->parserSendPacket(list_send, 3, boost::posix_time::millisec(200));

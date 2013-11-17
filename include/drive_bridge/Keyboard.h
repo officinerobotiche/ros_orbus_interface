@@ -11,7 +11,7 @@
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 
-#include <serial_bridge/Velocity.h>
+#include <geometry_msgs/Twist.h>
 #include <serial_bridge/Enable.h>
 #include <std_srvs/Empty.h>
 
@@ -60,7 +60,7 @@ private:
     ros::Subscriber sub_enable_;
     
     serial_bridge::Enable enable_pkg;
-    serial_bridge::Velocity velocity;
+    geometry_msgs::Twist velocity;
 };
 
 #endif	/* KEYBOARD_H */

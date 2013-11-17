@@ -15,18 +15,32 @@
 #define HEADER_ASYNC '@'
 #define HEAD_PKG 2
 
+#define ERROR_FRAMMING -1
+#define ERROR_FRAMMING_STRING "Framming"
+#define ERROR_OVERRUN -2
+#define ERROR_OVERRUN_STRING "Overrun"
 #define ERROR_HEADER -3
+#define ERROR_HEADER_STRING "Header"
 #define ERROR_LENGTH -4
+#define ERROR_LENGTH_STRING "Length"
 #define ERROR_DATA -5
+#define ERROR_DATA_STRING "Data"
 #define ERROR_CKS -6
+#define ERROR_CKS_STRING "Checksum"
 #define ERROR_CMD -7
+#define ERROR_CMD_STRING "Command"
 #define ERROR_NACK -8
+#define ERROR_NACK_STRING "NACK"
 #define ERROR_OPTION -9
+#define ERROR_OPTION_STRING "Option"
 #define ERROR_PKG -10
+#define ERROR_PKG_STRING "Packet"
 #define ERROR_CREATE_PKG -11
-
+#define ERROR_CREATE_PKG_STRING "Creation packet"
 #define ERROR_TIMEOUT_SYNC_PACKET -12
+#define ERROR_TIMEOUT_SYNC_PACKET_STRING "Timeout sync packet"
 #define ERROR_MAX_ASYNC_CALLBACK -15
+#define ERROR_MAX_ASYNC_CALLBACK_STRING "Max async callback"
 /**
  * Used internally (pkgimpl)
  */
@@ -38,11 +52,9 @@ class AsyncPacketImpl;
 class packet_exception : public std::runtime_error {
 public:
 
-    packet_exception(const std::string& arg, int number) : runtime_error(arg) {
-        this->number = number;
+    packet_exception(const std::string& arg) : runtime_error(arg) {
     }
     
-    int number;
 };
 
 class PacketSerial : public AsyncSerial {
@@ -97,11 +109,10 @@ public:
      * base class destructor
      */
     void clearAsyncPacketCallback();
-    
+
     /**
      * 
-     * @param data
-     * @param len
+     * @return 
      */
     std::map<std::string, int> getMapError();
 
@@ -109,9 +120,16 @@ private:
 
     /**
      * Read callback, stores data in the buffer
+     * @param data
+     * @param len
      */
     void readCallback(const char *data, size_t len);
-
+        
+    /**
+     * Init map error
+     */
+    void initMapError();
+    
     bool decode_pkgs(unsigned char rxchar);
     bool pkg_header(unsigned char rxchar);
     bool pkg_length(unsigned char rxchar);

@@ -10,7 +10,7 @@
 Keyboard::Keyboard(const ros::NodeHandle& nh, std::string robot, std::string command, std::string velocity, std::string enable)
 : nh_(nh)
 {
-  pub_vel_control_ = nh_.advertise<serial_bridge::Velocity>("/" + robot + "/" + command + "/" + velocity, 1000);
+  pub_vel_control_ = nh_.advertise<geometry_msgs::Twist>("/" + robot + "/" + command + "/" + velocity, 1000);
   pub_enable_control_ = nh_.advertise<serial_bridge::Enable>("/" + robot + "/" + command + "/" + enable, 1000);
   sub_enable_ = nh_.subscribe("/" + robot + "/" + enable, 1000, &Keyboard::enable_Callback, this);
   kfd = 0;
@@ -47,22 +47,22 @@ void Keyboard::arrows(char c)
   {
     case KEYCODE_L:
       ROS_DEBUG("LEFT");
-      velocity.angular += step_.step_ang;
+      velocity.angular.z += step_.step_ang;
       receive_command_ = true;
       break;
     case KEYCODE_R:
       ROS_DEBUG("RIGHT");
-      velocity.angular -= step_.step_ang;
+      velocity.angular.z -= step_.step_ang;
       receive_command_ = true;
       break;
     case KEYCODE_U:
       ROS_DEBUG("UP");
-      velocity.linear += step_.step_lin;
+      velocity.linear.x += step_.step_lin;
       receive_command_ = true;
       break;
     case KEYCODE_D:
       ROS_DEBUG("DOWN");
-      velocity.linear -= step_.step_lin;
+      velocity.linear.x -= step_.step_lin;
       receive_command_ = true;
       break;
   }
@@ -74,22 +74,22 @@ void Keyboard::letters(char c)
   {
     case 'a':
       ROS_DEBUG("LEFT");
-      velocity.angular += step_.step_ang;
+      velocity.angular.z += step_.step_ang;
       receive_command_ = true;
       break;
     case 'd':
       ROS_DEBUG("RIGHT");
-      velocity.angular -= step_.step_ang;
+      velocity.angular.z -= step_.step_ang;
       receive_command_ = true;
       break;
     case 'w':
       ROS_DEBUG("UP");
-      velocity.linear += step_.step_lin;
+      velocity.linear.x += step_.step_lin;
       receive_command_ = true;
       break;
     case 's':
       ROS_DEBUG("DOWN");
-      velocity.linear -= step_.step_lin;
+      velocity.linear.x -= step_.step_lin;
       receive_command_ = true;
       break;
   }
@@ -159,15 +159,15 @@ void Keyboard::read_keyboard()
       case ' ':
       case '*':
         ROS_DEBUG("SPACE");
-        velocity.linear = 0;
-        velocity.angular = 0;
+        velocity.linear.x = 0;
+        velocity.angular.z = 0;
         receive_command_ = true;
         break;
     }
 
     if (receive_command_)
     {
-      ROS_INFO("Command [%f, %f]", velocity.linear, velocity.angular);
+      ROS_INFO("Command [%f, %f]", velocity.linear.x, velocity.angular.z);
       pub_vel_control_.publish(velocity);
       receive_command_ = false;
     }

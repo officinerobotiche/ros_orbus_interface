@@ -44,6 +44,7 @@ private:
     bool compareAutosend(autosend_t autosend1, autosend_t autosend2);
     void updatePacket(std::vector<information_packet_t>* list_send);
     void addParameter(std::vector<information_packet_t>* list_send);
+    bool aliveOperation(const ros::TimerEvent& event, std::vector<information_packet_t>* list_send);
     void sensorPacket(const unsigned char& command, const abstract_packet_t* packet);
     void sendLaserSharp(infrared_t infrared);
 

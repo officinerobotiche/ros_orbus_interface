@@ -25,6 +25,7 @@ ROSMotionController::ROSMotionController(std::string name_node, const ros::NodeH
     addVectorPacketRequest(&ROSMotionController::updatePacket, this);
     addParameterPacketRequest(&ROSMotionController::addParameter, this);
     addTimerEvent(&ROSMotionController::timerEvent, this);
+    addAliveOperation(&ROSMotionController::aliveOperation, this);
 
     //Open Publisher
     //- Command receive
@@ -36,12 +37,8 @@ ROSMotionController::ROSMotionController(std::string name_node, const ros::NodeH
             boost::bind(&ROSController::connectCallback, this, _1));
     pub_motor_right = nh_.advertise<serial_bridge::Motor>(name_node + "/motor/" + right_string, NUMBER_PUB,
             boost::bind(&ROSController::connectCallback, this, _1));
-    pub_velocity = nh_.advertise<serial_bridge::Velocity>(name_node + "/velocity", NUMBER_PUB,
-            boost::bind(&ROSController::connectCallback, this, _1));
-    pub_velocity_meas = nh_.advertise<serial_bridge::Velocity>(name_node + "/" + measure_string + "/velocity", NUMBER_PUB,
-            boost::bind(&ROSController::connectCallback, this, _1));
     //-- Conventional (Using TF, NAV)
-    pub_twist = nh_.advertise<geometry_msgs::Twist>(name_node + "/twist", NUMBER_PUB,
+    pub_twist = nh_.advertise<geometry_msgs::Twist>(name_node + "/velocity", NUMBER_PUB,
             boost::bind(&ROSController::connectCallback, this, _1));
     pub_odom = nh_.advertise<nav_msgs::Odometry>(name_node + "/odometry", NUMBER_PUB,
             boost::bind(&ROSController::connectCallback, this, _1));
@@ -51,12 +48,11 @@ ROSMotionController::ROSMotionController(std::string name_node, const ros::NodeH
 
     //Open Subscriber
     //- Command
-    sub_velocity = nh_.subscribe(name_node + "/" + command_string + "/velocity", 1, &ROSMotionController::velocityCallback, this);
     sub_pose = nh_.subscribe(name_node + "/" + command_string + "/pose", 1, &ROSMotionController::poseCallback, this);
     sub_enable = nh_.subscribe(name_node + "/" + command_string + "/enable", 1, &ROSMotionController::enableCallback, this);
     //-- Conventional (Using TF, NAV)
     sub_pose_estimate = nh_.subscribe(name_node + "/" + command_string + "/odometry", 1, &ROSMotionController::poseTFCallback, this);
-    sub_twist = nh_.subscribe(name_node + "/" + command_string + "/twist", 1, &ROSMotionController::twistCallback, this);
+    sub_twist = nh_.subscribe(name_node + "/" + command_string + "/velocity", 1, &ROSMotionController::twistCallback, this);
 
     //Open Service
     srv_pid = nh_.advertiseService(name_node + "/pid", &ROSMotionController::pidServiceCallback, this);
@@ -69,6 +65,7 @@ ROSMotionController::~ROSMotionController() {
     clearVectorPacketRequest();
     clearParameterPacketRequest();
     clearTimerEvent();
+    clearAliveOperation();
 }
 
 void ROSMotionController::addParameter(std::vector<information_packet_t>* list_send) {
@@ -190,17 +187,12 @@ void ROSMotionController::motionPacket(const unsigned char& command, const abstr
             pub_pose.publish(pose);
             break;
         case VELOCITY:
-            cmd_velocity.linear = packet->velocity.v;
-            cmd_velocity.angular = packet->velocity.w;
-            pub_velocity.publish(cmd_velocity);
             twist.linear.x = packet->velocity.v;
             twist.angular.z = packet->velocity.w;
             pub_twist.publish(twist);
             break;
         case VELOCITY_MIS:
-            meas_velocity.linear = packet->velocity.v;
-            meas_velocity.angular = packet->velocity.w;
-            pub_velocity_meas.publish(meas_velocity);
+            meas_velocity = packet->velocity;
             break;
         case ENABLE:
             enable_motors.enable = packet->enable;
@@ -220,13 +212,32 @@ void ROSMotionController::timerEvent(const ros::TimerEvent& event) {
     }
 }
 
+bool ROSMotionController::aliveOperation(const ros::TimerEvent& event, std::vector<information_packet_t>* list_send) {
+//    ros::Time current = event.current_real;
+//    time_alive = time_alive + current;
+////    if(event.current_real) {
+////        
+////    }
+//    
+//    if (sub_twist.getNumPublishers() >= 1) {
+//        enable_motor_t enable = true;
+//        list_send->push_back(serial_->createDataPacket(ENABLE, HASHMAP_MOTION, (abstract_packet_t*) & enable));
+//    } else {
+//        enable_motor_t enable = false;
+//        list_send->push_back(serial_->createDataPacket(ENABLE, HASHMAP_MOTION, (abstract_packet_t*) & enable));
+//    }
+    if (list_send->size() != 0)
+        return true;
+    else return false;
+}
+
 void ROSMotionController::updatePacket(std::vector<information_packet_t>* list_send) {
     std::string packet_string;
     if ((pub_pose.getNumSubscribers() >= 1) || (pub_odom.getNumSubscribers() >= 1)) {
         packet_string += "Odo ";
         list_send->push_back(serial_->createPacket(COORDINATE, REQUEST, HASHMAP_MOTION));
     }
-    if ((pub_velocity.getNumSubscribers() >= 1) || (pub_twist.getNumSubscribers() >= 1)) {
+    if (pub_twist.getNumSubscribers() >= 1) {
         packet_string += "Vel ";
         list_send->push_back(serial_->createPacket(VELOCITY, REQUEST, HASHMAP_MOTION));
     }
@@ -234,7 +245,7 @@ void ROSMotionController::updatePacket(std::vector<information_packet_t>* list_s
         packet_string += "Ena ";
         list_send->push_back(serial_->createPacket(ENABLE, REQUEST, HASHMAP_MOTION));
     }
-    if ((pub_velocity_meas.getNumSubscribers() >= 1) || (pub_odom.getNumSubscribers() >= 1)) {
+    if (pub_odom.getNumSubscribers() >= 1) {
         packet_string += "VelMis ";
         list_send->push_back(serial_->createPacket(VELOCITY_MIS, REQUEST, HASHMAP_MOTION));
     }
@@ -247,17 +258,6 @@ void ROSMotionController::updatePacket(std::vector<information_packet_t>* list_s
         list_send->push_back(serial_->createPacket(MOTOR_R, REQUEST, HASHMAP_MOTION));
     }
     //    ROS_INFO("[ %s]", packet_string.c_str());
-}
-
-void ROSMotionController::velocityCallback(const serial_bridge::Velocity::ConstPtr &msg) {
-    velocity_t velocity;
-    velocity.v = msg->linear;
-    velocity.w = msg->angular;
-    try {
-        serial_->parserSendPacket(serial_->createDataPacket(VELOCITY, HASHMAP_MOTION, (abstract_packet_t*) & velocity), 3, boost::posix_time::millisec(200));
-    } catch (exception &e) {
-        ROS_ERROR("%s", e.what());
-    }
 }
 
 void ROSMotionController::twistCallback(const geometry_msgs::Twist::ConstPtr &msg) {
@@ -308,7 +308,7 @@ void ROSMotionController::saveOdometry(const serial_bridge::Pose* pose) {
     }
 }
 
-void ROSMotionController::sendOdometry(const serial_bridge::Velocity* velocity, const serial_bridge::Pose* pose) {
+void ROSMotionController::sendOdometry(const velocity_t* velocity, const serial_bridge::Pose* pose) {
     ros::Time current_time = ros::Time::now();
     //first, we'll publish the transform over tf
     geometry_msgs::TransformStamped odom_trans;
@@ -340,9 +340,9 @@ void ROSMotionController::sendOdometry(const serial_bridge::Velocity* velocity, 
 
     //set the velocity
     odom.child_frame_id = tf_base_link_string_;
-    odom.twist.twist.linear.x = velocity->linear;
+    odom.twist.twist.linear.x = velocity->v;
     odom.twist.twist.linear.y = 0;
-    odom.twist.twist.angular.z = velocity->angular;
+    odom.twist.twist.angular.z = velocity->w;
 
     //publish the message
     pub_odom.publish(odom);

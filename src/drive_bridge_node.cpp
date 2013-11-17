@@ -18,7 +18,7 @@ Keyboard* keyboard;
 std::string serial_bridge_string = "robot";
 std::string command = "command";
 std::string velocity = "velocity";
-std::string enable = "enable_motors";
+std::string enable = "enable";
 
 std::string name_node = "drive_bridge";
 

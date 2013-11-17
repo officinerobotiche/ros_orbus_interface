@@ -26,7 +26,7 @@ ROSSensorController::ROSSensorController(std::string name_node, const ros::NodeH
     serial->addCallback(&ROSSensorController::sensorPacket, this, HASHMAP_NAVIGATION);
     addVectorPacketRequest(&ROSSensorController::updatePacket, this);
     addParameterPacketRequest(&ROSSensorController::addParameter, this);
-    //    addTimerEvent(&ROSMotionController::timerEvent, this);
+    addAliveOperation(&ROSSensorController::aliveOperation, this, true);
 
     //Open Publisher
     pub_laser_sharp = nh_.advertise<sensor_msgs::LaserScan>(name_node + "/" + default_laser_sharp_string, NUMBER_PUB,
@@ -39,15 +39,13 @@ ROSSensorController::ROSSensorController(std::string name_node, const ros::NodeH
 
     //Open Service
     srv_parameter = nh_.advertiseService(name_node + "/" + default_parameter_string, &ROSSensorController::parameterCallback, this);
-
-    stop_timer = false;
 }
 
 ROSSensorController::~ROSSensorController() {
     serial_->clearCallback(HASHMAP_NAVIGATION);
     clearVectorPacketRequest();
     clearParameterPacketRequest();
-    //    clearTimerEvent();
+    clearAliveOperation();
 }
 
 bool ROSSensorController::compareAutosend(autosend_t autosend1, autosend_t autosend2) {
@@ -65,6 +63,10 @@ bool ROSSensorController::compareAutosend(autosend_t autosend1, autosend_t autos
         }
     } while (next);
     return compare;
+}
+
+bool ROSSensorController::aliveOperation(const ros::TimerEvent& event, std::vector<information_packet_t>* list_send) {
+    return true;
 }
 
 void ROSSensorController::updatePacket(std::vector<information_packet_t>* list_send) {
@@ -144,11 +146,11 @@ void ROSSensorController::addParameter(std::vector<information_packet_t>* list_s
         nh_.setParam(name_node_ + "/" + default_laser_sharp_string + "/distance_center", 0.0);
     }
     if (nh_.hasParam(name_node_ + "/" + default_parameter_string)) {
-        ROS_INFO("Sync parameter %s: ROS -> ROBOT", default_parameter_string.c_str());
+        ROS_DEBUG("Sync parameter %s: ROS -> ROBOT", default_parameter_string.c_str());
         parameter_sensor_t parameter = getParameter();
         list_send->push_back(serial_->createDataPacket(PARAMETER_SENSOR, HASHMAP_NAVIGATION, (abstract_packet_t*) & parameter));
     } else {
-        ROS_INFO("Sync parameter %s: ROBOT -> ROS", default_parameter_string.c_str());
+        ROS_DEBUG("Sync parameter %s: ROBOT -> ROS", default_parameter_string.c_str());
         list_send->push_back(serial_->createPacket(PARAMETER_SENSOR, REQUEST, HASHMAP_NAVIGATION));
     }
 }

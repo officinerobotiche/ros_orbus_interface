@@ -172,7 +172,7 @@ void ROSController::timerCallback(const ros::TimerEvent& event) {
     nh_.getParam(name_node_ + "/rate_timer", rate);
     timer_.setPeriod(ros::Duration(1 / rate));
     if (aliveOperation(event, &list_packet)) {
-        //ROS_INFO("Start streaming");
+//        ROS_INFO("Start streaming");
         try {
             serial_->parserSendPacket(list_packet, 3, boost::posix_time::millisec(200));
             if (callback_timer_event)

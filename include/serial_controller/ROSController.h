@@ -75,6 +75,7 @@ protected:
     std::string name_node_; //Name for topics, params, services
     ros::NodeHandle nh_; //NameSpace for bridge controller
     ParserPacket* serial_; //Serial object to comunicate with PIC device
+    ros::Timer timer_;
     std::string name_board, version, name_author, compiled;
 private:
 
@@ -85,7 +86,6 @@ private:
     callback_add_event_t callback_alive_event;
     callback_timer_event_t callback_timer_event;
 
-    ros::Timer timer_;
     ros::ServiceServer srv_board, srv_process;
     ros::Publisher pub_time_process;
 

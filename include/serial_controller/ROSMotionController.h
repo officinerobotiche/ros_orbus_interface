@@ -57,11 +57,14 @@ private:
     serial_bridge::Enable enable_motors;
     std::string name_pid;
     
-    ros::Time old_time, old_time_alive;
+    bool alive_operation;
+    ros::Timer delay_timer_;
+    ros::Time old_time;
     double k_ele_left, k_ele_right;
     double positon_joint_left, positon_joint_right;
     sensor_msgs::JointState joint;
 
+    void timerStopCallback(const ros::TimerEvent& event);
     void timerEvent(const ros::TimerEvent& event);
 
     void twistCallback(const geometry_msgs::Twist::ConstPtr &msg);

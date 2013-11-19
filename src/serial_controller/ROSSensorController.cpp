@@ -66,10 +66,14 @@ bool ROSSensorController::compareAutosend(autosend_t autosend1, autosend_t autos
 }
 
 bool ROSSensorController::aliveOperation(const ros::TimerEvent& event, std::vector<information_packet_t>* list_send) {
-    if (enable)
+    if (enable) {
+        ROS_INFO("Enable");
         list_send->push_back(serial_->createDataPacket(ENABLE_SENSOR, HASHMAP_NAVIGATION, (abstract_packet_t*) & enable));
-    if(autosend.pkgs[0] != -1)
+    }
+    if (autosend.pkgs[0] != -1) {
         list_send->push_back(serial_->createDataPacket(ENABLE_AUTOSEND, HASHMAP_NAVIGATION, (abstract_packet_t*) & autosend));
+        ROS_INFO("Auto send");
+    }
     return true;
 }
 
@@ -90,10 +94,12 @@ void ROSSensorController::updatePacket(std::vector<information_packet_t>* list_s
     new_autosend.pkgs[counter++] = -1;
     if (new_enable != enable) {
         enable = new_enable;
+        ROS_INFO("Update packet enable");
         list_send->push_back(serial_->createDataPacket(ENABLE_SENSOR, HASHMAP_NAVIGATION, (abstract_packet_t*) & enable));
     }
     if (!compareAutosend(new_autosend, autosend)) {
         autosend = new_autosend;
+        ROS_INFO("Update packet autosend");
         list_send->push_back(serial_->createDataPacket(ENABLE_AUTOSEND, HASHMAP_NAVIGATION, (abstract_packet_t*) & autosend));
     }
 }

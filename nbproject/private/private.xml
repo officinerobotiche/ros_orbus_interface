@@ -10,20 +10,12 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/home/raffaello/catkin_ws/src/serial_bridge/src/async_serial/ParserPacket.cpp</file>
-            <file>file:/home/raffaello/catkin_ws/src/serial_bridge/include/async_serial/ParserPacket.h</file>
-            <file>file:/home/raffaello/catkin_ws/src/serial_bridge/src/test_thread.cpp</file>
-            <file>file:/home/raffaello/catkin_ws/src/serial_bridge/src/async_serial/PacketSerial.cpp</file>
-            <file>file:/home/raffaello/catkin_ws/src/serial_bridge/include/async_serial/PacketSerial.h</file>
-            <file>file:/home/raffaello/catkin_ws/src/serial_bridge/src/serial_controller/ROSMotionController.cpp</file>
-            <file>file:/home/raffaello/catkin_ws/src/serial_bridge/src/ServiceSerial.cpp</file>
-            <file>file:/home/raffaello/catkin_ws/src/serial_bridge/include/ServiceSerial.h</file>
-            <file>file:/home/raffaello/catkin_ws/src/serial_bridge/src/serial_controller/ROSController.cpp</file>
-            <file>file:/home/raffaello/catkin_ws/src/serial_bridge/include/serial_controller/ROSController.h</file>
-            <file>file:/home/raffaello/catkin_ws/src/serial_bridge/include/packet/packet.h</file>
+            <file>file:/home/raffaello/catkin_ws/src/serial_bridge/include/drive_bridge/Keyboard.h</file>
+            <file>file:/home/raffaello/catkin_ws/src/serial_bridge/src/drive_bridge_node.cpp</file>
+            <file>file:/home/raffaello/catkin_ws/src/serial_bridge/src/drive_bridge/Keyboard.cpp</file>
             <file>file:/home/raffaello/catkin_ws/src/serial_bridge/include/serial_controller/ROSMotionController.h</file>
-            <file>file:/home/raffaello/catkin_ws/src/serial_bridge/include/packet/navigation.h</file>
-            <file>file:/home/raffaello/catkin_ws/src/serial_bridge/include/packet/motion.h</file>
+            <file>file:/home/raffaello/catkin_ws/src/serial_bridge/include/serial_controller/ROSController.h</file>
+            <file>file:/home/raffaello/catkin_ws/src/serial_bridge/include/serial_controller/ROSSensorController.h</file>
         </group>
     </open-files>
     <preferences xmlns="http://www.netbeans.org/ns/auxiliary-configuration-preferences/1">

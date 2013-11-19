@@ -39,6 +39,8 @@ ROSSensorController::ROSSensorController(std::string name_node, const ros::NodeH
 
     //Open Service
     srv_parameter = nh_.advertiseService(name_node + "/" + default_parameter_string, &ROSSensorController::parameterCallback, this);
+    
+    autosend.pkgs[0] = -1;
 }
 
 ROSSensorController::~ROSSensorController() {
@@ -163,6 +165,8 @@ void ROSSensorController::addParameter(std::vector<information_packet_t>* list_s
         ROS_DEBUG("Sync parameter %s: ROBOT -> ROS", default_parameter_string.c_str());
         list_send->push_back(serial_->createPacket(PARAMETER_SENSOR, REQUEST, HASHMAP_NAVIGATION));
     }
+    //Request state enable sensor
+    list_send->push_back(serial_->createPacket(ENABLE_SENSOR, REQUEST, HASHMAP_NAVIGATION));
 }
 
 void ROSSensorController::sensorPacket(const unsigned char& command, const abstract_packet_t* packet) {
@@ -170,6 +174,7 @@ void ROSSensorController::sensorPacket(const unsigned char& command, const abstr
     switch (command) {
         case ENABLE_SENSOR:
             //            enable_sensor_ = packet->enable_sensor;
+            enable = packet->enable_sensor;
             ROS_INFO("Enable state: %d", packet->enable_sensor);
             break;
         case INFRARED:

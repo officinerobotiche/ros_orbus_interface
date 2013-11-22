@@ -1,0 +1,9 @@
+[  0%] Built target std_msgs_generate_messages_lisp
+[  1%] Generating Lisp code from joystick_control/Axis.msg
+Traceback (most recent call last):
+  File "/opt/ros/hydro/share/genlisp/cmake/../../../lib/genlisp/gen_lisp.py", line 39, in <module>
+    import genlisp
+ImportError: No module named genlisp
+make[2]: *** [/home/raffaello/catkin_ws/devel/share/common-lisp/ros/joystick_control/msg/Axis.lisp] Error 1
+make[1]: *** [joystick_control/CMakeFiles/joystick_control_generate_messages_lisp.dir/all] Error 2
+make: *** [all] Error 2

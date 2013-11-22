@@ -132,6 +132,7 @@ packet_t ParserPacket::sendSyncPacket(packet_t packet, const unsigned int repeat
             //Repeat message
         }
     }
+    map_error[ERROR_TIMEOUT_SYNC_PACKET_STRING] = map_error[ERROR_TIMEOUT_SYNC_PACKET_STRING] + 1;
     ostringstream convert; // stream used for the conversion
     convert << repeat; // insert the textual representation of 'repeat' in the characters in the stream
     throw (parser_exception("Timeout sync packet n: " + convert.str()));
@@ -150,9 +151,11 @@ void ParserPacket::parserSendPacket(vector<information_packet_t> list_send, cons
 }
 
 void ParserPacket::parserSendPacket(information_packet_t send, const unsigned int repeat, const boost::posix_time::millisec& wait_duration) {
-    packet_t packet = encoder(send);
-    packet_t receive = sendSyncPacket(packet, repeat, wait_duration);
-    parser_impl->sendPacket(parsing(receive));
+    if (send.length != 0) {
+        packet_t packet = encoder(send);
+        packet_t receive = sendSyncPacket(packet, repeat, wait_duration);
+        parser_impl->sendPacket(parsing(receive));
+    }
 }
 
 vector<information_packet_t> ParserPacket::parsing(packet_t packet_receive) {

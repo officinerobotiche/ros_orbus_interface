@@ -54,7 +54,7 @@ public:
 
     packet_exception(const std::string& arg) : runtime_error(arg) {
     }
-    
+
 };
 
 class PacketSerial : public AsyncSerial {
@@ -116,6 +116,8 @@ public:
      */
     std::map<std::string, int> getMapError();
 
+protected:
+    std::map<std::string, int> map_error;
 private:
 
     /**
@@ -124,20 +126,18 @@ private:
      * @param len
      */
     void readCallback(const char *data, size_t len);
-        
+
     /**
      * Init map error
      */
     void initMapError();
-    
+
     bool decode_pkgs(unsigned char rxchar);
     bool pkg_header(unsigned char rxchar);
     bool pkg_length(unsigned char rxchar);
     bool pkg_data(unsigned char rxchar);
     unsigned char pkg_checksum(volatile unsigned char* Buffer, int FirstIndx, int LastIndx);
 
-    std::map<std::string, int> map_error;
-    
     bool async, data_ready;
     packet_t receive_pkg;
     unsigned short index_data;

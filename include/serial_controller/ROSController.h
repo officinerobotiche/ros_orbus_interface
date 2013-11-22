@@ -86,6 +86,7 @@ private:
     callback_add_event_t callback_alive_event;
     callback_timer_event_t callback_timer_event;
 
+    ros::Duration old_time_alive, reset_time_alive, alive_callback_time;
     ros::ServiceServer srv_board, srv_process;
     ros::Publisher pub_time_process;
 

@@ -12,9 +12,9 @@ using namespace std;
 #define NUMBER_PUB 10
 
 ROSController::ROSController(std::string name_node, const ros::NodeHandle& nh, ParserPacket* serial)
-: nh_(nh), name_node_(name_node), serial_(serial), init_number_process(false) {
+: nh_(nh), name_node_(name_node), serial_(serial), init_number_process(false), name_board("Nothing"), reset_time_alive(0) {
     serial_->addCallback(&ROSController::defaultPacket, this);
-    //    serial_->addErrorCallback(&ROSController::errorPacket, this);
+    serial_->addErrorCallback(&ROSController::errorPacket, this);
 
     //Publisher
     pub_time_process = nh_.advertise<serial_bridge::Process>(name_node + "/process", NUMBER_PUB,
@@ -37,12 +37,13 @@ ROSController::ROSController(std::string name_node, const ros::NodeHandle& nh, P
     serial->parserSendPacket(list_packet);
 
     if (!nh.hasParam(name_node + "/info/name_board"))
-        nh_.setParam(name_node + "/info/name_board", name_board);
+        if (name_board.compare("Nothing") != 0)
+            nh_.setParam(name_node + "/info/name_board", name_board);
 }
 
 ROSController::~ROSController() {
     serial_->clearCallback();
-    //    serial_->clearErrorCallback();
+    serial_->clearErrorCallback();
 }
 
 void ROSController::loadParameter() {
@@ -91,14 +92,24 @@ void ROSController::loadParameter() {
     }
     //Set timer rate
     double rate = 1;
-    if (nh_.hasParam(name_node_ + "/rate_timer")) {
-        nh_.getParam(name_node_ + "/rate_timer", rate);
-        ROS_DEBUG("Sync parameter /rate_timer: load - %f Hz", rate);
+    if (nh_.hasParam(name_node_ + "/timer/rate")) {
+        nh_.getParam(name_node_ + "/timer/rate", rate);
+        ROS_DEBUG("Sync parameter /timer/rate: load - %f Hz", rate);
     } else {
-        nh_.setParam(name_node_ + "/rate_timer", rate);
-        ROS_DEBUG("Sync parameter /rate_timer: set - %f Hz", rate);
+        nh_.setParam(name_node_ + "/timer/rate", rate);
+        ROS_DEBUG("Sync parameter /timer/rate: set - %f Hz", rate);
     }
     timer_.setPeriod(ros::Duration(1 / rate));
+    //Set timer rate
+    double time_alive = 1;
+    if (nh_.hasParam(name_node_ + "/timer/alive")) {
+        nh_.getParam(name_node_ + "/timer/alive", time_alive);
+        ROS_DEBUG("Sync parameter /timer/alive: load - %f s", time_alive);
+    } else {
+        nh_.setParam(name_node_ + "/timer/alive", time_alive);
+        ROS_DEBUG("Sync parameter /timer/alive: set - %f s", time_alive);
+    }
+    alive_callback_time = ros::Duration(time_alive);
     //Add other parameter request
     if (callback_add_parameter)
         callback_add_parameter(&list_packet);
@@ -160,7 +171,11 @@ std::vector<information_packet_t> ROSController::updatePacket() {
 
 bool ROSController::aliveOperation(const ros::TimerEvent& event, std::vector<information_packet_t>* list_packet) {
     if (callback_alive_event) {
-        return callback_alive_event(event, list_packet);
+        old_time_alive += event.current_real - event.last_real;
+        if (old_time_alive >= alive_callback_time) {
+            old_time_alive = reset_time_alive;
+            return callback_alive_event(event, list_packet);
+        } else return true;
     } else if (list_packet->size() != 0) {
         return true;
     } else return false;
@@ -169,10 +184,10 @@ bool ROSController::aliveOperation(const ros::TimerEvent& event, std::vector<inf
 void ROSController::timerCallback(const ros::TimerEvent& event) {
     vector<information_packet_t> list_packet = updatePacket();
     double rate = 1;
-    nh_.getParam(name_node_ + "/rate_timer", rate);
+    nh_.getParam(name_node_ + "/timer/rate", rate);
     timer_.setPeriod(ros::Duration(1 / rate));
     if (aliveOperation(event, &list_packet)) {
-//        ROS_INFO("Start streaming");
+        //        ROS_INFO("Start streaming");
         try {
             serial_->parserSendPacket(list_packet, 3, boost::posix_time::millisec(200));
             if (callback_timer_event)
@@ -326,15 +341,19 @@ void ROSController::resetBoard(unsigned int repeat) {
 void ROSController::decodeServices(const char command, const unsigned char* buffer) {
     switch (command) {
         case VERSION_CODE:
+            this->version.clear();
             this->version.append((char*) buffer);
             break;
         case AUTHOR_CODE:
+            this->name_author.clear();
             this->name_author.append((char*) buffer);
             break;
         case NAME_BOARD:
+            this->name_board.clear();
             this->name_board.append((char*) buffer);
             break;
         case DATE_CODE:
+            this->compiled.clear();
             this->compiled.append((char*) buffer, SERVICE_BUFF);
             break;
     }

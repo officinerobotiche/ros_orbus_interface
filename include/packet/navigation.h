@@ -37,7 +37,7 @@ typedef struct parameter_sensor {
 #define LNG_PARAMETER_SENSOR sizeof(parameter_sensor_t)
 
 typedef struct autosend {
-    char pkgs[BUFFER_AUTOSEND];
+    int8_t pkgs[BUFFER_AUTOSEND];
 } autosend_t;
 #define LNG_AUTOSEND sizeof(autosend_t)
 

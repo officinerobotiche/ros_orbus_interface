@@ -119,7 +119,8 @@ ParserPacket::ParserPacket(const std::string& devname,
 }
 
 void ParserPacket::sendAsyncPacket(packet_t packet) {
-    writePacket(packet, HEADER_ASYNC);
+    if (packet.length != 0)
+        writePacket(packet, HEADER_ASYNC);
 }
 
 packet_t ParserPacket::sendSyncPacket(packet_t packet, const unsigned int repeat, const boost::posix_time::millisec& wait_duration) {

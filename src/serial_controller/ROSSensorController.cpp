@@ -68,14 +68,16 @@ bool ROSSensorController::compareAutosend(autosend_t autosend1, autosend_t autos
 }
 
 bool ROSSensorController::aliveOperation(const ros::TimerEvent& event, std::vector<information_packet_t>* list_send) {
+    vector<information_packet_t> list;
     if (enable) {
         //        ROS_INFO("Enable");
-        list_send->push_back(serial_->createDataPacket(ENABLE_SENSOR, HASHMAP_NAVIGATION, (abstract_packet_t*) & enable));
+        list.push_back(serial_->createDataPacket(ENABLE_SENSOR, HASHMAP_NAVIGATION, (abstract_packet_t*) & enable));
     }
     if (autosend.pkgs[0] != -1) {
-        list_send->push_back(serial_->createDataPacket(ENABLE_AUTOSEND, HASHMAP_NAVIGATION, (abstract_packet_t*) & autosend));
+        list.push_back(serial_->createDataPacket(ENABLE_AUTOSEND, HASHMAP_NAVIGATION, (abstract_packet_t*) & autosend));
         //        ROS_INFO("Auto send %d", ((unsigned int)autosend.pkgs[0]));
     }
+    serial_->sendAsyncPacket(serial_->encoder(list));
     return true;
 }
 
@@ -151,7 +153,7 @@ void ROSSensorController::addParameter(std::vector<information_packet_t>* list_s
         double laser_frequency = 40;
         nh_.setParam(name_node_ + "/" + default_laser_sharp_string + "/angle/min", -M_PI / 2);
         nh_.setParam(name_node_ + "/" + default_laser_sharp_string + "/angle/max", M_PI / 2);
-        nh_.setParam(name_node_ + "/" + default_laser_sharp_string + "/angle/increment", (M_PI) / (NUMBER_INFRARED));
+        nh_.setParam(name_node_ + "/" + default_laser_sharp_string + "/angle/increment", (M_PI) / (NUMBER_INFRARED - 1));
         nh_.setParam(name_node_ + "/" + default_laser_sharp_string + "/time/increment", (1 / laser_frequency) / (NUMBER_INFRARED));
         nh_.setParam(name_node_ + "/" + default_laser_sharp_string + "/range/min", 0.04);
         nh_.setParam(name_node_ + "/" + default_laser_sharp_string + "/range/max", 0.40);

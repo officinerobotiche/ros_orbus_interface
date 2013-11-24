@@ -50,7 +50,8 @@ private:
     double pwm_motor;
     std::string tf_odometry_string_, tf_base_link_string_, tf_joint_string_;
 
-    geometry_msgs::Twist twist;
+    bool save_velocity;
+    geometry_msgs::Twist em_twist, rif_twist, twist;
     velocity_t meas_velocity;
     serial_bridge::Pose pose;
     serial_bridge::Motor motor_left, motor_right;
@@ -66,7 +67,7 @@ private:
 
     void timerStopCallback(const ros::TimerEvent& event);
     void timerEvent(const ros::TimerEvent& event);
-
+    
     void twistCallback(const geometry_msgs::Twist::ConstPtr &msg);
     void enableCallback(const serial_bridge::Enable::ConstPtr &msg);
     void poseCallback(const serial_bridge::Pose::ConstPtr &msg);

@@ -8,11 +8,13 @@
 #include "serial_controller/ROSMotionController.h"
 
 #define NUMBER_PUB 10
+#define SGN(x)  ( ((x) < 0) ?  -1 : ( ((x) == 0 ) ? 0 : 1) )
 
 using namespace std;
 
 ROSMotionController::ROSMotionController(std::string name_node, const ros::NodeHandle& nh, ParserPacket* serial)
-: ROSController(name_node, nh, serial), positon_joint_left(0), positon_joint_right(0), alive_operation(false) {
+: ROSController(name_node, nh, serial), positon_joint_left(0), positon_joint_right(0),
+alive_operation(false), save_velocity(true) {
 
     string param_name_board = "Motion Control";
     if (name_board.compare(param_name_board) == 0) {
@@ -139,6 +141,13 @@ void ROSMotionController::addParameter(std::vector<information_packet_t>* list_s
         nh_.setParam(name_node_ + "/timer/stop", time);
         ROS_DEBUG("Sync parameter /timer/stop: set - %f s", time);
     }
+    //Set timer rate
+    double time_em = 3;
+    if (nh_.hasParam(name_node_ + "/timer/emergency")) {
+        nh_.getParam(name_node_ + "/timer/emergency", time_em);
+    } else {
+        nh_.setParam(name_node_ + "/timer/emergency", time_em);
+    }
     joint.header.frame_id = tf_joint_string_;
     joint.name.resize(2);
     joint.effort.resize(2);
@@ -228,6 +237,7 @@ void ROSMotionController::timerEvent(const ros::TimerEvent& event) {
 void ROSMotionController::timerStopCallback(const ros::TimerEvent& event) {
     ROS_DEBUG("Stop operation 2");
     enable_motor_t enable = false;
+    save_velocity = true;
     try {
         serial_->parserSendPacket(serial_->createDataPacket(ENABLE, HASHMAP_MOTION, (abstract_packet_t*) & enable), 3, boost::posix_time::millisec(200));
     } catch (exception &e) {
@@ -243,20 +253,43 @@ bool ROSMotionController::aliveOperation(const ros::TimerEvent& event, std::vect
             enable_motor_t enable = true;
             serial_->parserSendPacket(serial_->createDataPacket(ENABLE, HASHMAP_MOTION, (abstract_packet_t*) & enable), 3, boost::posix_time::millisec(200));
             alive_operation = true;
+            save_velocity = true;
+            rif_twist.linear.x = 0;
+            rif_twist.angular.z = 0;
         }
+        velocity_t velocity;
+        velocity.v = rif_twist.linear.x;
+        velocity.w = rif_twist.angular.z;
+        serial_->parserSendPacket(serial_->createDataPacket(VELOCITY, HASHMAP_MOTION, (abstract_packet_t*) & velocity), 3, boost::posix_time::millisec(200));
         return true;
     } else {
         if (alive_operation) {
             ROS_DEBUG("Stop operation 1");
+            if (save_velocity) {
+                //Save velocity
+                em_twist = rif_twist;
+                save_velocity = false;
+            }
             velocity_t velocity;
-            velocity.v = 0;
-            velocity.w = 0;
+            double time = 3, alive = 1;
+            nh_.getParam(name_node_ + "/timer/emergency", time);
+            nh_.getParam(name_node_ + "/timer/alive", alive);
+            em_twist.linear.x -= rif_twist.linear.x * alive / time;
+            em_twist.angular.z -= rif_twist.angular.z * alive / time;
+            if (SGN(rif_twist.linear.x) * em_twist.linear.x < 0) em_twist.linear.x = 0;
+            if (SGN(rif_twist.angular.z) * em_twist.angular.z < 0) em_twist.angular.z = 0;
+
+            velocity.v = em_twist.linear.x;
+            velocity.w = em_twist.angular.z;
             list_send->push_back(serial_->createDataPacket(VELOCITY, HASHMAP_MOTION, (abstract_packet_t*) & velocity));
-            double time = 1;
-            nh_.getParam(name_node_ + "/timer/stop", time);
-            delay_timer_.setPeriod(ros::Duration(time));
-            delay_timer_.start();
-            alive_operation = false;
+
+            if ((em_twist.linear.x == 0) && (em_twist.angular.z == 0)) {
+                double time = 1;
+                nh_.getParam(name_node_ + "/timer/stop", time);
+                delay_timer_.setPeriod(ros::Duration(time));
+                delay_timer_.start();
+                alive_operation = false;
+            }
         }
         if (list_send->size() != 0)
             return true;
@@ -297,6 +330,7 @@ void ROSMotionController::twistCallback(const geometry_msgs::Twist::ConstPtr &ms
     velocity_t velocity;
     velocity.v = msg->linear.x;
     velocity.w = msg->angular.z;
+    rif_twist = *msg.get();
     try {
         serial_->parserSendPacket(serial_->createDataPacket(VELOCITY, HASHMAP_MOTION, (abstract_packet_t*) & velocity), 3, boost::posix_time::millisec(200));
         timer_.start();

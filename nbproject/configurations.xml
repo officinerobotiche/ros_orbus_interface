@@ -87,6 +87,16 @@
       </item>
       <item path="src/async_serial/ParserPacket.cpp" ex="false" tool="1" flavor2="4">
         <ccTool>
+          <incDir>
+            <pElem>../../devel/include</pElem>
+            <pElem>include</pElem>
+            <pElem>/opt/ros/hydro/include</pElem>
+            <pElem>../../build/serial_bridge</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>ROS_BUILD_SHARED_LIBS=1</Elem>
+            <Elem>ROS_PACKAGE_NAME="serial_bridge"</Elem>
+          </preprocessorList>
         </ccTool>
       </item>
       <item path="src/drive_bridge/Keyboard.cpp" ex="false" tool="1" flavor2="4">

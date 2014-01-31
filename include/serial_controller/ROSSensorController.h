@@ -15,6 +15,7 @@
 const std::string default_laser_sharp_string = "laser_sharp";
 const std::string default_base_link_string = "base_link";
 const std::string laser_sharp_position_string = "sharp_pose";
+const std::string default_temperature_string = "temperature";
 const std::string default_sensor_string = "other_sensors";
 const std::string default_parameter_string = "parameter_sensor";
 
@@ -27,7 +28,7 @@ public:
     virtual ~ROSSensorController();
 private:
 
-    ros::Publisher pub_laser_sharp, pub_sensors;
+    ros::Publisher pub_laser_sharp, pub_temperature, pub_sensors;
     ros::Subscriber sub_enable;
     ros::ServiceServer srv_parameter;
     tf::TransformBroadcaster broadcaster;

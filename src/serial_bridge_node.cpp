@@ -12,7 +12,6 @@
 #include "serial_controller/ROSSensorController.h"
 
 using namespace std;
-bool arduino = false;
 
 typedef struct serial_port {
     string name;
@@ -71,9 +70,11 @@ int main(int argc, char **argv) {
         try {
             serial = new ParserPacket(serial_port1.name + number.str(), baud_rate);
             //If protocoll on arduino
-            if (arduino) {
+            if (nh.hasParam(name_node + "/info/arduino")) {
+                int arduino = 2;
+                nh.getParam(name_node + "/info/arduino", arduino);
                 ROS_INFO("Wait to start Arduino (2sec) ... ");
-                sleep(2);
+                sleep(arduino);
                 ROS_INFO("Serial Arduino started");
             }
             if (nh.hasParam(name_node + "/info/name_board")) {

@@ -7,6 +7,7 @@
 
 #include "serial_controller/ROSSensorController.h"
 #include <sensor_msgs/LaserScan.h>
+#include <sensor_msgs/Temperature.h>
 #include <serial_bridge/Sensor.h>
 
 #define NUMBER_PUB 10
@@ -30,6 +31,8 @@ ROSSensorController::ROSSensorController(std::string name_node, const ros::NodeH
 
     //Open Publisher
     pub_laser_sharp = nh_.advertise<sensor_msgs::LaserScan>(name_node + "/" + default_laser_sharp_string, NUMBER_PUB,
+            boost::bind(&ROSController::connectCallback, this, _1));
+    pub_temperature = nh_.advertise<sensor_msgs::Temperature>(name_node + "/" + default_temperature_string, NUMBER_PUB,
             boost::bind(&ROSController::connectCallback, this, _1));
     pub_sensors = nh_.advertise<serial_bridge::Sensor>(name_node + "/" + default_sensor_string, NUMBER_PUB,
             boost::bind(&ROSController::connectCallback, this, _1));
@@ -91,7 +94,7 @@ void ROSSensorController::updatePacket(std::vector<information_packet_t>* list_s
     } else {
         new_enable = false;
     }
-    if (pub_sensors.getNumSubscribers() >= 1) {
+    if (pub_sensors.getNumSubscribers() >= 1 || pub_temperature.getNumSubscribers() >= 1) {
         //        ROS_INFO("Sensor start");
         new_autosend.pkgs[counter++] = SENSOR;
     }
@@ -173,6 +176,7 @@ void ROSSensorController::addParameter(std::vector<information_packet_t>* list_s
 
 void ROSSensorController::sensorPacket(const unsigned char& command, const abstract_packet_t* packet) {
     serial_bridge::Sensor sensor;
+    sensor_msgs::Temperature temperature;
     switch (command) {
         case ENABLE_SENSOR:
             //            enable_sensor_ = packet->enable_sensor;
@@ -187,6 +191,12 @@ void ROSSensorController::sensorPacket(const unsigned char& command, const abstr
             sensor.temperature = packet->sensor.temperature;
             sensor.voltage = packet->sensor.voltage;
             pub_sensors.publish(sensor);
+            //Temperature
+            temperature.header.frame_id = base_link_string_;
+            temperature.header.stamp = ros::Time::now();
+            temperature.temperature = packet->sensor.temperature;
+            temperature.variance = 0.5;
+            pub_temperature.publish(temperature);
             break;
         case PARAMETER_SENSOR:
             nh_.setParam("/" + name_node_ + "/" + default_parameter_string + "/sharp/exp", packet->parameter_sensor.exp_sharp);

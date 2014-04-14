@@ -24,7 +24,7 @@ const std::string enable_autosend = "enable_autosend";
 
 class ROSSensorController : public ROSController {
 public:
-    ROSSensorController(std::string name_node, const ros::NodeHandle& nh, ParserPacket* serial);
+    ROSSensorController(const ros::NodeHandle& nh, ParserPacket* serial);
     virtual ~ROSSensorController();
 private:
 

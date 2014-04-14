@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configurationDescriptor version="90">
+<configurationDescriptor version="94">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <df root="." name="0">
       <df name="src">
@@ -72,18 +72,15 @@
             <pElem>../../build/serial_bridge</pElem>
           </incDir>
           <preprocessorList>
+            <Elem>ROSCONSOLE_BACKEND_LOG4CXX</Elem>
             <Elem>ROS_BUILD_SHARED_LIBS=1</Elem>
             <Elem>ROS_PACKAGE_NAME="serial_bridge"</Elem>
           </preprocessorList>
         </ccTool>
       </folder>
       <item path="src/async_serial/AsyncSerial.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool>
-        </ccTool>
       </item>
       <item path="src/async_serial/PacketSerial.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool>
-        </ccTool>
       </item>
       <item path="src/async_serial/ParserPacket.cpp" ex="false" tool="1" flavor2="4">
         <ccTool>
@@ -100,8 +97,6 @@
         </ccTool>
       </item>
       <item path="src/drive_bridge/Keyboard.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool>
-        </ccTool>
       </item>
       <item path="src/drive_bridge_node.cpp" ex="false" tool="1" flavor2="4">
         <ccTool>
@@ -126,6 +121,7 @@
             <pElem>../../build/serial_bridge</pElem>
           </incDir>
           <preprocessorList>
+            <Elem>ROSCONSOLE_BACKEND_LOG4CXX</Elem>
             <Elem>ROS_BUILD_SHARED_LIBS=1</Elem>
             <Elem>ROS_PACKAGE_NAME="serial_bridge"</Elem>
           </preprocessorList>
@@ -135,22 +131,16 @@
             ex="false"
             tool="1"
             flavor2="4">
-        <ccTool>
-        </ccTool>
       </item>
       <item path="src/serial_controller/ROSMotionController.cpp"
             ex="false"
             tool="1"
             flavor2="4">
-        <ccTool>
-        </ccTool>
       </item>
       <item path="src/serial_controller/ROSSensorController.cpp"
             ex="false"
             tool="1"
             flavor2="4">
-        <ccTool>
-        </ccTool>
       </item>
     </conf>
   </confs>

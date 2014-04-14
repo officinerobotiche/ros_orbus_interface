@@ -12,13 +12,13 @@
 
 using namespace std;
 
-ROSMotionController::ROSMotionController(std::string name_node, const ros::NodeHandle& nh, ParserPacket* serial)
-: ROSController(name_node, nh, serial), positon_joint_left(0), positon_joint_right(0),
+ROSMotionController::ROSMotionController(const ros::NodeHandle& nh, ParserPacket* serial)
+: ROSController(nh, serial), positon_joint_left(0), positon_joint_right(0),
 alive_operation(false), save_velocity(true) {
 
     string param_name_board = "Motion Control";
     if (name_board.compare(param_name_board) == 0) {
-        nh_.setParam(name_node + "/info/name_board", name_board);
+        nh_.setParam("info/name_board", name_board);
     } else {
         throw (controller_exception("Other board: " + name_board));
     }
@@ -31,18 +31,18 @@ alive_operation(false), save_velocity(true) {
 
     //Open Publisher
     //- Command receive
-    pub_pose = nh_.advertise<serial_bridge::Pose>(name_node + "/pose", NUMBER_PUB,
+    pub_pose = nh_.advertise<serial_bridge::Pose>("pose", NUMBER_PUB,
             boost::bind(&ROSController::connectCallback, this, _1));
-    pub_enable = nh_.advertise<serial_bridge::Enable>(name_node + "/enable", NUMBER_PUB,
+    pub_enable = nh_.advertise<serial_bridge::Enable>("enable", NUMBER_PUB,
             boost::bind(&ROSController::connectCallback, this, _1));
-    pub_motor_left = nh_.advertise<serial_bridge::Motor>(name_node + "/motor/" + left_string, NUMBER_PUB,
+    pub_motor_left = nh_.advertise<serial_bridge::Motor>("motor/" + left_string, NUMBER_PUB,
             boost::bind(&ROSController::connectCallback, this, _1));
-    pub_motor_right = nh_.advertise<serial_bridge::Motor>(name_node + "/motor/" + right_string, NUMBER_PUB,
+    pub_motor_right = nh_.advertise<serial_bridge::Motor>("motor/" + right_string, NUMBER_PUB,
             boost::bind(&ROSController::connectCallback, this, _1));
     //-- Conventional (Using TF, NAV)
-    pub_twist = nh_.advertise<geometry_msgs::Twist>(name_node + "/velocity", NUMBER_PUB,
+    pub_twist = nh_.advertise<geometry_msgs::Twist>("velocity", NUMBER_PUB,
             boost::bind(&ROSController::connectCallback, this, _1));
-    pub_odom = nh_.advertise<nav_msgs::Odometry>(name_node + "/odometry", NUMBER_PUB,
+    pub_odom = nh_.advertise<nav_msgs::Odometry>("odometry", NUMBER_PUB,
             boost::bind(&ROSController::connectCallback, this, _1));
     //JointState position
     pub_joint = nh_.advertise<sensor_msgs::JointState>(joint_string, 1,
@@ -50,16 +50,16 @@ alive_operation(false), save_velocity(true) {
 
     //Open Subscriber
     //- Command
-    sub_pose = nh_.subscribe(name_node + "/" + command_string + "/pose", 1, &ROSMotionController::poseCallback, this);
-    sub_enable = nh_.subscribe(name_node + "/" + command_string + "/enable", 1, &ROSMotionController::enableCallback, this);
+    sub_pose = nh_.subscribe(command_string + "pose", 1, &ROSMotionController::poseCallback, this);
+    sub_enable = nh_.subscribe(command_string + "enable", 1, &ROSMotionController::enableCallback, this);
     //-- Conventional (Using TF, NAV)
-    sub_pose_estimate = nh_.subscribe(name_node + "/" + command_string + "/odometry", 1, &ROSMotionController::poseTFCallback, this);
-    sub_twist = nh_.subscribe(name_node + "/" + command_string + "/velocity", 1, &ROSMotionController::twistCallback, this);
+    sub_pose_estimate = nh_.subscribe(command_string + "odometry", 1, &ROSMotionController::poseTFCallback, this);
+    sub_twist = nh_.subscribe(command_string + "velocity", 1, &ROSMotionController::twistCallback, this);
 
     //Open Service
-    srv_pid = nh_.advertiseService(name_node + "/pid", &ROSMotionController::pidServiceCallback, this);
-    srv_parameter = nh_.advertiseService(name_node + "/parameter", &ROSMotionController::parameterServiceCallback, this);
-    srv_constraint = nh_.advertiseService(name_node + "/constraint", &ROSMotionController::constraintServiceCallback, this);
+    srv_pid = nh_.advertiseService("pid", &ROSMotionController::pidServiceCallback, this);
+    srv_parameter = nh_.advertiseService("parameter", &ROSMotionController::parameterServiceCallback, this);
+    srv_constraint = nh_.advertiseService("constraint", &ROSMotionController::constraintServiceCallback, this);
 
     //Delay timer stop operation
     delay_timer_ = nh_.createTimer(ros::Duration(10), &ROSMotionController::timerStopCallback, this, true, false);
@@ -76,77 +76,78 @@ ROSMotionController::~ROSMotionController() {
 
 void ROSMotionController::addParameter(std::vector<information_packet_t>* list_send) {
     //Constraint
-    if (nh_.hasParam(name_node_ + "/" + joint_string + "/constraint")) {
-        ROS_DEBUG("Sync parameter /constraint: ROS -> ROBOT");
+    ROS_INFO("%s/constraint",joint_string.c_str());
+    if (nh_.hasParam(joint_string + "/constraint")) {
+        ROS_INFO("Sync parameter constraint: ROS -> ROBOT");
         constraint_t constraint = get_constraint();
         list_send->push_back(serial_->createDataPacket(CONSTRAINT, HASHMAP_MOTION, (abstract_packet_t*) & constraint));
     } else {
-        ROS_DEBUG("Sync parameter /constraint: ROBOT -> ROS");
+        ROS_INFO("Sync parameter constraint: ROBOT -> ROS");
         list_send->push_back(serial_->createPacket(CONSTRAINT, REQUEST, HASHMAP_MOTION));
     }
     //Load PID/Left
-    if (nh_.hasParam(name_node_ + +"/pid/" + left_string)) {
-        ROS_DEBUG("Sync parameter /pid/%s: ROS -> ROBOT", left_string.c_str());
+    if (nh_.hasParam("pid/" + left_string)) {
+        ROS_INFO("Sync parameter pid/%s: ROS -> ROBOT", left_string.c_str());
         pid_control_t pid_l = get_pid(left_string);
         list_send->push_back(serial_->createDataPacket(PID_CONTROL_L, HASHMAP_MOTION, (abstract_packet_t*) & pid_l));
     } else {
-        ROS_DEBUG("Sync parameter /pid/%s: ROBOT -> ROS", left_string.c_str());
+        ROS_INFO("Sync parameter pid/%s: ROBOT -> ROS", left_string.c_str());
         list_send->push_back(serial_->createPacket(PID_CONTROL_L, REQUEST, HASHMAP_MOTION));
     }
     //Load PID/Right
-    if (nh_.hasParam(name_node_ + +"/pid/" + right_string)) {
-        ROS_DEBUG("Sync parameter /pid/%s: ROS -> ROBOT", right_string.c_str());
+    if (nh_.hasParam("pid/" + right_string)) {
+        ROS_INFO("Sync parameter pid/%s: ROS -> ROBOT", right_string.c_str());
         pid_control_t pid_r = get_pid(right_string);
         list_send->push_back(serial_->createDataPacket(PID_CONTROL_R, HASHMAP_MOTION, (abstract_packet_t*) & pid_r));
     } else {
-        ROS_DEBUG("Sync parameter /pid/%s: ROBOT -> ROS", right_string.c_str());
+        ROS_INFO("Sync parameter pid/%s: ROBOT -> ROS", right_string.c_str());
         list_send->push_back(serial_->createPacket(PID_CONTROL_R, REQUEST, HASHMAP_MOTION));
     }
     //Parameter motors
-    if (nh_.hasParam(name_node_ + "/structure")) {
-        ROS_DEBUG("Sync parameter /structure: ROS -> ROBOT");
+    if (nh_.hasParam("structure")) {
+        ROS_INFO("Sync parameter structure: ROS -> ROBOT");
         parameter_motors_t parameter_motors = get_parameter();
         list_send->push_back(serial_->createDataPacket(PARAMETER_MOTORS, HASHMAP_MOTION, (abstract_packet_t*) & parameter_motors));
     } else {
-        ROS_DEBUG("Sync parameter /structure: ROBOT -> ROS");
+        ROS_INFO("Sync parameter structure: ROBOT -> ROS");
         list_send->push_back(serial_->createPacket(PARAMETER_MOTORS, REQUEST, HASHMAP_MOTION));
     }
     //Names TF
-    if (nh_.hasParam(name_node_ + "/" + tf_string)) {
-        ROS_DEBUG("Sync parameter %s: load", tf_string.c_str());
-        nh_.param<std::string>("/" + name_node_ + "/" + tf_string + "/" + odometry_string, tf_odometry_string_, tf_odometry_string_);
-        nh_.param<std::string>("/" + name_node_ + "/" + tf_string + "/" + base_link_string, tf_base_link_string_, tf_base_link_string_);
-        nh_.param<std::string>("/" + name_node_ + "/" + tf_string + "/" + joint_string, tf_joint_string_, tf_joint_string_);
+    if (nh_.hasParam(tf_string)) {
+        ROS_INFO("Sync parameter %s: load", tf_string.c_str());
+        nh_.param<std::string>(tf_string + "/" + odometry_string, tf_odometry_string_, tf_odometry_string_);
+        nh_.param<std::string>(tf_string + "/" + base_link_string, tf_base_link_string_, tf_base_link_string_);
+        nh_.param<std::string>(tf_string + "/" + joint_string, tf_joint_string_, tf_joint_string_);
     } else {
-        ROS_DEBUG("Sync parameter %s: set", tf_string.c_str());
+        ROS_INFO("Sync parameter %s: set", tf_string.c_str());
         tf_odometry_string_ = odometry_string;
         tf_base_link_string_ = base_link_string;
         tf_joint_string_ = joint_string;
-        nh_.setParam("/" + name_node_ + "/" + tf_string + "/" + odometry_string, tf_odometry_string_);
-        nh_.setParam("/" + name_node_ + "/" + tf_string + "/" + base_link_string, tf_base_link_string_);
-        nh_.setParam("/" + name_node_ + "/" + tf_string + "/" + joint_string, tf_joint_string_);
+        nh_.setParam(tf_string + "/" + odometry_string, tf_odometry_string_);
+        nh_.setParam(tf_string + "/" + base_link_string, tf_base_link_string_);
+        nh_.setParam(tf_string + "/" + joint_string, tf_joint_string_);
     }
     //Names ele
-    if (!nh_.hasParam(name_node_ + "/" + joint_string + "/back_emf")) {
-        ROS_DEBUG("Sync parameter %s/back_emf: set", joint_string.c_str());
-        nh_.setParam("/" + name_node_ + "/" + joint_string + "/back_emf/" + left_string, 1.0);
-        nh_.setParam("/" + name_node_ + "/" + joint_string + "/back_emf/" + right_string, 1.0);
+    if (!nh_.hasParam(joint_string + "/back_emf")) {
+        ROS_INFO("Sync parameter %s/back_emf: set", joint_string.c_str());
+        nh_.setParam(joint_string + "/back_emf/" + left_string, 1.0);
+        nh_.setParam(joint_string + "/back_emf/" + right_string, 1.0);
     }
     //Set timer rate
     double time = 1;
-    if (nh_.hasParam(name_node_ + "/timer/stop")) {
-        nh_.getParam(name_node_ + "/timer/stop", time);
-        ROS_DEBUG("Sync parameter /timer/stop: load - %f s", time);
+    if (nh_.hasParam("timer/stop")) {
+        nh_.getParam("timer/stop", time);
+        ROS_INFO("Sync parameter /timer/stop: load - %f s", time);
     } else {
-        nh_.setParam(name_node_ + "/timer/stop", time);
-        ROS_DEBUG("Sync parameter /timer/stop: set - %f s", time);
+        nh_.setParam("timer/stop", time);
+        ROS_INFO("Sync parameter /timer/stop: set - %f s", time);
     }
     //Set timer rate
     double time_em = 3;
-    if (nh_.hasParam(name_node_ + "/timer/emergency")) {
-        nh_.getParam(name_node_ + "/timer/emergency", time_em);
+    if (nh_.hasParam("timer/emergency")) {
+        nh_.getParam("timer/emergency", time_em);
     } else {
-        nh_.setParam(name_node_ + "/timer/emergency", time_em);
+        nh_.setParam("timer/emergency", time_em);
     }
     joint.header.frame_id = tf_joint_string_;
     joint.name.resize(2);
@@ -160,29 +161,29 @@ void ROSMotionController::addParameter(std::vector<information_packet_t>* list_s
 void ROSMotionController::motionPacket(const unsigned char& command, const abstract_packet_t* packet) {
     switch (command) {
         case CONSTRAINT:
-            nh_.setParam(name_node_ + "/" + joint_string + "/constraint/" + right_string, packet->constraint.max_right);
-            nh_.setParam(name_node_ + "/" + joint_string + "/constraint/" + left_string, packet->constraint.max_left);
+            nh_.setParam(joint_string + "/constraint/" + right_string, packet->constraint.max_right);
+            nh_.setParam(joint_string + "/constraint/" + left_string, packet->constraint.max_left);
             break;
         case PARAMETER_MOTORS:
-            nh_.setParam(name_node_ + "/structure/" + wheelbase_string, packet->parameter_motors.wheelbase);
-            nh_.setParam(name_node_ + "/structure/" + radius_string + "/" + right_string, packet->parameter_motors.radius_r);
-            nh_.setParam(name_node_ + "/structure/" + radius_string + "/" + left_string, packet->parameter_motors.radius_l);
-            nh_.setParam(name_node_ + "/" + joint_string + "/k_vel/" + right_string, packet->parameter_motors.k_vel_r);
-            nh_.setParam(name_node_ + "/" + joint_string + "/k_vel/" + left_string, packet->parameter_motors.k_vel_l);
-            nh_.setParam(name_node_ + "/" + joint_string + "/k_ang/" + right_string, packet->parameter_motors.k_ang_r);
-            nh_.setParam(name_node_ + "/" + joint_string + "/k_ang/" + left_string, packet->parameter_motors.k_ang_l);
-            nh_.setParam(name_node_ + "/" + joint_string + "/pwm_bit", packet->parameter_motors.pwm_step);
-            nh_.setParam(name_node_ + "/odo_mis_step", packet->parameter_motors.sp_min);
+            nh_.setParam("structure/" + wheelbase_string, packet->parameter_motors.wheelbase);
+            nh_.setParam("structure/" + radius_string + "/" + right_string, packet->parameter_motors.radius_r);
+            nh_.setParam("structure/" + radius_string + "/" + left_string, packet->parameter_motors.radius_l);
+            nh_.setParam(joint_string + "/k_vel/" + right_string, packet->parameter_motors.k_vel_r);
+            nh_.setParam(joint_string + "/k_vel/" + left_string, packet->parameter_motors.k_vel_l);
+            nh_.setParam(joint_string + "/k_ang/" + right_string, packet->parameter_motors.k_ang_r);
+            nh_.setParam(joint_string + "/k_ang/" + left_string, packet->parameter_motors.k_ang_l);
+            nh_.setParam(joint_string + "/pwm_bit", packet->parameter_motors.pwm_step);
+            nh_.setParam("odo_mis_step", packet->parameter_motors.sp_min);
             pwm_motor = packet->parameter_motors.pwm_step;
             break;
         case PID_CONTROL_L:
-            name_pid = name_node_ + "/pid/" + left_string + "/";
+            name_pid = "pid/" + left_string + "/";
             nh_.setParam(name_pid + "P", packet->pid.kp);
             nh_.setParam(name_pid + "I", packet->pid.ki);
             nh_.setParam(name_pid + "D", packet->pid.kd);
             break;
         case PID_CONTROL_R:
-            name_pid = "/" + name_node_ + "/pid/" + right_string + "/";
+            name_pid = "pid/" + right_string + "/";
             nh_.setParam(name_pid + "P", packet->pid.kp);
             nh_.setParam(name_pid + "I", packet->pid.ki);
             nh_.setParam(name_pid + "D", packet->pid.kd);
@@ -272,8 +273,8 @@ bool ROSMotionController::aliveOperation(const ros::TimerEvent& event, std::vect
             }
             velocity_t velocity;
             double time = 3, alive = 1;
-            nh_.getParam(name_node_ + "/timer/emergency", time);
-            nh_.getParam(name_node_ + "/timer/alive", alive);
+            nh_.getParam("timer/emergency", time);
+            nh_.getParam("timer/alive", alive);
             em_twist.linear.x -= rif_twist.linear.x * alive / time;
             em_twist.angular.z -= rif_twist.angular.z * alive / time;
             if (SGN(rif_twist.linear.x) * em_twist.linear.x < 0) em_twist.linear.x = 0;
@@ -285,7 +286,7 @@ bool ROSMotionController::aliveOperation(const ros::TimerEvent& event, std::vect
 
             if ((em_twist.linear.x == 0) && (em_twist.angular.z == 0)) {
                 double time = 1;
-                nh_.getParam(name_node_ + "/timer/stop", time);
+                nh_.getParam("timer/stop", time);
                 delay_timer_.setPeriod(ros::Duration(time));
                 delay_timer_.start();
                 alive_operation = false;
@@ -420,8 +421,8 @@ void ROSMotionController::sendJointState(serial_bridge::Motor* motor_left, seria
     ros::Time now = ros::Time::now();
     double rate = (now - old_time).toSec();
     old_time = now;
-    nh_.getParam(name_node_ + "/" + joint_string + "/back_emf/" + left_string, k_ele_left);
-    nh_.getParam(name_node_ + "/" + joint_string + "/back_emf/" + right_string, k_ele_right);
+    nh_.getParam(joint_string + "/back_emf/" + left_string, k_ele_left);
+    nh_.getParam(joint_string + "/back_emf/" + right_string, k_ele_right);
 
     joint.header.stamp = now;
     joint.velocity[0] = motor_left->measure;
@@ -438,7 +439,7 @@ void ROSMotionController::sendJointState(serial_bridge::Motor* motor_left, seria
 pid_control_t ROSMotionController::get_pid(std::string name) {
     pid_control_t pid;
     double temp;
-    std::string name_pid = name_node_ + "/pid/" + name + "/";
+    std::string name_pid = "pid/" + name + "/";
     nh_.getParam(name_pid + "P", temp);
     pid.kp = temp;
     nh_.getParam(name_pid + "I", temp);
@@ -453,24 +454,25 @@ parameter_motors_t ROSMotionController::get_parameter() {
     double temp;
     int temp_int;
 
-    nh_.getParam(name_node_ + "/structure/" + wheelbase_string, temp);
+    nh_.getParam("structure/" + wheelbase_string, temp);
     parameter.wheelbase = temp;
-    nh_.getParam(name_node_ + "/structure/" + radius_string + "/" + right_string, temp);
+    nh_.getParam("structure/" + radius_string + "/" + right_string, temp);
     parameter.radius_r = temp;
-    nh_.getParam(name_node_ + "/structure/" + radius_string + "/" + left_string, temp);
+    nh_.getParam("structure/" + radius_string + "/" + left_string, temp);
     parameter.radius_l = temp;
-    nh_.getParam(name_node_ + "/" + joint_string + "/k_vel/" + right_string, temp);
+    nh_.getParam(joint_string + "/k_vel/" + right_string, temp);
     parameter.k_vel_r = temp;
-    nh_.getParam(name_node_ + "/" + joint_string + "/k_vel/" + left_string, temp);
+    nh_.getParam(joint_string + "/k_vel/" + left_string, temp);
     parameter.k_vel_l = temp;
-    nh_.getParam(name_node_ + "/" + joint_string + "/k_ang/" + right_string, temp);
+    nh_.getParam(joint_string + "/k_ang/" + right_string, temp);
     parameter.k_ang_r = temp;
-    nh_.getParam(name_node_ + "/" + joint_string + "/k_ang/" + left_string, temp);
+    nh_.getParam(joint_string + "/k_ang/" + left_string, temp);
     parameter.k_ang_l = temp;
-    nh_.getParam(name_node_ + "/odo_mis_step", temp);
+    nh_.getParam("odo_mis_step", temp);
     parameter.sp_min = temp;
-    nh_.getParam(name_node_ + "/" + joint_string + "/pwm_bit", temp_int);
+    nh_.getParam(joint_string + "/pwm_bit", temp_int);
     parameter.pwm_step = temp_int;
+    pwm_motor = parameter.pwm_step;
     return parameter;
 }
 
@@ -478,9 +480,9 @@ constraint_t ROSMotionController::get_constraint() {
     constraint_t constraint;
     double temp;
 
-    nh_.getParam(name_node_ + "/" + joint_string + "/constraint/" + right_string, temp);
+    nh_.getParam(joint_string + "/constraint/" + right_string, temp);
     constraint.max_right = temp;
-    nh_.getParam(name_node_ + "/" + joint_string + "/constraint/" + left_string, temp);
+    nh_.getParam(joint_string + "/constraint/" + left_string, temp);
     constraint.max_left = temp;
     return constraint;
 }

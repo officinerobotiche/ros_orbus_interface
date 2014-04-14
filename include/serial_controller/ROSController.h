@@ -34,7 +34,7 @@ public:
 
 class ROSController {
 public:
-    ROSController(std::string name_node, const ros::NodeHandle& nh, ParserPacket* serial);
+    ROSController(const ros::NodeHandle& nh, ParserPacket* serial);
 
     virtual ~ROSController();
 
@@ -72,7 +72,6 @@ public:
 
 protected:
     //Initialization object
-    std::string name_node_; //Name for topics, params, services
     ros::NodeHandle nh_; //NameSpace for bridge controller
     ParserPacket* serial_; //Serial object to comunicate with PIC device
     ros::Timer timer_;

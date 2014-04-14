@@ -28,7 +28,7 @@ const std::string radius_string = "radius";
 
 class ROSMotionController : public ROSController {
 public:
-    ROSMotionController(std::string name_node, const ros::NodeHandle& nh, ParserPacket* serial);
+    ROSMotionController(const ros::NodeHandle& nh, ParserPacket* serial);
     virtual ~ROSMotionController();
 
 private:

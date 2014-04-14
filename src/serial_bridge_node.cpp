@@ -51,13 +51,12 @@ int main(int argc, char **argv) {
     }
 
     ros::NodeHandle nh;
-    string name_node = ros::this_node::getName();
 
     int baud_rate = 115200;
-    if (nh.hasParam(name_node + "/info/baud_rate")) {
-        nh.getParam(name_node + "/info/baud_rate", baud_rate);
+    if (nh.hasParam("info/baud_rate")) {
+        nh.getParam("info/baud_rate", baud_rate);
     } else {
-        nh.setParam(name_node + "/info/baud_rate", baud_rate);
+        nh.setParam("info/baud_rate", baud_rate);
     }
 
     ParserPacket* serial;
@@ -70,24 +69,24 @@ int main(int argc, char **argv) {
         try {
             serial = new ParserPacket(serial_port1.name + number.str(), baud_rate);
             //If protocoll on arduino
-            if (nh.hasParam(name_node + "/info/arduino")) {
+            if (nh.hasParam("info/arduino")) {
                 int arduino = 2;
-                nh.getParam(name_node + "/info/arduino", arduino);
-                ROS_INFO("Wait to start Arduino (2sec) ... ");
+                nh.getParam("info/arduino", arduino);
+                ROS_INFO("Wait to start Arduino (%d sec) ... ",arduino);
                 sleep(arduino);
                 ROS_INFO("Serial Arduino started");
             }
-            if (nh.hasParam(name_node + "/info/name_board")) {
+            if (nh.hasParam("info/name_board")) {
                 string param_name_board;
-                nh.getParam(name_node + "/info/name_board", param_name_board);
+                nh.getParam("info/name_board", param_name_board);
                 ROS_INFO("Find Controller for %s", param_name_board.c_str());
                 if (param_name_board.compare("Motion Control") == 0)
-                    controller = new ROSMotionController(name_node, nh, serial);
+                    controller = new ROSMotionController(nh, serial);
                 if (param_name_board.compare("Navigation Board") == 0)
-                    controller = new ROSSensorController(name_node, nh, serial);
+                    controller = new ROSSensorController(nh, serial);
             } else {
                 ROS_INFO("Standard Controller");
-                controller = new ROSController(name_node, nh, serial);
+                controller = new ROSController(nh, serial);
                 ROS_INFO("Founded: %s", controller->getNameBoard().c_str());
             }
             break;
@@ -98,6 +97,7 @@ int main(int argc, char **argv) {
     }
     // Load parameter
     controller->loadParameter();
+    string name_node = ros::this_node::getName();
     ROS_INFO("Started %s", name_node.c_str());
 
     ros::spin();

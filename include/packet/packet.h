@@ -122,6 +122,7 @@ typedef union buffer_packet {
 #define NAME_BOARD 'n'
 #define VERSION_CODE 'v'
 #define AUTHOR_CODE 'a'
+#define TYPE_BOARD 't'
 
 #define HASHMAP_DEFAULT 'D'
 static unsigned int hashmap_default[10];

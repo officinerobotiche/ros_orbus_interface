@@ -16,11 +16,11 @@ ROSMotionController::ROSMotionController(const ros::NodeHandle& nh, ParserPacket
 : ROSController(nh, serial), positon_joint_left(0), positon_joint_right(0),
 alive_operation(false), save_velocity(true) {
 
-    string param_name_board = "Motion Control";
-    if (name_board.compare(param_name_board) == 0) {
-        nh_.setParam("info/name_board", name_board);
+    string param_type_board = "Motor Control";
+    if (type_board.compare(param_type_board) == 0) {
+        nh_.setParam("info/type_board", type_board);
     } else {
-        throw (controller_exception("Other board: " + name_board));
+        throw (controller_exception("Other board: " + type_board));
     }
 
     serial->addCallback(&ROSMotionController::motionPacket, this, HASHMAP_MOTION);

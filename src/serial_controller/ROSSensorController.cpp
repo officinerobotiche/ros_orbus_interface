@@ -17,11 +17,11 @@ using namespace std;
 ROSSensorController::ROSSensorController(const ros::NodeHandle& nh, ParserPacket* serial)
 : ROSController(nh, serial), dynamic_update(false) {
 
-    string param_name_board = "Navigation Board";
-    if (name_board.compare(param_name_board) == 0) {
-        nh_.setParam("info/name_board", name_board);
+    string param_type_board = "Sensor Board";
+    if (type_board.compare(param_type_board) == 0) {
+        nh_.setParam("info/type_board", type_board);
     } else {
-        throw (controller_exception("Other board: " + name_board));
+        throw (controller_exception("Other board: " + type_board));
     }
 
     serial->addCallback(&ROSSensorController::sensorPacket, this, HASHMAP_NAVIGATION);

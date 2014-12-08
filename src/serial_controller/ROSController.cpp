@@ -12,7 +12,7 @@ using namespace std;
 #define NUMBER_PUB 10
 
 ROSController::ROSController(const ros::NodeHandle& nh, ParserPacket* serial)
-: nh_(nh), serial_(serial), init_number_process(false), name_board("Nothing"), reset_time_alive(0) {
+: nh_(nh), serial_(serial), init_number_process(false), name_board("Nothing"), type_board("Nothing"), reset_time_alive(0) {
     serial_->addCallback(&ROSController::defaultPacket, this);
     serial_->addErrorCallback(&ROSController::errorPacket, this);
 
@@ -34,11 +34,12 @@ ROSController::ROSController(const ros::NodeHandle& nh, ParserPacket* serial)
     list_packet.push_back(encodeServices(AUTHOR_CODE));
     list_packet.push_back(encodeServices(NAME_BOARD));
     list_packet.push_back(encodeServices(DATE_CODE));
+    list_packet.push_back(encodeServices(TYPE_BOARD));
     serial->parserSendPacket(list_packet);
 
-    if (!nh.hasParam("info/name_board"))
+    if (!nh.hasParam("info/type_board"))
         if (name_board.compare("Nothing") != 0)
-            nh_.setParam("info/name_board", name_board);
+            nh_.setParam("info/type_board", type_board);
 }
 
 ROSController::~ROSController() {
@@ -356,6 +357,10 @@ void ROSController::decodeServices(const char command, const unsigned char* buff
             this->compiled.clear();
             this->compiled.append((char*) buffer, SERVICE_BUFF);
             break;
+        case TYPE_BOARD:
+            this->type_board.clear();
+            this->type_board.append((char*) buffer);
+            break;
     }
 }
 
@@ -390,12 +395,20 @@ bool ROSController::service_Callback(serial_bridge::Service::Request &req, seria
         msg.name = "reset";
     } else if (req.name.compare("version") == 0) {
         string information_string = "Name Board: " + name_board + " " + version + "\n" +
+                "Type Board: " + type_board + "\n" +
                 name_author + " - Build in: " + compiled + "\n";
+        msg.name = information_string;
+    } else if(req.name.compare("type") == 0) {
+        string information_string = "Type board: " + type_board + "\n";
         msg.name = information_string;
     } else if (req.name.compare("serial_info") == 0) {
         msg.name = getBoardSerialError();
     } else {
-        msg.name = "help";
+        msg.name = "HELP, commands: \n" +
+                "version\n" +
+                "type\n" + 
+                "serial_info\n" + 
+                "help";
     }
     return true;
 }

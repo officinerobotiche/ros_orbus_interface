@@ -75,7 +75,7 @@ protected:
     ros::NodeHandle nh_; //NameSpace for bridge controller
     ParserPacket* serial_; //Serial object to comunicate with PIC device
     ros::Timer timer_;
-    std::string name_board, version, name_author, compiled;
+    std::string name_board, version, name_author, compiled, type_board;
 private:
 
     typedef boost::function<void (std::vector<information_packet_t>*) > callback_add_packet_t;

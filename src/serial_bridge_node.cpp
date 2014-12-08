@@ -76,14 +76,16 @@ int main(int argc, char **argv) {
                 sleep(arduino);
                 ROS_INFO("Serial Arduino started");
             }
-            if (nh.hasParam("info/name_board")) {
-                string param_name_board;
-                nh.getParam("info/name_board", param_name_board);
-                ROS_INFO("Find Controller for %s", param_name_board.c_str());
-                if (param_name_board.compare("Motion Control") == 0)
+            if (nh.hasParam("info/type_board")) {
+                string param_type_board;
+                nh.getParam("info/type_board", param_type_board);
+                ROS_INFO("Find Controller for %s", param_type_board.c_str());
+                if (param_type_board.compare("Motor Control") == 0)
                     controller = new ROSMotionController(nh, serial);
-                if (param_name_board.compare("Navigation Board") == 0)
+                else if (param_type_board.compare("Sensor Board") == 0)
                     controller = new ROSSensorController(nh, serial);
+                else 
+                    controller = new ROSController(nh, serial);
             } else {
                 ROS_INFO("Standard Controller");
                 controller = new ROSController(nh, serial);

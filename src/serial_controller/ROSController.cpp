@@ -404,11 +404,7 @@ bool ROSController::service_Callback(serial_bridge::Service::Request &req, seria
     } else if (req.name.compare("serial_info") == 0) {
         msg.name = getBoardSerialError();
     } else {
-        msg.name = "HELP, commands: \n" +
-                "version\n" +
-                "type\n" + 
-                "serial_info\n" + 
-                "help";
+        msg.name = "HELP, commands: \nversion\ntype\nserial_info\nhelp";
     }
     return true;
 }

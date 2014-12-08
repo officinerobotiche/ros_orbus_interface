@@ -38,7 +38,7 @@ ROSController::ROSController(const ros::NodeHandle& nh, ParserPacket* serial)
     serial->parserSendPacket(list_packet);
 
     if (!nh.hasParam("info/type_board"))
-        if (name_board.compare("Nothing") != 0)
+        if (type_board.compare("Nothing") != 0)
             nh_.setParam("info/type_board", type_board);
 }
 
@@ -158,6 +158,10 @@ void ROSController::clearTimerEvent() {
 
 std::string ROSController::getNameBoard() {
     return name_board;
+}
+
+std::string ROSController::getTypeBoard() {
+    return type_board;
 }
 
 std::vector<information_packet_t> ROSController::updatePacket() {

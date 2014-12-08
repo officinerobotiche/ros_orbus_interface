@@ -41,6 +41,7 @@ public:
     void loadParameter();
     void connectCallback(const ros::SingleSubscriberPublisher& pub);
     std::string getNameBoard();
+    std::string getTypeBoard();
 
     void addVectorPacketRequest(const boost::function<void (std::vector<information_packet_t>*) >& callback);
 

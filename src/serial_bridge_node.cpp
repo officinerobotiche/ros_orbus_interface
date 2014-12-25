@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
             } else {
                 ROS_INFO("Standard Controller");
                 controller = new ROSController(nh, serial);
-                ROS_INFO("Founded: %s", controller->getTypeBoard().c_str());
+                ROS_INFO("Found: %s", controller->getTypeBoard().c_str());
             }
             break;
         } catch (exception &e) {

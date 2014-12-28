@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(serial_bridge)
 
+set(ROS_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Debug)
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -16,6 +19,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system thread)
 
+find_package( PkgConfig REQUIRED )
+pkg_check_modules ( ncurses++ REQUIRED ncurses++ )
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -100,9 +105,14 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
+set(teleop_INC_DIRS
+    src/keybrd_teleop/include/
+)
+
 include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  ${teleop_INC_DIRS}
 )
 
 link_directories(${catkin_LIBRARY_DIRS})
@@ -127,6 +137,11 @@ set(drive_teleop_SRC
     src/drive_bridge/Keyboard.cpp
 )
 
+set(keybrd_teleop_SRC
+    src/keybrd_teleop_node.cpp
+    src/keybrd_teleop/src/teleop_key.cpp
+)
+
 ## Declare a cpp executable
 add_executable(serial_bridge_node ${serial_SRC})
 target_link_libraries(serial_bridge_node ${catkin_LIBRARIES} ${Boost_LIBRARIES})
@@ -135,6 +150,10 @@ add_dependencies(serial_bridge_node serial_bridge_gencpp)
 add_executable(drive_bridge_node ${drive_teleop_SRC})
 target_link_libraries(drive_bridge_node ${catkin_LIBRARIES})
 add_dependencies(drive_bridge_node serial_bridge_gencpp)
+
+add_executable(keybrd_teleop_key_node ${keybrd_teleop_SRC})
+target_link_libraries(keybrd_teleop_key_node ${catkin_LIBRARIES} ncurses)
+add_dependencies(keybrd_teleop_key_node	${PROJECT_NAME}_generate_messages_cpp)
 
 #############
 ## Install ##

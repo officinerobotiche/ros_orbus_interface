@@ -64,7 +64,6 @@ alive_operation(false), save_velocity(true) {
 
     //Delay timer stop operation
     delay_timer_ = nh_.createTimer(ros::Duration(10), &ROSMotionController::timerStopCallback, this, true, false);
-
 }
 
 ROSMotionController::~ROSMotionController() {

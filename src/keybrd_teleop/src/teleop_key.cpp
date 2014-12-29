@@ -9,12 +9,12 @@ using namespace std;
 TeleopKeybrd::TeleopKeybrd(const ros::NodeHandle& nh, std::string robot, std::string command, std::string velocity, std::string enable):
 mLinear(0.0),
 mAngular(0.0),
-mMaxLin(1.0),
-mMaxAng(3.14),
+mMaxLin(1.5),
+mMaxAng(6.28),
 mLinStep(0.05),
-mAngStep(0.314),
+mAngStep(0.157),
 mSpeedRatio(1.0),
-mKeyTimeout(100),
+mKeyTimeout(50),
 mLocked(false)
 {
 	mVelPub = m_nh.advertise<geometry_msgs::Twist>("/cmd_vel", 10);

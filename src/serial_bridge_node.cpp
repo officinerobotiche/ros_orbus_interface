@@ -27,6 +27,9 @@ serial_port_t GetSerialPort(char *c_port) {
     return serial_port;
 }
 
+std::string default_robot_name = "robot";
+std::string robot_name = default_robot_name;
+
 int main(int argc, char **argv) {
 
     ros::init(argc, argv, "serial_bridge");
@@ -51,6 +54,12 @@ int main(int argc, char **argv) {
     }
 
     ros::NodeHandle nh;
+
+    if (nh.hasParam("info/robot_name")) {
+        nh.getParam("info/robot_name", robot_name);
+    } else {
+        nh.setParam("info/robot_name", default_robot_name);
+    }
 
     int baud_rate = 115200;
     if (nh.hasParam("info/baud_rate")) {

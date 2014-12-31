@@ -130,14 +130,14 @@ void TeleopKeybrd::keyLoop()
 			case KEY_LEFT:
 				{
 					ROS_DEBUG_STREAM("LEFT\r");
-					mAngular -= angStep;
+                    mAngular += angStep;
 					dirty = true;
 					break;
 				}
 			case KEY_RIGHT:
 				{
 					ROS_DEBUG_STREAM("RIGHT\r");
-					mAngular += angStep;
+                    mAngular -= angStep;
 					dirty = true;
 					break;
 				}
@@ -185,9 +185,12 @@ void TeleopKeybrd::keyLoop()
 			case 'Q':
 				{
 					ROS_DEBUG_STREAM("EXIT\r");
-					mLinear = 0.0;
+                    // The following code is not needed
+                    // the motor driver must put speed to 0.0
+                    // if it does not receive commands
+                    /*mLinear = 0.0;
 					mAngular = 0.0;
-					dirty = true;
+                    dirty = true;*/
 					stop = true;
 					break;
 				}

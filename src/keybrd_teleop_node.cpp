@@ -15,10 +15,10 @@ int main(int argc, char** argv)
 
 	//Load configuration
 
-    if (nh.hasParam("info/robot_name")) {
-        nh.getParam("info/robot_name", serial_bridge_string);
+    if (nh.hasParam("/info/robot_name")) {
+        nh.getParam("/info/robot_name", serial_bridge_string);
     } else {
-        nh.setParam("info/robot_name", serial_bridge_string);
+        nh.setParam("/info/robot_name", serial_bridge_string);
     }
 
 	if (nh.hasParam(name_node + "/serial_bridge")) {

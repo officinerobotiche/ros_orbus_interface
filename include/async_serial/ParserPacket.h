@@ -1,8 +1,16 @@
-/* 
- * File:   ParserPacket.h
- * Author: raffaello
+/*
+ * Copyright (C) 2014 Officine Robotiche
+ * Author: Raffaello Bonghi
+ * email:  raffaello.bonghi@officinerobotiche.it
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Lesser General Public License
+ * (LGPL) version 2.1 which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/lgpl-2.1.html
  *
- * Created on 05 November 2013, 19:29
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
  */
 
 #ifndef PARSERPACKET_H
@@ -57,17 +65,17 @@ public:
     packet_t encoder(information_packet_t *list_send, size_t len);
     packet_t encoder(information_packet_t list_send);
 
-    information_packet_t createPacket(unsigned char command, unsigned char option, unsigned char type = HASHMAP_DEFAULT, abstract_packet_t * packet = NULL);
-    information_packet_t createDataPacket(unsigned char command, unsigned char type, abstract_packet_t * packet);
+    information_packet_t createPacket(unsigned char command, unsigned char option, unsigned char type = HASHMAP_DEFAULT, abstract_message_u * packet = NULL);
+    information_packet_t createDataPacket(unsigned char command, unsigned char type, abstract_message_u * packet);
 
-    void addCallback(const boost::function<void (const unsigned char&, const abstract_packet_t*) >& callback, unsigned char type=HASHMAP_DEFAULT);
-    void addErrorCallback(const boost::function<void (const unsigned char&, const abstract_packet_t*) >& callback);
+    void addCallback(const boost::function<void (const unsigned char&, const abstract_message_u*) >& callback, unsigned char type=HASHMAP_DEFAULT);
+    void addErrorCallback(const boost::function<void (const unsigned char&, const abstract_message_u*) >& callback);
 
-    template <class T> void addCallback(void(T::*fp)(const unsigned char&, const abstract_packet_t*), T* obj, unsigned char type=HASHMAP_DEFAULT) {
+    template <class T> void addCallback(void(T::*fp)(const unsigned char&, const abstract_message_u*), T* obj, unsigned char type=HASHMAP_DEFAULT) {
         addCallback(boost::bind(fp, obj, _1, _2), type);
     }
     
-    template <class T> void addErrorCallback(void(T::*fp)(const unsigned char&, const abstract_packet_t*), T* obj) {
+    template <class T> void addErrorCallback(void(T::*fp)(const unsigned char&, const abstract_message_u*), T* obj) {
         addErrorCallback(boost::bind(fp, obj, _1, _2));
     }
 

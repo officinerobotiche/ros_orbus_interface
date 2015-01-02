@@ -189,16 +189,16 @@ void ROSMotionController::motionPacket(const unsigned char& command, const abstr
             nh_.setParam("odo_mis_step", packet->parameter_unicycle.sp_min);
             break;
         case PARAMETER_MOTOR_L:
-            nh_.setParam(joint_string + "/" + left_string + "k_vel", packet->parameter_motor.k_vel);
-            nh_.setParam(joint_string + "/" + left_string + "k_ang", packet->parameter_motor.k_ang);
-            nh_.setParam(joint_string + "/" + left_string + "encoder_swap", packet->parameter_motor.encoder_swap);
-            nh_.setParam(joint_string + "/" + left_string + "default_enable", packet->parameter_motor.enable_set);
+            nh_.setParam(joint_string + "/" + left_string + "/k_vel", packet->parameter_motor.k_vel);
+            nh_.setParam(joint_string + "/" + left_string + "/k_ang", packet->parameter_motor.k_ang);
+            nh_.setParam(joint_string + "/" + left_string + "/encoder_swap", packet->parameter_motor.encoder_swap);
+            nh_.setParam(joint_string + "/" + left_string + "/default_enable", packet->parameter_motor.enable_set);
             break;
         case PARAMETER_MOTOR_R:
-            nh_.setParam(joint_string + "/" + right_string + "k_vel", packet->parameter_motor.k_vel);
-            nh_.setParam(joint_string + "/" + right_string + "k_ang", packet->parameter_motor.k_ang);
-            nh_.setParam(joint_string + "/" + right_string + "encoder_swap", packet->parameter_motor.encoder_swap);
-            nh_.setParam(joint_string + "/" + right_string + "default_enable", packet->parameter_motor.enable_set);
+            nh_.setParam(joint_string + "/" + right_string + "/k_vel", packet->parameter_motor.k_vel);
+            nh_.setParam(joint_string + "/" + right_string + "/k_ang", packet->parameter_motor.k_ang);
+            nh_.setParam(joint_string + "/" + right_string + "/encoder_swap", packet->parameter_motor.encoder_swap);
+            nh_.setParam(joint_string + "/" + right_string + "/default_enable", packet->parameter_motor.enable_set);
             break;
         case PID_CONTROL_L:
             name_pid = "pid/" + left_string + "/";
@@ -476,7 +476,7 @@ pid_control_t ROSMotionController::get_pid(std::string name) {
 parameter_motor_t ROSMotionController::get_motor_parameter(std::string name) {
     parameter_motor_t parameter;
     double temp;
-    bool temp2;
+    int temp2;
 
     nh_.getParam(joint_string + "/" + name + "/k_vel", temp);
     parameter.k_vel = temp;

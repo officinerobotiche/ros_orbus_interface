@@ -191,13 +191,13 @@ void ROSMotionController::motionPacket(const unsigned char& command, const abstr
         case PARAMETER_MOTOR_L:
             nh_.setParam(joint_string + "/" + left_string + "/k_vel", packet->parameter_motor.k_vel);
             nh_.setParam(joint_string + "/" + left_string + "/k_ang", packet->parameter_motor.k_ang);
-            nh_.setParam(joint_string + "/" + left_string + "/encoder_swap", packet->parameter_motor.encoder_swap);
+            nh_.setParam(joint_string + "/" + left_string + "/encoder_swap", packet->parameter_motor.versus);
             nh_.setParam(joint_string + "/" + left_string + "/default_enable", packet->parameter_motor.enable_set);
             break;
         case PARAMETER_MOTOR_R:
             nh_.setParam(joint_string + "/" + right_string + "/k_vel", packet->parameter_motor.k_vel);
             nh_.setParam(joint_string + "/" + right_string + "/k_ang", packet->parameter_motor.k_ang);
-            nh_.setParam(joint_string + "/" + right_string + "/encoder_swap", packet->parameter_motor.encoder_swap);
+            nh_.setParam(joint_string + "/" + right_string + "/versus", packet->parameter_motor.versus);
             nh_.setParam(joint_string + "/" + right_string + "/default_enable", packet->parameter_motor.enable_set);
             break;
         case PID_CONTROL_L:
@@ -482,8 +482,8 @@ parameter_motor_t ROSMotionController::get_motor_parameter(std::string name) {
     parameter.k_vel = temp;
     nh_.getParam(joint_string + "/" + name + "/k_ang", temp);
     parameter.k_ang = temp;
-    nh_.getParam(joint_string + "/" + name + "/encoder_swap", temp2);
-    parameter.encoder_swap = temp2;
+    nh_.getParam(joint_string + "/" + name + "/versus", temp2);
+    parameter.versus = temp2;
     nh_.getParam(joint_string + "/" + name + "/default_enable", temp2);
     parameter.enable_set = temp2;
     return parameter;

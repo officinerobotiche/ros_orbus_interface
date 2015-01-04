@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
         ROS_INFO("Open Serial %s%d:%d", serial_port1.name.c_str(), i, baud_rate);
         try {
             serial = new ParserPacket(serial_port1.name + number.str(), baud_rate);
-            //If protocoll on arduino
+            //If protocol on arduino
             if (nh.hasParam("info/arduino")) {
                 int arduino = 2;
                 nh.getParam("info/arduino", arduino);

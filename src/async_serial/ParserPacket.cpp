@@ -1,8 +1,16 @@
-/* 
- * File:   ParserPacket.cpp
- * Author: raffaello
- * 
- * Created on 05 November 2013, 19:29
+/*
+ * Copyright (C) 2014 Officine Robotiche
+ * Author: Raffaello Bonghi
+ * email:  raffaello.bonghi@officinerobotiche.it
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Lesser General Public License
+ * (LGPL) version 2.1 which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/lgpl-2.1.html
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
  */
 
 #include "async_serial/ParserPacket.h"
@@ -32,7 +40,7 @@ public:
         }
     }
 
-    void addCallback(const boost::function<void (const unsigned char&, const abstract_packet_t*) >& callback, unsigned char type) {
+    void addCallback(const boost::function<void (const unsigned char&, const abstract_message_u*) >& callback, unsigned char type) {
         if (type == HASHMAP_DEFAULT) {
             addCallBack("Default", &counter_default, data_default_packet_functions, callback);
         } else {
@@ -41,7 +49,7 @@ public:
         }
     }
 
-    void addErrorCallback(const boost::function<void (const unsigned char&, const abstract_packet_t*) >& callback) {
+    void addErrorCallback(const boost::function<void (const unsigned char&, const abstract_message_u*) >& callback) {
         addCallBack("Error", &counter_error, data_error_packet_functions, callback);
     }
 
@@ -59,7 +67,7 @@ public:
 private:
 
     /// Read complete callback - Array of callback
-    typedef boost::function<void (const unsigned char&, const abstract_packet_t*) > callback_data_packet_t;
+    typedef boost::function<void (const unsigned char&, const abstract_message_u*) > callback_data_packet_t;
 
     void clearCallback(unsigned int* counter, boost::array<callback_data_packet_t, NUMBER_CALLBACK >& array) {
         for (int i = 0; i < (*counter); ++i) {
@@ -69,7 +77,7 @@ private:
         counter = 0;
     }
 
-    void addCallBack(string name, unsigned int* counter, boost::array<callback_data_packet_t, NUMBER_CALLBACK >& array, const boost::function<void (const unsigned char&, const abstract_packet_t*) >& callback) {
+    void addCallBack(string name, unsigned int* counter, boost::array<callback_data_packet_t, NUMBER_CALLBACK >& array, const boost::function<void (const unsigned char&, const abstract_message_u*) >& callback) {
         if (*counter == 10)
             throw (parser_exception("Max callback packet " + name));
         else {
@@ -84,7 +92,7 @@ private:
             if (data_other_packet_callback) data_other_packet_callback(packet->command, &packet->packet);
     }
 
-    void sendDataCallBack(unsigned int counter, unsigned char& command, abstract_packet_t* packet, boost::array<callback_data_packet_t, NUMBER_CALLBACK > array) {
+    void sendDataCallBack(unsigned int counter, unsigned char& command, abstract_message_u* packet, boost::array<callback_data_packet_t, NUMBER_CALLBACK > array) {
         for (int i = 0; i < counter; ++i) {
             callback_data_packet_t callback = array[i];
             if (callback)
@@ -207,7 +215,7 @@ packet_t ParserPacket::encoder(information_packet_t send) {
     return packet_send;
 }
 
-information_packet_t ParserPacket::createPacket(unsigned char command, unsigned char option, unsigned char type, abstract_packet_t * packet) {
+information_packet_t ParserPacket::createPacket(unsigned char command, unsigned char option, unsigned char type, abstract_message_u * packet) {
     information_packet_t information;
     information.command = command;
     information.option = option;
@@ -231,20 +239,20 @@ information_packet_t ParserPacket::createPacket(unsigned char command, unsigned 
         information.length = LNG_HEAD_INFORMATION_PACKET;
     }
     if (packet != NULL) {
-        memcpy(&information.packet, packet, sizeof (abstract_packet_t));
+        memcpy(&information.packet, packet, sizeof (abstract_message_u));
     }
     return information;
 }
 
-information_packet_t ParserPacket::createDataPacket(unsigned char command, unsigned char type, abstract_packet_t * packet) {
+information_packet_t ParserPacket::createDataPacket(unsigned char command, unsigned char type, abstract_message_u * packet) {
     return createPacket(command, DATA, type, packet);
 }
 
-void ParserPacket::addCallback(const boost::function<void (const unsigned char&, const abstract_packet_t*) >& callback, unsigned char type) {
+void ParserPacket::addCallback(const boost::function<void (const unsigned char&, const abstract_message_u*) >& callback, unsigned char type) {
     parser_impl->addCallback(callback, type);
 }
 
-void ParserPacket::addErrorCallback(const boost::function<void (const unsigned char&, const abstract_packet_t*) >& callback) {
+void ParserPacket::addErrorCallback(const boost::function<void (const unsigned char&, const abstract_message_u*) >& callback) {
     parser_impl->addErrorCallback(callback);
 }
 

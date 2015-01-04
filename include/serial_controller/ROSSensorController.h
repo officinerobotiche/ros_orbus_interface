@@ -46,7 +46,7 @@ private:
     void updatePacket(std::vector<information_packet_t>* list_send);
     void addParameter(std::vector<information_packet_t>* list_send);
     bool aliveOperation(const ros::TimerEvent& event, std::vector<information_packet_t>* list_send);
-    void sensorPacket(const unsigned char& command, const abstract_packet_t* packet);
+    void sensorPacket(const unsigned char& command, const abstract_message_u* packet);
     void sendLaserSharp(infrared_t infrared);
 
     void enableCallback(const serial_bridge::Enable::ConstPtr &msg);

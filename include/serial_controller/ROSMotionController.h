@@ -23,6 +23,7 @@
 const std::string joint_string = "joint_states";
 const std::string odometry_string = "odometry";
 const std::string base_link_string = "base_link";
+const std::string paramenter_unicycle_string = "unicycle";
 
 const std::string wheelbase_string = "wheelbase";
 const std::string radius_string = "radius";
@@ -49,7 +50,6 @@ private:
     //Service
     ros::ServiceServer srv_pid, srv_parameter, srv_constraint;
 
-    double pwm_motor;
     std::string tf_odometry_string_, tf_base_link_string_, tf_joint_string_;
 
     bool save_velocity;
@@ -76,11 +76,11 @@ private:
     void poseTFCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg);
 
     bool pidServiceCallback(serial_bridge::Update::Request &req, serial_bridge::Update::Response&);
-    bool parameterServiceCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
+    bool parameterServiceCallback(serial_bridge::Update::Request &req, serial_bridge::Update::Response&);
     bool constraintServiceCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
 
     bool aliveOperation(const ros::TimerEvent& event, std::vector<information_packet_t>* list_send);
-    void motionPacket(const unsigned char& command, const abstract_packet_t* packet);
+    void motionPacket(const unsigned char& command, const abstract_message_u* packet);
     void updatePacket(std::vector<information_packet_t>* list_send);
     void addParameter(std::vector<information_packet_t>* list_send);
 
@@ -89,7 +89,8 @@ private:
     void sendJointState(serial_bridge::Motor* motor_left, serial_bridge::Motor* motor_right);
 
     pid_control_t get_pid(std::string name);
-    parameter_motors_t get_parameter();
+    parameter_motor_t get_motor_parameter(std::string name);
+    parameter_unicycle_t get_unicycle_parameter();
     constraint_t get_constraint();
 
 };

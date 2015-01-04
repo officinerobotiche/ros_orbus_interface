@@ -80,7 +80,7 @@ void ROSMotionController::addParameter(std::vector<information_packet_t>* list_s
     if (nh_.hasParam(joint_string + "/constraint")) {
         ROS_INFO("Sync parameter constraint: ROS -> ROBOT");
         constraint_t constraint = get_constraint();
-        list_send->push_back(serial_->createDataPacket(CONSTRAINT, HASHMAP_MOTION, (abstract_packet_t*) & constraint));
+        list_send->push_back(serial_->createDataPacket(CONSTRAINT, HASHMAP_MOTION, (abstract_message_u*) & constraint));
     } else {
         ROS_INFO("Sync parameter constraint: ROBOT -> ROS");
         list_send->push_back(serial_->createPacket(CONSTRAINT, REQUEST, HASHMAP_MOTION));
@@ -89,7 +89,7 @@ void ROSMotionController::addParameter(std::vector<information_packet_t>* list_s
     if (nh_.hasParam("pid/" + left_string)) {
         ROS_INFO("Sync parameter pid/%s: ROS -> ROBOT", left_string.c_str());
         pid_control_t pid_l = get_pid(left_string);
-        list_send->push_back(serial_->createDataPacket(PID_CONTROL_L, HASHMAP_MOTION, (abstract_packet_t*) & pid_l));
+        list_send->push_back(serial_->createDataPacket(PID_CONTROL_L, HASHMAP_MOTION, (abstract_message_u*) & pid_l));
     } else {
         ROS_INFO("Sync parameter pid/%s: ROBOT -> ROS", left_string.c_str());
         list_send->push_back(serial_->createPacket(PID_CONTROL_L, REQUEST, HASHMAP_MOTION));
@@ -98,19 +98,37 @@ void ROSMotionController::addParameter(std::vector<information_packet_t>* list_s
     if (nh_.hasParam("pid/" + right_string)) {
         ROS_INFO("Sync parameter pid/%s: ROS -> ROBOT", right_string.c_str());
         pid_control_t pid_r = get_pid(right_string);
-        list_send->push_back(serial_->createDataPacket(PID_CONTROL_R, HASHMAP_MOTION, (abstract_packet_t*) & pid_r));
+        list_send->push_back(serial_->createDataPacket(PID_CONTROL_R, HASHMAP_MOTION, (abstract_message_u*) & pid_r));
     } else {
         ROS_INFO("Sync parameter pid/%s: ROBOT -> ROS", right_string.c_str());
         list_send->push_back(serial_->createPacket(PID_CONTROL_R, REQUEST, HASHMAP_MOTION));
     }
-    //Parameter motors
+    //Parameter unicycle
     if (nh_.hasParam("structure")) {
         ROS_INFO("Sync parameter structure: ROS -> ROBOT");
-        parameter_motors_t parameter_motors = get_parameter();
-        list_send->push_back(serial_->createDataPacket(PARAMETER_MOTORS, HASHMAP_MOTION, (abstract_packet_t*) & parameter_motors));
+        parameter_unicycle_t parameter_unicycle = get_unicycle_parameter();
+        list_send->push_back(serial_->createDataPacket(PARAMETER_UNICYCLE, HASHMAP_MOTION, (abstract_message_u*) & parameter_unicycle));
     } else {
         ROS_INFO("Sync parameter structure: ROBOT -> ROS");
-        list_send->push_back(serial_->createPacket(PARAMETER_MOTORS, REQUEST, HASHMAP_MOTION));
+        list_send->push_back(serial_->createPacket(PARAMETER_UNICYCLE, REQUEST, HASHMAP_MOTION));
+    }
+    //Parameter motors LEFT
+    if (nh_.hasParam(joint_string + "/" + left_string)) {
+        ROS_INFO("Sync parameter parameter motor/%s: ROS -> ROBOT",left_string.c_str());
+        parameter_motor_t parameter_motor = get_motor_parameter(left_string);
+        list_send->push_back(serial_->createDataPacket(PARAMETER_MOTOR_L, HASHMAP_MOTION, (abstract_message_u*) & parameter_motor));
+    } else {
+        ROS_INFO("Sync parameter parameter motor/%s: ROBOT -> ROS",left_string.c_str());
+        list_send->push_back(serial_->createPacket(PARAMETER_MOTOR_L, REQUEST, HASHMAP_MOTION));
+    }
+    //Parameter motors RIGHT
+    if (nh_.hasParam(joint_string + "/" + right_string)) {
+        ROS_INFO("Sync parameter parameter motor/%s: ROS -> ROBOT",right_string.c_str());
+        parameter_motor_t parameter_motor = get_motor_parameter(right_string);
+        list_send->push_back(serial_->createDataPacket(PARAMETER_MOTOR_R, HASHMAP_MOTION, (abstract_message_u*) & parameter_motor));
+    } else {
+        ROS_INFO("Sync parameter parameter motor/%s: ROBOT -> ROS",right_string.c_str());
+        list_send->push_back(serial_->createPacket(PARAMETER_MOTOR_R, REQUEST, HASHMAP_MOTION));
     }
     //Names TF
     if (nh_.hasParam(tf_string)) {
@@ -158,23 +176,29 @@ void ROSMotionController::addParameter(std::vector<information_packet_t>* list_s
     joint.name[1] = right_string;
 }
 
-void ROSMotionController::motionPacket(const unsigned char& command, const abstract_packet_t* packet) {
+void ROSMotionController::motionPacket(const unsigned char& command, const abstract_message_u* packet) {
     switch (command) {
         case CONSTRAINT:
             nh_.setParam(joint_string + "/constraint/" + right_string, packet->constraint.max_right);
             nh_.setParam(joint_string + "/constraint/" + left_string, packet->constraint.max_left);
             break;
-        case PARAMETER_MOTORS:
-            nh_.setParam("structure/" + wheelbase_string, packet->parameter_motors.wheelbase);
-            nh_.setParam("structure/" + radius_string + "/" + right_string, packet->parameter_motors.radius_r);
-            nh_.setParam("structure/" + radius_string + "/" + left_string, packet->parameter_motors.radius_l);
-            nh_.setParam(joint_string + "/k_vel/" + right_string, packet->parameter_motors.k_vel_r);
-            nh_.setParam(joint_string + "/k_vel/" + left_string, packet->parameter_motors.k_vel_l);
-            nh_.setParam(joint_string + "/k_ang/" + right_string, packet->parameter_motors.k_ang_r);
-            nh_.setParam(joint_string + "/k_ang/" + left_string, packet->parameter_motors.k_ang_l);
-            nh_.setParam(joint_string + "/pwm_bit", packet->parameter_motors.pwm_step);
-            nh_.setParam("odo_mis_step", packet->parameter_motors.sp_min);
-            pwm_motor = packet->parameter_motors.pwm_step;
+        case PARAMETER_UNICYCLE:
+            nh_.setParam("structure/" + wheelbase_string, packet->parameter_unicycle.wheelbase);
+            nh_.setParam("structure/" + radius_string + "/" + right_string, packet->parameter_unicycle.radius_r);
+            nh_.setParam("structure/" + radius_string + "/" + left_string, packet->parameter_unicycle.radius_l);
+            nh_.setParam("odo_mis_step", packet->parameter_unicycle.sp_min);
+            break;
+        case PARAMETER_MOTOR_L:
+            nh_.setParam(joint_string + "/" + left_string + "/k_vel", packet->parameter_motor.k_vel);
+            nh_.setParam(joint_string + "/" + left_string + "/k_ang", packet->parameter_motor.k_ang);
+            nh_.setParam(joint_string + "/" + left_string + "/encoder_swap", packet->parameter_motor.versus);
+            nh_.setParam(joint_string + "/" + left_string + "/default_enable", packet->parameter_motor.enable_set);
+            break;
+        case PARAMETER_MOTOR_R:
+            nh_.setParam(joint_string + "/" + right_string + "/k_vel", packet->parameter_motor.k_vel);
+            nh_.setParam(joint_string + "/" + right_string + "/k_ang", packet->parameter_motor.k_ang);
+            nh_.setParam(joint_string + "/" + right_string + "/versus", packet->parameter_motor.versus);
+            nh_.setParam(joint_string + "/" + right_string + "/default_enable", packet->parameter_motor.enable_set);
             break;
         case PID_CONTROL_L:
             name_pid = "pid/" + left_string + "/";
@@ -189,15 +213,15 @@ void ROSMotionController::motionPacket(const unsigned char& command, const abstr
             nh_.setParam(name_pid + "D", packet->pid.kd);
             break;
         case MOTOR_L:
-            motor_left.reference = ((double) packet->motor.rifer_vel) / 1000;
-            motor_left.control = -((double) packet->motor.control_vel - pwm_motor / 2) / (pwm_motor / 2);
+            motor_left.reference = ((double) packet->motor.refer_vel) / 1000;
+            motor_left.control = ((double) packet->motor.control_vel) / INT16_MAX;
             motor_left.measure = ((double) packet->motor.measure_vel) / 1000;
             motor_left.current = ((double) packet->motor.current) / 1000;
             pub_motor_left.publish(motor_left);
             break;
         case MOTOR_R:
-            motor_right.reference = ((double) packet->motor.rifer_vel) / 1000;
-            motor_right.control = ((double) packet->motor.control_vel - pwm_motor / 2) / (pwm_motor / 2);
+            motor_right.reference = ((double) packet->motor.refer_vel) / 1000;
+            motor_right.control = ((double) packet->motor.control_vel) / INT16_MAX;
             motor_right.measure = ((double) packet->motor.measure_vel) / 1000;
             motor_right.current = ((double) packet->motor.current) / 1000;
             pub_motor_right.publish(motor_right);
@@ -240,7 +264,7 @@ void ROSMotionController::timerStopCallback(const ros::TimerEvent& event) {
     enable_motor_t enable = false;
     save_velocity = true;
     try {
-        serial_->parserSendPacket(serial_->createDataPacket(ENABLE, HASHMAP_MOTION, (abstract_packet_t*) & enable), 3, boost::posix_time::millisec(200));
+        serial_->parserSendPacket(serial_->createDataPacket(ENABLE, HASHMAP_MOTION, (abstract_message_u*) & enable), 3, boost::posix_time::millisec(200));
     } catch (exception &e) {
         ROS_ERROR("%s", e.what());
     }
@@ -252,7 +276,7 @@ bool ROSMotionController::aliveOperation(const ros::TimerEvent& event, std::vect
             ROS_DEBUG("Start operation");
             delay_timer_.stop();
             enable_motor_t enable = true;
-            serial_->parserSendPacket(serial_->createDataPacket(ENABLE, HASHMAP_MOTION, (abstract_packet_t*) & enable), 3, boost::posix_time::millisec(200));
+            serial_->parserSendPacket(serial_->createDataPacket(ENABLE, HASHMAP_MOTION, (abstract_message_u*) & enable), 3, boost::posix_time::millisec(200));
             alive_operation = true;
             save_velocity = true;
             rif_twist.linear.x = 0;
@@ -261,7 +285,7 @@ bool ROSMotionController::aliveOperation(const ros::TimerEvent& event, std::vect
         velocity_t velocity;
         velocity.v = rif_twist.linear.x;
         velocity.w = rif_twist.angular.z;
-        serial_->parserSendPacket(serial_->createDataPacket(VELOCITY, HASHMAP_MOTION, (abstract_packet_t*) & velocity), 3, boost::posix_time::millisec(200));
+        serial_->parserSendPacket(serial_->createDataPacket(VELOCITY, HASHMAP_MOTION, (abstract_message_u*) & velocity), 3, boost::posix_time::millisec(200));
         return true;
     } else {
         if (alive_operation) {
@@ -282,7 +306,7 @@ bool ROSMotionController::aliveOperation(const ros::TimerEvent& event, std::vect
 
             velocity.v = em_twist.linear.x;
             velocity.w = em_twist.angular.z;
-            list_send->push_back(serial_->createDataPacket(VELOCITY, HASHMAP_MOTION, (abstract_packet_t*) & velocity));
+            list_send->push_back(serial_->createDataPacket(VELOCITY, HASHMAP_MOTION, (abstract_message_u*) & velocity));
 
             if ((em_twist.linear.x == 0) && (em_twist.angular.z == 0)) {
                 double time = 1;
@@ -333,7 +357,7 @@ void ROSMotionController::twistCallback(const geometry_msgs::Twist::ConstPtr &ms
     velocity.w = msg->angular.z;
     rif_twist = *msg.get();
     try {
-        serial_->parserSendPacket(serial_->createDataPacket(VELOCITY, HASHMAP_MOTION, (abstract_packet_t*) & velocity), 3, boost::posix_time::millisec(200));
+        serial_->parserSendPacket(serial_->createDataPacket(VELOCITY, HASHMAP_MOTION, (abstract_message_u*) & velocity), 3, boost::posix_time::millisec(200));
         timer_.start();
     } catch (exception &e) {
         ROS_ERROR("%s", e.what());
@@ -343,7 +367,7 @@ void ROSMotionController::twistCallback(const geometry_msgs::Twist::ConstPtr &ms
 void ROSMotionController::enableCallback(const serial_bridge::Enable::ConstPtr &msg) {
     enable_motor_t enable = msg->enable;
     try {
-        serial_->parserSendPacket(serial_->createDataPacket(ENABLE, HASHMAP_MOTION, (abstract_packet_t*) & enable), 3, boost::posix_time::millisec(200));
+        serial_->parserSendPacket(serial_->createDataPacket(ENABLE, HASHMAP_MOTION, (abstract_message_u*) & enable), 3, boost::posix_time::millisec(200));
     } catch (exception &e) {
         ROS_ERROR("%s", e.what());
     }
@@ -371,7 +395,7 @@ void ROSMotionController::saveOdometry(const serial_bridge::Pose* pose) {
     coordinate.theta = pose->theta;
     coordinate.space = pose->space;
     try {
-        serial_->parserSendPacket(serial_->createDataPacket(COORDINATE, HASHMAP_MOTION, (abstract_packet_t*) & coordinate), 3, boost::posix_time::millisec(200));
+        serial_->parserSendPacket(serial_->createDataPacket(COORDINATE, HASHMAP_MOTION, (abstract_message_u*) & coordinate), 3, boost::posix_time::millisec(200));
     } catch (exception &e) {
         ROS_ERROR("%s", e.what());
     }
@@ -449,10 +473,25 @@ pid_control_t ROSMotionController::get_pid(std::string name) {
     return pid;
 }
 
-parameter_motors_t ROSMotionController::get_parameter() {
-    parameter_motors_t parameter;
+parameter_motor_t ROSMotionController::get_motor_parameter(std::string name) {
+    parameter_motor_t parameter;
     double temp;
-    int temp_int;
+    int temp2;
+
+    nh_.getParam(joint_string + "/" + name + "/k_vel", temp);
+    parameter.k_vel = temp;
+    nh_.getParam(joint_string + "/" + name + "/k_ang", temp);
+    parameter.k_ang = temp;
+    nh_.getParam(joint_string + "/" + name + "/versus", temp2);
+    parameter.versus = temp2;
+    nh_.getParam(joint_string + "/" + name + "/default_enable", temp2);
+    parameter.enable_set = temp2;
+    return parameter;
+}
+
+parameter_unicycle_t ROSMotionController::get_unicycle_parameter() {
+    parameter_unicycle_t parameter;
+    double temp;
 
     nh_.getParam("structure/" + wheelbase_string, temp);
     parameter.wheelbase = temp;
@@ -460,19 +499,8 @@ parameter_motors_t ROSMotionController::get_parameter() {
     parameter.radius_r = temp;
     nh_.getParam("structure/" + radius_string + "/" + left_string, temp);
     parameter.radius_l = temp;
-    nh_.getParam(joint_string + "/k_vel/" + right_string, temp);
-    parameter.k_vel_r = temp;
-    nh_.getParam(joint_string + "/k_vel/" + left_string, temp);
-    parameter.k_vel_l = temp;
-    nh_.getParam(joint_string + "/k_ang/" + right_string, temp);
-    parameter.k_ang_r = temp;
-    nh_.getParam(joint_string + "/k_ang/" + left_string, temp);
-    parameter.k_ang_l = temp;
     nh_.getParam("odo_mis_step", temp);
     parameter.sp_min = temp;
-    nh_.getParam(joint_string + "/pwm_bit", temp_int);
-    parameter.pwm_step = temp_int;
-    pwm_motor = parameter.pwm_step;
     return parameter;
 }
 
@@ -494,11 +522,11 @@ bool ROSMotionController::pidServiceCallback(serial_bridge::Update::Request &req
     ROS_INFO("PID UPDATE");
     if ((name.compare(left_string) == 0) || (name.compare(all_string) == 0)) {
         pid = get_pid(left_string);
-        list_send.push_back(serial_->createDataPacket(PID_CONTROL_L, HASHMAP_MOTION, (abstract_packet_t*) & pid));
+        list_send.push_back(serial_->createDataPacket(PID_CONTROL_L, HASHMAP_MOTION, (abstract_message_u*) & pid));
     }
     if ((name.compare(right_string) == 0) || (name.compare(all_string) == 0)) {
         pid = get_pid(right_string);
-        list_send.push_back(serial_->createDataPacket(PID_CONTROL_R, HASHMAP_MOTION, (abstract_packet_t*) & pid));
+        list_send.push_back(serial_->createDataPacket(PID_CONTROL_R, HASHMAP_MOTION, (abstract_message_u*) & pid));
     }
     try {
         serial_->parserSendPacket(list_send, 3, boost::posix_time::millisec(200));
@@ -508,10 +536,25 @@ bool ROSMotionController::pidServiceCallback(serial_bridge::Update::Request &req
     return true;
 }
 
-bool ROSMotionController::parameterServiceCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&) {
-    parameter_motors_t parameter = get_parameter();
+bool ROSMotionController::parameterServiceCallback(serial_bridge::Update::Request &req, serial_bridge::Update::Response&) {
+    std::string name = req.name;
+    parameter_motor_t parameter_motor;
+    std::vector<information_packet_t> list_send;
+    ROS_INFO("PARAMETER UPDATE");
+    if ((name.compare(left_string) == 0) || (name.compare(all_string) == 0)) {
+        parameter_motor = get_motor_parameter(left_string);
+        list_send.push_back(serial_->createDataPacket(PARAMETER_MOTOR_L, HASHMAP_MOTION, (abstract_message_u*) & parameter_motor));
+    }
+    if ((name.compare(right_string) == 0) || (name.compare(all_string) == 0)) {
+        parameter_motor = get_motor_parameter(right_string);
+        list_send.push_back(serial_->createDataPacket(PARAMETER_MOTOR_R, HASHMAP_MOTION, (abstract_message_u*) & parameter_motor));
+    }
+    if ((name.compare(paramenter_unicycle_string) == 0) || (name.compare(all_string) == 0)) {
+        parameter_unicycle_t parameter_unicycle = get_unicycle_parameter();
+        list_send.push_back(serial_->createDataPacket(PARAMETER_UNICYCLE, HASHMAP_MOTION, (abstract_message_u*) & parameter_unicycle));
+    }
     try {
-        serial_->parserSendPacket(serial_->createDataPacket(PARAMETER_MOTORS, HASHMAP_MOTION, (abstract_packet_t*) & parameter), 3, boost::posix_time::millisec(200));
+        serial_->parserSendPacket(list_send, 3, boost::posix_time::millisec(200));
     } catch (exception &e) {
         ROS_ERROR("%s", e.what());
     }
@@ -521,7 +564,7 @@ bool ROSMotionController::parameterServiceCallback(std_srvs::Empty::Request&, st
 bool ROSMotionController::constraintServiceCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&) {
     constraint_t constraint = get_constraint();
     try {
-        serial_->parserSendPacket(serial_->createDataPacket(CONSTRAINT, HASHMAP_MOTION, (abstract_packet_t*) & constraint), 3, boost::posix_time::millisec(200));
+        serial_->parserSendPacket(serial_->createDataPacket(CONSTRAINT, HASHMAP_MOTION, (abstract_message_u*) & constraint), 3, boost::posix_time::millisec(200));
     } catch (exception &e) {
         ROS_ERROR("%s", e.what());
     }

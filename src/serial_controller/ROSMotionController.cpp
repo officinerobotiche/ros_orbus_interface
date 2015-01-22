@@ -214,14 +214,14 @@ void ROSMotionController::motionPacket(const unsigned char& command, const abstr
             break;
         case MOTOR_L:
             motor_left.reference = ((double) packet->motor.refer_vel) / 1000;
-            motor_left.control = ((double) packet->motor.control_vel) / INT16_MAX;
+            motor_left.control = ((double) packet->motor.control_vel) * (1000 / INT16_MAX);
             motor_left.measure = ((double) packet->motor.measure_vel) / 1000;
             motor_left.current = ((double) packet->motor.current) / 1000;
             pub_motor_left.publish(motor_left);
             break;
         case MOTOR_R:
             motor_right.reference = ((double) packet->motor.refer_vel) / 1000;
-            motor_right.control = ((double) packet->motor.control_vel) / INT16_MAX;
+            motor_right.control = ((double) packet->motor.control_vel) * (1000 / INT16_MAX);
             motor_right.measure = ((double) packet->motor.measure_vel) / 1000;
             motor_right.current = ((double) packet->motor.current) / 1000;
             pub_motor_right.publish(motor_right);
@@ -261,7 +261,7 @@ void ROSMotionController::timerEvent(const ros::TimerEvent& event) {
 
 void ROSMotionController::timerStopCallback(const ros::TimerEvent& event) {
     ROS_DEBUG("Stop operation 2");
-    enable_motor_t enable = false;
+    state_controller_t enable = false;
     save_velocity = true;
     try {
         serial_->parserSendPacket(serial_->createDataPacket(ENABLE, HASHMAP_MOTION, (abstract_message_u*) & enable), 3, boost::posix_time::millisec(200));
@@ -275,7 +275,7 @@ bool ROSMotionController::aliveOperation(const ros::TimerEvent& event, std::vect
         if (!alive_operation) {
             ROS_DEBUG("Start operation");
             delay_timer_.stop();
-            enable_motor_t enable = true;
+            state_controller_t enable = true;
             serial_->parserSendPacket(serial_->createDataPacket(ENABLE, HASHMAP_MOTION, (abstract_message_u*) & enable), 3, boost::posix_time::millisec(200));
             alive_operation = true;
             save_velocity = true;
@@ -365,7 +365,7 @@ void ROSMotionController::twistCallback(const geometry_msgs::Twist::ConstPtr &ms
 }
 
 void ROSMotionController::enableCallback(const serial_bridge::Enable::ConstPtr &msg) {
-    enable_motor_t enable = msg->enable;
+    state_controller_t enable = msg->enable;
     try {
         serial_->parserSendPacket(serial_->createDataPacket(ENABLE, HASHMAP_MOTION, (abstract_message_u*) & enable), 3, boost::posix_time::millisec(200));
     } catch (exception &e) {

@@ -249,6 +249,9 @@ void ROSMotionController::motionPacket(const unsigned char& command, const abstr
 }
 
 void ROSMotionController::timerEvent(const ros::TimerEvent& event) {
+
+    ROS_INFO_STREAM( "Timer" );
+
     // Send Odometry message
     if (pub_odom.getNumSubscribers() >= 1) {
         sendOdometry(&meas_velocity, &pose);
@@ -416,6 +419,9 @@ void ROSMotionController::sendOdometry(const velocity_t* velocity, const serial_
     odom_trans.transform.translation.y = pose->y;
     odom_trans.transform.translation.z = 0.0;
     odom_trans.transform.rotation = odom_quat;
+
+    ROS_INFO_STREAM( tf_odometry_string_ );
+    ROS_INFO_STREAM( tf_base_link_string_ );
 
     //send the transform
     odom_broadcaster.sendTransform(odom_trans);

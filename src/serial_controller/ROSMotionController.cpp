@@ -55,7 +55,6 @@ alive_operation(false), save_velocity(true) {
     //-- Conventional (Using TF, NAV)
     sub_pose_estimate = nh_.subscribe(command_string + "/odometry", 1, &ROSMotionController::poseTFCallback, this);
     sub_twist = nh_.subscribe(command_string + "/velocity", 1, &ROSMotionController::twistCallback, this);
-    vel_twist = nh_.subscribe("/cmd_vel", 1, &ROSMotionController::twistCallback, this);
 
     //Open Service
     srv_pid = nh_.advertiseService("pid", &ROSMotionController::pidServiceCallback, this);

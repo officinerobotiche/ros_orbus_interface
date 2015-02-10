@@ -55,7 +55,7 @@ alive_operation(false), save_velocity(true) {
     //-- Conventional (Using TF, NAV)
     sub_pose_estimate = nh_.subscribe(command_string + "/odometry", 1, &ROSMotionController::poseTFCallback, this);
     sub_twist = nh_.subscribe(command_string + "/velocity", 1, &ROSMotionController::twistCallback, this);
-		//vel_twist = nh_.subscribe("/cmd_vel", 1, &ROSMotionController::twistCallback, this);
+    vel_twist = nh_.subscribe("/cmd_vel", 1, &ROSMotionController::twistCallback, this);
 
     //Open Service
     srv_pid = nh_.advertiseService("pid", &ROSMotionController::pidServiceCallback, this);
@@ -419,9 +419,6 @@ void ROSMotionController::sendOdometry(const velocity_t* velocity, const serial_
     odom_trans.transform.translation.y = pose->y;
     odom_trans.transform.translation.z = 0.0;
     odom_trans.transform.rotation = odom_quat;
-
-    ROS_INFO_STREAM( tf_odometry_string_ );
-    ROS_INFO_STREAM( tf_base_link_string_ );
 
     //send the transform
     odom_broadcaster.sendTransform(odom_trans);

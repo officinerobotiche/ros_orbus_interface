@@ -44,7 +44,7 @@ private:
     //-Standard ROS publisher
     ros::Publisher pub_twist, pub_odom, pub_joint;
     //Subscriber
-		ros::Subscriber sub_twist, sub_pose, sub_enable/*, vel_twist*/;
+    ros::Subscriber sub_twist, sub_pose, sub_enable, vel_twist;
     //-Standard ROS subscriber
     ros::Subscriber sub_pose_estimate;
     //Service

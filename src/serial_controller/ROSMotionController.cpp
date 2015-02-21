@@ -13,8 +13,7 @@
 using namespace std;
 
 ROSMotionController::ROSMotionController(const ros::NodeHandle& nh, ParserPacket* serial)
-: ROSController(nh, serial), positon_joint_left(0), positon_joint_right(0),
-alive_operation(false), save_velocity(true) {
+: ROSController(nh, serial), positon_joint_left(0), positon_joint_right(0) {
 
     string param_type_board = "Motor Control";
     if (type_board.compare(param_type_board) == 0) {
@@ -61,8 +60,8 @@ alive_operation(false), save_velocity(true) {
     srv_parameter = nh_.advertiseService("parameter", &ROSMotionController::parameterServiceCallback, this);
     srv_constraint = nh_.advertiseService("constraint", &ROSMotionController::constraintServiceCallback, this);
 
-    //Delay timer stop operation
-    delay_timer_ = nh_.createTimer(ros::Duration(10), &ROSMotionController::timerStopCallback, this, true, false);
+    status[0] = STATE_CONTROL_DISABLE;
+    status[1] = STATE_CONTROL_DISABLE;
 }
 
 ROSMotionController::~ROSMotionController() {
@@ -211,16 +210,22 @@ void ROSMotionController::motionPacket(const unsigned char& command, const abstr
             nh_.setParam(name_pid + "I", packet->pid.ki);
             nh_.setParam(name_pid + "D", packet->pid.kd);
             break;
+        case VEL_MOTOR_MIS_L:
+
+            break;
+        case VEL_MOTOR_MIS_R:
+
+            break;
         case MOTOR_L:
             motor_left.reference = ((double) packet->motor.refer_vel) / 1000;
-            motor_left.control = ((double) packet->motor.control_vel) * (1000 / INT16_MAX);
+            motor_left.control = ((double) packet->motor.control_vel) * (1000.0 / INT16_MAX);
             motor_left.measure = ((double) packet->motor.measure_vel) / 1000;
             motor_left.current = ((double) packet->motor.current) / 1000;
             pub_motor_left.publish(motor_left);
             break;
         case MOTOR_R:
             motor_right.reference = ((double) packet->motor.refer_vel) / 1000;
-            motor_right.control = ((double) packet->motor.control_vel) * (1000 / INT16_MAX);
+            motor_right.control = ((double) packet->motor.control_vel) * (1000.0 / INT16_MAX);
             motor_right.measure = ((double) packet->motor.measure_vel) / 1000;
             motor_right.current = ((double) packet->motor.current) / 1000;
             pub_motor_right.publish(motor_right);
@@ -248,9 +253,6 @@ void ROSMotionController::motionPacket(const unsigned char& command, const abstr
 }
 
 void ROSMotionController::timerEvent(const ros::TimerEvent& event) {
-
-    ROS_INFO_STREAM( "Timer" );
-
     // Send Odometry message
     if (pub_odom.getNumSubscribers() >= 1) {
         sendOdometry(&meas_velocity, &pose);
@@ -261,66 +263,21 @@ void ROSMotionController::timerEvent(const ros::TimerEvent& event) {
     }
 }
 
-void ROSMotionController::timerStopCallback(const ros::TimerEvent& event) {
-    ROS_DEBUG("Stop operation 2");
-    state_controller_t enable = false;
-    save_velocity = true;
-    try {
-        serial_->parserSendPacket(serial_->createDataPacket(ENABLE, HASHMAP_MOTION, (abstract_message_u*) & enable), 3, boost::posix_time::millisec(200));
-    } catch (exception &e) {
-        ROS_ERROR("%s", e.what());
-    }
-}
-
 bool ROSMotionController::aliveOperation(const ros::TimerEvent& event, std::vector<information_packet_t>* list_send) {
     if (sub_twist.getNumPublishers() >= 1) {
-        if (!alive_operation) {
-            ROS_DEBUG("Start operation");
-            delay_timer_.stop();
-            state_controller_t enable = true;
-            serial_->parserSendPacket(serial_->createDataPacket(ENABLE, HASHMAP_MOTION, (abstract_message_u*) & enable), 3, boost::posix_time::millisec(200));
-            alive_operation = true;
-            save_velocity = true;
-            rif_twist.linear.x = 0;
-            rif_twist.angular.z = 0;
-        }
-        velocity_t velocity;
-        velocity.v = rif_twist.linear.x;
-        velocity.w = rif_twist.angular.z;
-        serial_->parserSendPacket(serial_->createDataPacket(VELOCITY, HASHMAP_MOTION, (abstract_message_u*) & velocity), 3, boost::posix_time::millisec(200));
+        list_send->push_back(serial_->createDataPacket(VEL_MOTOR_L, HASHMAP_MOTION, (abstract_message_u*) & velocity_ref[0]));
+        list_send->push_back(serial_->createDataPacket(VEL_MOTOR_R, HASHMAP_MOTION, (abstract_message_u*) & velocity_ref[1]));
         return true;
     } else {
-        if (alive_operation) {
-            ROS_DEBUG("Stop operation 1");
-            if (save_velocity) {
-                //Save velocity
-                em_twist = rif_twist;
-                save_velocity = false;
-            }
-            velocity_t velocity;
-            double time = 3, alive = 1;
-            nh_.getParam("timer/emergency", time);
-            nh_.getParam("timer/alive", alive);
-            em_twist.linear.x -= rif_twist.linear.x * alive / time;
-            em_twist.angular.z -= rif_twist.angular.z * alive / time;
-            if (SGN(rif_twist.linear.x) * em_twist.linear.x < 0) em_twist.linear.x = 0;
-            if (SGN(rif_twist.angular.z) * em_twist.angular.z < 0) em_twist.angular.z = 0;
-
-            velocity.v = em_twist.linear.x;
-            velocity.w = em_twist.angular.z;
-            list_send->push_back(serial_->createDataPacket(VELOCITY, HASHMAP_MOTION, (abstract_message_u*) & velocity));
-
-            if ((em_twist.linear.x == 0) && (em_twist.angular.z == 0)) {
-                double time = 1;
-                nh_.getParam("timer/stop", time);
-                delay_timer_.setPeriod(ros::Duration(time));
-                delay_timer_.start();
-                alive_operation = false;
-            }
-        }
-        if (list_send->size() != 0)
+        if (status[0] != STATE_CONTROL_EMERGENCY || status[1] != STATE_CONTROL_EMERGENCY) {
+            status[0] = STATE_CONTROL_EMERGENCY;
+            status[1] = STATE_CONTROL_EMERGENCY;
+            list_send->push_back(serial_->createDataPacket(ENABLE_MOTOR_L, HASHMAP_MOTION, (abstract_message_u*) & status[0]));
+            list_send->push_back(serial_->createDataPacket(ENABLE_MOTOR_R, HASHMAP_MOTION, (abstract_message_u*) & status[1]));
             return true;
-        else return false;
+        } else {
+            return false;
+        }
     }
 }
 
@@ -353,13 +310,30 @@ void ROSMotionController::updatePacket(std::vector<information_packet_t>* list_s
     //    ROS_INFO("[ %s]", packet_string.c_str());
 }
 
+void ROSMotionController::ConverToMotorVelocity(const geometry_msgs::Twist* msg, motor_control_t *motor_ref) {
+    parameter_unicycle_t parameter_unicycle = get_unicycle_parameter();
+    //[ 1/rl,  d/(2*rl)]
+    //[ 1/rr, -d/(2*rr)]
+    motor_ref[0] = (long int) ((1.0f / parameter_unicycle.radius_r)*(msg->linear.x + (parameter_unicycle.wheelbase * (-msg->angular.z)))*1000);
+    motor_ref[1] = (long int) ((1.0f / parameter_unicycle.radius_l)*(msg->linear.x - (parameter_unicycle.wheelbase * (-msg->angular.z)))*1000);
+
+
+}
+
 void ROSMotionController::twistCallback(const geometry_msgs::Twist::ConstPtr &msg) {
-    velocity_t velocity;
-    velocity.v = msg->linear.x;
-    velocity.w = msg->angular.z;
-    rif_twist = *msg.get();
+    vector<information_packet_t> list_send;
+    ConverToMotorVelocity(msg.get(), velocity_ref);
+    list_send.push_back(serial_->createDataPacket(VEL_MOTOR_L, HASHMAP_MOTION, (abstract_message_u*) & velocity_ref[0]));
+    list_send.push_back(serial_->createDataPacket(VEL_MOTOR_R, HASHMAP_MOTION, (abstract_message_u*) & velocity_ref[1]));
+    if (status[0] != STATE_CONTROL_VELOCITY || status[1] != STATE_CONTROL_VELOCITY) {
+        status[0] = STATE_CONTROL_VELOCITY;
+        status[1] = STATE_CONTROL_VELOCITY;
+        list_send.push_back(serial_->createDataPacket(ENABLE_MOTOR_L, HASHMAP_MOTION, (abstract_message_u*) & status[0]));
+        list_send.push_back(serial_->createDataPacket(ENABLE_MOTOR_R, HASHMAP_MOTION, (abstract_message_u*) & status[1]));
+    }
+    list_send.push_back(serial_->createDataPacket(VELOCITY, HASHMAP_MOTION, (abstract_message_u*) & velocity_ref));
     try {
-        serial_->parserSendPacket(serial_->createDataPacket(VELOCITY, HASHMAP_MOTION, (abstract_message_u*) & velocity), 3, boost::posix_time::millisec(200));
+        serial_->parserSendPacket(list_send, 3, boost::posix_time::millisec(200));
         timer_.start();
     } catch (exception &e) {
         ROS_ERROR("%s", e.what());
@@ -367,9 +341,14 @@ void ROSMotionController::twistCallback(const geometry_msgs::Twist::ConstPtr &ms
 }
 
 void ROSMotionController::enableCallback(const serial_bridge::Enable::ConstPtr &msg) {
+    vector<information_packet_t> list_send;
     state_controller_t enable = msg->enable;
+    status[0] = msg->enable;
+    status[1] = msg->enable;
+    list_send.push_back(serial_->createDataPacket(ENABLE_MOTOR_L, HASHMAP_MOTION, (abstract_message_u*) & status[0]));
+    list_send.push_back(serial_->createDataPacket(ENABLE_MOTOR_R, HASHMAP_MOTION, (abstract_message_u*) & status[1]));
     try {
-        serial_->parserSendPacket(serial_->createDataPacket(ENABLE, HASHMAP_MOTION, (abstract_message_u*) & enable), 3, boost::posix_time::millisec(200));
+        serial_->parserSendPacket(list_send, 3, boost::posix_time::millisec(200));
     } catch (exception &e) {
         ROS_ERROR("%s", e.what());
     }

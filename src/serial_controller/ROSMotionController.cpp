@@ -6,6 +6,7 @@
  */
 
 #include "serial_controller/ROSMotionController.h"
+#include <limits>
 
 #define NUMBER_PUB 10
 #define SGN(x)  ( ((x) < 0) ?  -1 : ( ((x) == 0 ) ? 0 : 1) )
@@ -150,20 +151,13 @@ void ROSMotionController::addParameter(std::vector<information_packet_t>* list_s
         nh_.setParam(joint_string + "/back_emf/" + right_string, 1.0);
     }
     //Set timer rate
-    double time = 1;
-    if (nh_.hasParam("timer/stop")) {
-        nh_.getParam("timer/stop", time);
-        ROS_INFO("Sync parameter /timer/stop: load - %f s", time);
+    if (nh_.hasParam(emergency_string)) {
+        ROS_INFO("Sync parameter %s: ROS -> ROBOT", emergency_string.c_str());
+        emergency_t emergency = get_emergency();
+        list_send->push_back(serial_->createDataPacket(EMERGENCY, HASHMAP_MOTION, (abstract_message_u*) & emergency));
     } else {
-        nh_.setParam("timer/stop", time);
-        ROS_INFO("Sync parameter /timer/stop: set - %f s", time);
-    }
-    //Set timer rate
-    double time_em = 3;
-    if (nh_.hasParam("timer/emergency")) {
-        nh_.getParam("timer/emergency", time_em);
-    } else {
-        nh_.setParam("timer/emergency", time_em);
+        ROS_INFO("Sync parameter %s: ROBOT -> ROS", emergency_string.c_str());
+        list_send->push_back(serial_->createPacket(EMERGENCY, REQUEST, HASHMAP_MOTION));
     }
     joint.header.frame_id = tf_joint_string_;
     joint.name.resize(2);
@@ -198,6 +192,11 @@ void ROSMotionController::motionPacket(const unsigned char& command, const abstr
             nh_.setParam(joint_string + "/" + right_string + "/versus", packet->parameter_motor.versus);
             nh_.setParam(joint_string + "/" + right_string + "/default_enable", packet->parameter_motor.enable_set);
             break;
+        case EMERGENCY:
+            nh_.setParam(emergency_string + "/bridge_off", packet->emergency.bridge_off);
+            nh_.setParam(emergency_string + "/slope_time", packet->emergency.slope_time);
+            nh_.setParam(emergency_string + "/timeout", ((double) packet->emergency.timeout) / 1000.0);
+        break;
         case PID_CONTROL_L:
             name_pid = "pid/" + left_string + "/";
             nh_.setParam(name_pid + "P", packet->pid.kp);
@@ -312,11 +311,29 @@ void ROSMotionController::updatePacket(std::vector<information_packet_t>* list_s
 
 void ROSMotionController::ConverToMotorVelocity(const geometry_msgs::Twist* msg, motor_control_t *motor_ref) {
     parameter_unicycle_t parameter_unicycle = get_unicycle_parameter();
-    //[ 1/rl,  d/(2*rl)]
-    //[ 1/rr, -d/(2*rr)]
-    motor_ref[0] = (long int) ((1.0f / parameter_unicycle.radius_r)*(msg->linear.x + (parameter_unicycle.wheelbase * (-msg->angular.z)))*1000);
-    motor_ref[1] = (long int) ((1.0f / parameter_unicycle.radius_l)*(msg->linear.x - (parameter_unicycle.wheelbase * (-msg->angular.z)))*1000);
+    // wl = 1/rl [ 1,  d/2]
+    // wr = 1/rr [ 1, -d/2]
+    long int motor_ref_long[2];
+    motor_ref_long[0] = (long int) ((1.0f / parameter_unicycle.radius_l)*(msg->linear.x + (parameter_unicycle.wheelbase * (-msg->angular.z)))*1000);
+    motor_ref_long[1] = (long int) ((1.0f / parameter_unicycle.radius_r)*(msg->linear.x - (parameter_unicycle.wheelbase * (-msg->angular.z)))*1000);
 
+    // >>>>> Saturation on 16 bit values
+    if(motor_ref_long[0] > 32767) {
+        motor_ref[0] = 32767;
+    } else if (motor_ref_long[0] < -32768) {
+        motor_ref_long[0] = -32768;
+    } else {
+        motor_ref[0] = (int16_t) motor_ref_long[0];
+    }
+
+    if(motor_ref_long[1] > 32767) {
+        motor_ref[1] = 32767;
+    } else if (motor_ref_long[1] < -32768) {
+        motor_ref_long[1] = -32768;
+    } else {
+        motor_ref[1] = (int16_t) motor_ref_long[1];
+    }
+    // <<<<< Saturation on 16 bit values
 
 }
 
@@ -485,14 +502,26 @@ parameter_unicycle_t ROSMotionController::get_unicycle_parameter() {
     return parameter;
 }
 
+emergency_t ROSMotionController::get_emergency() {
+    emergency_t emergency;
+    double temp;
+    nh_.getParam(emergency_string + "/bridge_off", temp);
+    emergency.bridge_off = temp;
+    nh_.getParam(emergency_string + "/slope_time", temp);
+    emergency.slope_time = temp;
+    nh_.getParam(emergency_string + "/timeout", temp);
+    emergency.timeout = (int16_t) (temp * 1000);
+    return emergency;
+}
+
 constraint_t ROSMotionController::get_constraint() {
     constraint_t constraint;
-    double temp;
+    int temp;
 
     nh_.getParam(joint_string + "/constraint/" + right_string, temp);
-    constraint.max_right = temp;
+    constraint.max_right = (int16_t) temp;
     nh_.getParam(joint_string + "/constraint/" + left_string, temp);
-    constraint.max_left = temp;
+    constraint.max_left = (int16_t) temp;
     return constraint;
 }
 

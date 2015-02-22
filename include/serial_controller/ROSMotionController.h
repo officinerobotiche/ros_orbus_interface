@@ -26,6 +26,7 @@ const std::string joint_string = "joint_states";
 const std::string odometry_string = "odometry";
 const std::string base_link_string = "base_link";
 const std::string paramenter_unicycle_string = "unicycle";
+const std::string emergency_string = "emergency";
 
 const std::string wheelbase_string = "wheelbase";
 const std::string radius_string = "radius";
@@ -95,6 +96,7 @@ private:
     parameter_motor_t get_motor_parameter(std::string name);
     parameter_unicycle_t get_unicycle_parameter();
     constraint_t get_constraint();
+    emergency_t get_emergency();
 
 };
 

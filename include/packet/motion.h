@@ -48,8 +48,8 @@
  * - timeout to start emergency stop motors
  */
 typedef struct emergency {
-    float time;
-    float stop;
+    float slope_time;
+    float bridge_off;
     int16_t timeout;
 } emergency_t;
 #define LNG_EMERGENCY sizeof(emergency_t)
@@ -61,8 +61,8 @@ typedef struct emergency {
  * - right motor
  */
 typedef struct constraint {
-    float max_left;
-    float max_right;
+    int16_t max_left;
+    int16_t max_right;
 } constraint_t;
 #define LNG_CONSTRAINT sizeof(constraint_t)
 
@@ -167,7 +167,7 @@ typedef int16_t motor_control_t;
 /**
  * Message for read and write state of H-bridge (enable or disable)
  */
-typedef uint8_t state_controller_t;
+typedef int8_t state_controller_t;
 #define LNG_ENABLE_MOTOR sizeof(state_controller_t)
 
 //List of all motion messages

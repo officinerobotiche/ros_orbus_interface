@@ -51,7 +51,7 @@ private:
     //-Standard ROS subscriber
     ros::Subscriber sub_pose_estimate;
     //Service
-    ros::ServiceServer srv_pid, srv_parameter, srv_constraint;
+    ros::ServiceServer srv_pid, srv_parameter, srv_constraint, srv_emergency;
 
     std::string tf_odometry_string_, tf_base_link_string_, tf_joint_string_;
 
@@ -80,6 +80,7 @@ private:
     bool pidServiceCallback(serial_bridge::Update::Request &req, serial_bridge::Update::Response&);
     bool parameterServiceCallback(serial_bridge::Update::Request &req, serial_bridge::Update::Response&);
     bool constraintServiceCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
+    bool emergencyServiceCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
 
     bool aliveOperation(const ros::TimerEvent& event, std::vector<information_packet_t>* list_send);
     void motionPacket(const unsigned char& command, const abstract_message_u* packet);

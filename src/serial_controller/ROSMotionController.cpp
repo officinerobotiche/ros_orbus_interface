@@ -60,6 +60,7 @@ ROSMotionController::ROSMotionController(const ros::NodeHandle& nh, ParserPacket
     srv_pid = nh_.advertiseService("pid", &ROSMotionController::pidServiceCallback, this);
     srv_parameter = nh_.advertiseService("parameter", &ROSMotionController::parameterServiceCallback, this);
     srv_constraint = nh_.advertiseService("constraint", &ROSMotionController::constraintServiceCallback, this);
+    srv_emergency = nh_.advertiseService("emergency", &ROSMotionController::emergencyServiceCallback, this);
 
     status[0] = STATE_CONTROL_DISABLE;
     status[1] = STATE_CONTROL_DISABLE;
@@ -575,6 +576,16 @@ bool ROSMotionController::constraintServiceCallback(std_srvs::Empty::Request&, s
     constraint_t constraint = get_constraint();
     try {
         serial_->parserSendPacket(serial_->createDataPacket(CONSTRAINT, HASHMAP_MOTION, (abstract_message_u*) & constraint), 3, boost::posix_time::millisec(200));
+    } catch (exception &e) {
+        ROS_ERROR("%s", e.what());
+    }
+    return true;
+}
+
+bool ROSMotionController::emergencyServiceCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&) {
+    emergency_t emergency = get_emergency();
+    try {
+        serial_->parserSendPacket(serial_->createDataPacket(EMERGENCY, HASHMAP_MOTION, (abstract_message_u*) & emergency), 3, boost::posix_time::millisec(200));
     } catch (exception &e) {
         ROS_ERROR("%s", e.what());
     }

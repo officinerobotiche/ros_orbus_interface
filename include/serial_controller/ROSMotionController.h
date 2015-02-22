@@ -20,10 +20,13 @@
 #include <tf/transform_broadcaster.h>
 //#include <tf2_ros/transform_broadcaster.h>
 
+#define NUM_MOTORS 2
+
 const std::string joint_string = "joint_states";
 const std::string odometry_string = "odometry";
 const std::string base_link_string = "base_link";
 const std::string paramenter_unicycle_string = "unicycle";
+const std::string emergency_string = "emergency";
 
 const std::string wheelbase_string = "wheelbase";
 const std::string radius_string = "radius";
@@ -52,22 +55,21 @@ private:
 
     std::string tf_odometry_string_, tf_base_link_string_, tf_joint_string_;
 
-    bool save_velocity;
-    geometry_msgs::Twist em_twist, rif_twist, twist;
+    motor_control_t velocity_ref[NUM_MOTORS];
+    state_controller_t status[NUM_MOTORS];
+
+    geometry_msgs::Twist twist;
     velocity_t meas_velocity;
     serial_bridge::Pose pose;
     serial_bridge::Motor motor_left, motor_right;
     serial_bridge::Enable enable_motors;
     std::string name_pid;
     
-    bool alive_operation;
-    ros::Timer delay_timer_;
     ros::Time old_time;
     double k_ele_left, k_ele_right;
     double positon_joint_left, positon_joint_right;
     sensor_msgs::JointState joint;
 
-    void timerStopCallback(const ros::TimerEvent& event);
     void timerEvent(const ros::TimerEvent& event);
     
     void twistCallback(const geometry_msgs::Twist::ConstPtr &msg);
@@ -88,10 +90,13 @@ private:
     void sendOdometry(const velocity_t* velocity, const serial_bridge::Pose* pose);
     void sendJointState(serial_bridge::Motor* motor_left, serial_bridge::Motor* motor_right);
 
+    void ConverToMotorVelocity(const geometry_msgs::Twist* msg, motor_control_t *motor_ref);
+
     pid_control_t get_pid(std::string name);
     parameter_motor_t get_motor_parameter(std::string name);
     parameter_unicycle_t get_unicycle_parameter();
     constraint_t get_constraint();
+    emergency_t get_emergency();
 
 };
 

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-    <name>serial_bridge</name>
+    <name>ros_serial_bridge</name>
     <version>2.0.0</version>
     <description>The serial_bridge package</description>
 

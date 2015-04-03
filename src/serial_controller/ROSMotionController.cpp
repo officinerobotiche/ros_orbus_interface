@@ -31,13 +31,13 @@ ROSMotionController::ROSMotionController(const ros::NodeHandle& nh, ParserPacket
 
     //Open Publisher
     //- Command receive
-    pub_pose = nh_.advertise<serial_bridge::Pose>("pose", NUMBER_PUB,
+    pub_pose = nh_.advertise<ros_serial_bridge::Pose>("pose", NUMBER_PUB,
             boost::bind(&ROSController::connectCallback, this, _1));
-    pub_enable = nh_.advertise<serial_bridge::Enable>("enable", NUMBER_PUB,
+    pub_enable = nh_.advertise<ros_serial_bridge::Enable>("enable", NUMBER_PUB,
             boost::bind(&ROSController::connectCallback, this, _1));
-    pub_motor_left = nh_.advertise<serial_bridge::Motor>("motor/" + left_string, NUMBER_PUB,
+    pub_motor_left = nh_.advertise<ros_serial_bridge::Motor>("motor/" + left_string, NUMBER_PUB,
             boost::bind(&ROSController::connectCallback, this, _1));
-    pub_motor_right = nh_.advertise<serial_bridge::Motor>("motor/" + right_string, NUMBER_PUB,
+    pub_motor_right = nh_.advertise<ros_serial_bridge::Motor>("motor/" + right_string, NUMBER_PUB,
             boost::bind(&ROSController::connectCallback, this, _1));
     //-- Conventional (Using TF, NAV)
     pub_twist = nh_.advertise<geometry_msgs::Twist>("velocity", NUMBER_PUB,
@@ -358,7 +358,7 @@ void ROSMotionController::twistCallback(const geometry_msgs::Twist::ConstPtr &ms
     }
 }
 
-void ROSMotionController::enableCallback(const serial_bridge::Enable::ConstPtr &msg) {
+void ROSMotionController::enableCallback(const ros_serial_bridge::Enable::ConstPtr &msg) {
     vector<information_packet_t> list_send;
     state_controller_t enable = msg->enable;
     status[0] = msg->enable;
@@ -372,12 +372,12 @@ void ROSMotionController::enableCallback(const serial_bridge::Enable::ConstPtr &
     }
 }
 
-void ROSMotionController::poseCallback(const serial_bridge::Pose::ConstPtr &msg) {
+void ROSMotionController::poseCallback(const ros_serial_bridge::Pose::ConstPtr &msg) {
     saveOdometry(msg.get());
 }
 
 void ROSMotionController::poseTFCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg) {
-    serial_bridge::Pose pose;
+    ros_serial_bridge::Pose pose;
     pose.x = msg.get()->pose.pose.position.x;
     pose.y = msg.get()->pose.pose.position.y;
     pose.theta = tf::getYaw(msg.get()->pose.pose.orientation);
@@ -385,7 +385,7 @@ void ROSMotionController::poseTFCallback(const geometry_msgs::PoseWithCovariance
     saveOdometry(&pose);
 }
 
-void ROSMotionController::saveOdometry(const serial_bridge::Pose* pose) {
+void ROSMotionController::saveOdometry(const ros_serial_bridge::Pose* pose) {
     positon_joint_left = 0;
     positon_joint_right = 0;
     coordinate_t coordinate;
@@ -400,7 +400,7 @@ void ROSMotionController::saveOdometry(const serial_bridge::Pose* pose) {
     }
 }
 
-void ROSMotionController::sendOdometry(const velocity_t* velocity, const serial_bridge::Pose* pose) {
+void ROSMotionController::sendOdometry(const velocity_t* velocity, const ros_serial_bridge::Pose* pose) {
     ros::Time current_time = ros::Time::now();
     //first, we'll publish the transform over tf
     geometry_msgs::TransformStamped odom_trans;
@@ -440,7 +440,7 @@ void ROSMotionController::sendOdometry(const velocity_t* velocity, const serial_
     pub_odom.publish(odom);
 }
 
-void ROSMotionController::sendJointState(serial_bridge::Motor* motor_left, serial_bridge::Motor* motor_right) {
+void ROSMotionController::sendJointState(ros_serial_bridge::Motor* motor_left, ros_serial_bridge::Motor* motor_right) {
     ros::Time now = ros::Time::now();
     double rate = (now - old_time).toSec();
     old_time = now;
@@ -526,7 +526,7 @@ constraint_t ROSMotionController::get_constraint() {
     return constraint;
 }
 
-bool ROSMotionController::pidServiceCallback(serial_bridge::Update::Request &req, serial_bridge::Update::Response&) {
+bool ROSMotionController::pidServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&) {
     std::string name = req.name;
     pid_control_t pid;
     std::vector<information_packet_t> list_send;
@@ -547,7 +547,7 @@ bool ROSMotionController::pidServiceCallback(serial_bridge::Update::Request &req
     return true;
 }
 
-bool ROSMotionController::parameterServiceCallback(serial_bridge::Update::Request &req, serial_bridge::Update::Response&) {
+bool ROSMotionController::parameterServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&) {
     std::string name = req.name;
     parameter_motor_t parameter_motor;
     std::vector<information_packet_t> list_send;

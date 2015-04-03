@@ -8,7 +8,7 @@
 #include "serial_controller/ROSSensorController.h"
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/Temperature.h>
-#include <serial_bridge/Sensor.h>
+#include <ros_serial_bridge/Sensor.h>
 
 #define NUMBER_PUB 10
 
@@ -34,7 +34,7 @@ ROSSensorController::ROSSensorController(const ros::NodeHandle& nh, ParserPacket
             boost::bind(&ROSController::connectCallback, this, _1));
     pub_temperature = nh_.advertise<sensor_msgs::Temperature>(default_temperature_string, NUMBER_PUB,
             boost::bind(&ROSController::connectCallback, this, _1));
-    pub_sensors = nh_.advertise<serial_bridge::Sensor>(default_sensor_string, NUMBER_PUB,
+    pub_sensors = nh_.advertise<ros_serial_bridge::Sensor>(default_sensor_string, NUMBER_PUB,
             boost::bind(&ROSController::connectCallback, this, _1));
     //Open Subscriber
     //-Command
@@ -175,7 +175,7 @@ void ROSSensorController::addParameter(std::vector<information_packet_t>* list_s
 }
 
 void ROSSensorController::sensorPacket(const unsigned char& command, const abstract_message_u* packet) {
-    serial_bridge::Sensor sensor;
+    ros_serial_bridge::Sensor sensor;
     sensor_msgs::Temperature temperature;
     switch (command) {
         case ENABLE_SENSOR:
@@ -278,7 +278,7 @@ parameter_sensor_t ROSSensorController::getParameter() {
     return parameter;
 }
 
-void ROSSensorController::enableCallback(const serial_bridge::Enable::ConstPtr &msg) {
+void ROSSensorController::enableCallback(const ros_serial_bridge::Enable::ConstPtr &msg) {
     enable_sensor_t enable = msg->enable;
     try {
         serial_->parserSendPacket(serial_->createDataPacket(ENABLE_SENSOR, HASHMAP_NAVIGATION, (abstract_message_u*) & enable), 3, boost::posix_time::millisec(200));

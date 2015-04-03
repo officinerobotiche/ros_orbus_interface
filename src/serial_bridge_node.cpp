@@ -32,7 +32,7 @@ std::string robot_name = default_robot_name;
 
 int main(int argc, char **argv) {
 
-    ros::init(argc, argv, "serial_bridge");
+    ros::init(argc, argv, "ros_serial_bridge");
     serial_port_t serial_port1, serial_port2;
     switch (argc) {
         case 1:

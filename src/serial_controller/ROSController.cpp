@@ -27,7 +27,7 @@ ROSController::ROSController(const ros::NodeHandle& nh, ParserPacket* serial)
     serial_->addErrorCallback(&ROSController::errorPacket, this);
 
     //Publisher
-    pub_time_process = nh_.advertise<serial_bridge::Process>("process", NUMBER_PUB,
+    pub_time_process = nh_.advertise<ros_serial_bridge::Process>("process", NUMBER_PUB,
             boost::bind(&ROSController::connectCallback, this, _1));
     //Services
     srv_board = nh_.advertiseService("service_serial", &ROSController::service_Callback, this);
@@ -403,7 +403,7 @@ std::string ROSController::getBoardSerialError() {
     return service_str.str();
 }
 
-bool ROSController::service_Callback(serial_bridge::Service::Request &req, serial_bridge::Service::Response & msg) {
+bool ROSController::service_Callback(ros_serial_bridge::Service::Request &req, ros_serial_bridge::Service::Response & msg) {
     if (req.name.compare("reset") == 0) {
         resetBoard();
         msg.name = "reset";
@@ -438,7 +438,7 @@ process_t ROSController::get_process(std::string name) {
     return process;
 }
 
-bool ROSController::processServiceCallback(serial_bridge::Update::Request &req, serial_bridge::Update::Response&) {
+bool ROSController::processServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&) {
     std::string name = req.name;
     process_t process;
     std::vector<information_packet_t> list_send;

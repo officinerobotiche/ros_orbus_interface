@@ -19,9 +19,9 @@
 #define	ROSCONTROLLER_H
 
 #include <ros/ros.h>
-#include <serial_bridge/Service.h>
-#include <serial_bridge/Process.h>
-#include <serial_bridge/Update.h>
+#include <ros_serial_bridge/Service.h>
+#include <ros_serial_bridge/Process.h>
+#include <ros_serial_bridge/Update.h>
 #include <std_srvs/Empty.h>
 #include "../async_serial/ParserPacket.h"
 
@@ -100,7 +100,7 @@ private:
     ros::ServiceServer srv_board, srv_process;
     ros::Publisher pub_time_process;
 
-    serial_bridge::Process time_process;
+    ros_serial_bridge::Process time_process;
     double step_timer, tm_mill, k_time;
     int number_process;
     bool init_number_process;
@@ -124,8 +124,8 @@ private:
 
     process_t get_process(std::string name);
 
-    bool processServiceCallback(serial_bridge::Update::Request &req, serial_bridge::Update::Response&);
-    bool service_Callback(serial_bridge::Service::Request &req, serial_bridge::Service::Response &msg);
+    bool processServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
+    bool service_Callback(ros_serial_bridge::Service::Request &req, ros_serial_bridge::Service::Response &msg);
 };
 
 #endif	/* ROSCONTROLLER_H */

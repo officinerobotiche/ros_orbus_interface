@@ -10,9 +10,9 @@
 
 #include "ROSController.h"
 
-#include <serial_bridge/Pose.h>
-#include <serial_bridge/Enable.h>
-#include <serial_bridge/Motor.h>
+#include <ros_serial_bridge/Pose.h>
+#include <ros_serial_bridge/Enable.h>
+#include <ros_serial_bridge/Motor.h>
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/JointState.h>
 #include <geometry_msgs/Twist.h>
@@ -60,9 +60,9 @@ private:
 
     geometry_msgs::Twist twist;
     velocity_t meas_velocity;
-    serial_bridge::Pose pose;
-    serial_bridge::Motor motor_left, motor_right;
-    serial_bridge::Enable enable_motors;
+    ros_serial_bridge::Pose pose;
+    ros_serial_bridge::Motor motor_left, motor_right;
+    ros_serial_bridge::Enable enable_motors;
     std::string name_pid;
     
     ros::Time old_time;
@@ -73,12 +73,12 @@ private:
     void timerEvent(const ros::TimerEvent& event);
     
     void twistCallback(const geometry_msgs::Twist::ConstPtr &msg);
-    void enableCallback(const serial_bridge::Enable::ConstPtr &msg);
-    void poseCallback(const serial_bridge::Pose::ConstPtr &msg);
+    void enableCallback(const ros_serial_bridge::Enable::ConstPtr &msg);
+    void poseCallback(const ros_serial_bridge::Pose::ConstPtr &msg);
     void poseTFCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg);
 
-    bool pidServiceCallback(serial_bridge::Update::Request &req, serial_bridge::Update::Response&);
-    bool parameterServiceCallback(serial_bridge::Update::Request &req, serial_bridge::Update::Response&);
+    bool pidServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
+    bool parameterServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
     bool constraintServiceCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
     bool emergencyServiceCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
 
@@ -87,9 +87,9 @@ private:
     void updatePacket(std::vector<information_packet_t>* list_send);
     void addParameter(std::vector<information_packet_t>* list_send);
 
-    void saveOdometry(const serial_bridge::Pose* msg);
-    void sendOdometry(const velocity_t* velocity, const serial_bridge::Pose* pose);
-    void sendJointState(serial_bridge::Motor* motor_left, serial_bridge::Motor* motor_right);
+    void saveOdometry(const ros_serial_bridge::Pose* msg);
+    void sendOdometry(const velocity_t* velocity, const ros_serial_bridge::Pose* pose);
+    void sendJointState(ros_serial_bridge::Motor* motor_left, ros_serial_bridge::Motor* motor_right);
 
     void ConverToMotorVelocity(const geometry_msgs::Twist* msg, motor_control_t *motor_ref);
 

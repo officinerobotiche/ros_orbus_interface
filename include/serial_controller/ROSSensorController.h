@@ -9,7 +9,7 @@
 #define	ROSTEMPSENSORCONTROLLER_H
 
 #include "ROSController.h"
-#include <serial_bridge/Enable.h>
+#include <ros_serial_bridge/Enable.h>
 #include <tf/transform_broadcaster.h>
 
 const std::string default_laser_sharp_string = "laser_sharp";
@@ -49,7 +49,7 @@ private:
     void sensorPacket(const unsigned char& command, const abstract_message_u* packet);
     void sendLaserSharp(infrared_t infrared);
 
-    void enableCallback(const serial_bridge::Enable::ConstPtr &msg);
+    void enableCallback(const ros_serial_bridge::Enable::ConstPtr &msg);
     bool parameterCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
 
     parameter_sensor_t getParameter();

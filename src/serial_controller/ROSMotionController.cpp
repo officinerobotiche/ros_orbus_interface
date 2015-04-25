@@ -312,11 +312,11 @@ void ROSMotionController::updatePacket(std::vector<information_packet_t>* list_s
 
 void ROSMotionController::ConverToMotorVelocity(const geometry_msgs::Twist* msg, motor_control_t *motor_ref) {
     parameter_unicycle_t parameter_unicycle = get_unicycle_parameter();
-    // wl = 1/rl [ 1,  d/2]
-    // wr = 1/rr [ 1, -d/2]
+    // wl = 1/rl [ 1, -d/2]
+    // wr = 1/rr [ 1,  d/2]
     long int motor_ref_long[2];
-    motor_ref_long[0] = (long int) ((1.0f / parameter_unicycle.radius_l)*(msg->linear.x + (0.5f*parameter_unicycle.wheelbase * (-msg->angular.z)))*1000);
-    motor_ref_long[1] = (long int) ((1.0f / parameter_unicycle.radius_r)*(msg->linear.x - (0.5f*parameter_unicycle.wheelbase * (-msg->angular.z)))*1000);
+    motor_ref_long[0] = (long int) ((1.0f / parameter_unicycle.radius_l)*(msg->linear.x + (0.5f*parameter_unicycle.wheelbase * (msg->angular.z)))*1000);
+    motor_ref_long[1] = (long int) ((1.0f / parameter_unicycle.radius_r)*(msg->linear.x - (0.5f*parameter_unicycle.wheelbase * (msg->angular.z)))*1000);
 
     // >>>>> Saturation on 16 bit values
     if(motor_ref_long[0] > 32767) {

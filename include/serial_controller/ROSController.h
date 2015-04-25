@@ -25,7 +25,6 @@
 #include <std_srvs/Empty.h>
 #include "../async_serial/ParserPacket.h"
 
-const std::string command_string = "command";
 const std::string measure_string = "measure";
 const std::string left_string = "Left";
 const std::string right_string = "Right";

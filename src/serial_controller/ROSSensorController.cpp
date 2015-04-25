@@ -38,7 +38,7 @@ ROSSensorController::ROSSensorController(const ros::NodeHandle& nh, ParserPacket
             boost::bind(&ROSController::connectCallback, this, _1));
     //Open Subscriber
     //-Command
-    sub_enable = nh_.subscribe(command_string + "/" + enable_sensors, 1, &ROSSensorController::enableCallback, this);
+    sub_enable = nh_.subscribe("/" + enable_sensors, 1, &ROSSensorController::enableCallback, this);
 
     //Open Service
     srv_parameter = nh_.advertiseService(default_parameter_string, &ROSSensorController::parameterCallback, this);

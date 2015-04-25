@@ -42,7 +42,7 @@ ROSMotionController::ROSMotionController(const ros::NodeHandle& nh, ParserPacket
     //-- Conventional (Using TF, NAV)
     pub_twist = nh_.advertise<geometry_msgs::Twist>("velocity", NUMBER_PUB,
             boost::bind(&ROSController::connectCallback, this, _1));
-    pub_odom = nh_.advertise<nav_msgs::Odometry>("odometry", NUMBER_PUB,
+    pub_odom = nh_.advertise<nav_msgs::Odometry>("odom", NUMBER_PUB,
             boost::bind(&ROSController::connectCallback, this, _1));
     //JointState position
     pub_joint = nh_.advertise<sensor_msgs::JointState>(joint_string, 1,
@@ -50,11 +50,11 @@ ROSMotionController::ROSMotionController(const ros::NodeHandle& nh, ParserPacket
 
     //Open Subscriber
     //- Command
-    sub_pose = nh_.subscribe(command_string + "/pose", 1, &ROSMotionController::poseCallback, this);
-    sub_enable = nh_.subscribe(command_string + "/enable", 1, &ROSMotionController::enableCallback, this);
+    sub_pose = nh_.subscribe("/cmd_pose", 1, &ROSMotionController::poseCallback, this);
+    sub_enable = nh_.subscribe("/cmd_enable", 1, &ROSMotionController::enableCallback, this);
     //-- Conventional (Using TF, NAV)
-    sub_pose_estimate = nh_.subscribe(command_string + "/odometry", 1, &ROSMotionController::poseTFCallback, this);
-    sub_twist = nh_.subscribe(command_string + "/velocity", 1, &ROSMotionController::twistCallback, this);
+    sub_pose_estimate = nh_.subscribe("/cmd_odom", 1, &ROSMotionController::poseTFCallback, this);
+    sub_twist = nh_.subscribe("/cmd_vel", 1, &ROSMotionController::twistCallback, this);
 
     //Open Service
     srv_pid = nh_.advertiseService("pid", &ROSMotionController::pidServiceCallback, this);

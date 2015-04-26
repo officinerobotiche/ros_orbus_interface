@@ -143,7 +143,8 @@ set(hardware_unav_SRC
     src/async_serial/AsyncSerial.cpp
     src/async_serial/PacketSerial.cpp
     src/async_serial/ParserPacket.cpp
-    src/hardware/orb_hardware.cpp
+    src/hardware/ORBHardware.cpp
+    src/hardware/UNAVHardware.cpp
     src/unav_hwinterface.cpp
 )
 

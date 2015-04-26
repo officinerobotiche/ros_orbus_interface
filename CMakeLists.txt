@@ -14,10 +14,19 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   message_generation
   geometry_msgs
+# NEW
+  controller_manager
+  hardware_interface
+  diagnostic_updater
+  roslaunch
+  roslint
+  sensor_msgs
 )
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system thread)
+
+find_package(Boost REQUIRED COMPONENTS chrono)
 
 find_package( PkgConfig REQUIRED )
 
@@ -94,10 +103,9 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES serial_bridge
-   CATKIN_DEPENDS geometry_msgs message_runtime std_msgs std_srvs
-#  DEPENDS system_lib
+   CATKIN_DEPENDS diagnostic_updater hardware_interface sensor_msgs geometry_msgs message_runtime std_msgs std_srvs roscpp
+   DEPENDS Boost
 )
-
 ###########
 ## Build ##
 ###########
@@ -135,7 +143,7 @@ set(hardware_unav_SRC
     src/async_serial/AsyncSerial.cpp
     src/async_serial/PacketSerial.cpp
     src/async_serial/ParserPacket.cpp
-    src/serial_controller/UnavInterface.cpp
+    src/hardware/orb_hardware.cpp
     src/unav_hwinterface.cpp
 )
 

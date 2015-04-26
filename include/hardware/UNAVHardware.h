@@ -39,6 +39,9 @@ public:
     UNAVHardware(const ros::NodeHandle& nh, ParserPacket* serial);
     virtual ~UNAVHardware();
 
+    void updateJointsFromHardware();
+    void writeCommandsToHardware();
+
 private:
 
     // ROS Control interfaces
@@ -66,8 +69,6 @@ private:
     sensor_msgs::JointState joint;
 
     void registerControlInterfaces();
-    void updateJointsFromHardware();
-    void writeCommandsToHardware();
 
     void timerEvent(const ros::TimerEvent& event);
 

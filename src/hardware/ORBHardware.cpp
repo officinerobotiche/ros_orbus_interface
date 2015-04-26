@@ -36,7 +36,7 @@ using namespace std;
 #define NUMBER_PUB 10
 
 ORBHardware::ORBHardware(const ros::NodeHandle& nh, ParserPacket* serial)
-: nh_(nh), serial_(serial), init_number_process(false), name_board("Nothing"), type_board("Nothing"), reset_time_alive(0) {
+: nh_(nh), serial_(serial), init_number_process(false), name_board("Nothing"), type_board("Nothing") {
     serial_->addCallback(&ORBHardware::defaultPacket, this);
     serial_->addErrorCallback(&ORBHardware::errorPacket, this);
 
@@ -46,9 +46,6 @@ ORBHardware::ORBHardware(const ros::NodeHandle& nh, ParserPacket* serial)
     //Services
     srv_board = nh_.advertiseService("service_serial", &ORBHardware::service_Callback, this);
     srv_process = nh_.advertiseService("process", &ORBHardware::processServiceCallback, this);
-
-    //Timer
-    timer_ = nh_.createTimer(ros::Duration(1), &ORBHardware::timerCallback, this, false, false);
 
     map_error_serial[ERROR_TIMEOUT_SYNC_PACKET_STRING] = 0;
     map_error_serial[ERROR_MAX_ASYNC_CALLBACK_STRING] = 0;
@@ -115,26 +112,6 @@ void ORBHardware::loadParameter() {
         ROS_INFO("Sync parameter /priority: ROBOT -> ROS");
         list_packet.push_back(serial_->createPacket(PRIORITY_PROCESS, REQUEST));
     }
-    //Set timer rate
-    double rate = 1;
-    if (nh_.hasParam("timer/rate")) {
-        nh_.getParam("timer/rate", rate);
-        ROS_INFO("Sync parameter timer/rate: load - %f Hz", rate);
-    } else {
-        nh_.setParam("timer/rate", rate);
-        ROS_INFO("Sync parameter timer/rate: set - %f Hz", rate);
-    }
-    timer_.setPeriod(ros::Duration(1 / rate));
-    //Set timer rate
-    double time_alive = 1;
-    if (nh_.hasParam("timer/alive")) {
-        nh_.getParam("timer/alive", time_alive);
-        ROS_INFO("Sync parameter timer/alive: load - %f s", time_alive);
-    } else {
-        nh_.setParam("timer/alive", time_alive);
-        ROS_INFO("Sync parameter timer/alive: set - %f s", time_alive);
-    }
-    alive_callback_time = ros::Duration(time_alive);
     //Add other parameter request
     if (callback_add_parameter)
         callback_add_parameter(&list_packet);
@@ -144,6 +121,22 @@ void ORBHardware::loadParameter() {
     } catch (exception &e) {
         ROS_ERROR("%s", e.what());
     }
+}
+
+/**
+* External hook to trigger diagnostic update
+*/
+void ORBHardware::updateDiagnostics()
+{
+
+}
+
+/**
+* Update diagnostics with control loop timing information
+*/
+void ORBHardware::reportLoopDuration(const ros::Duration &duration)
+{
+
 }
 
 void ORBHardware::addVectorPacketRequest(const boost::function<void (std::vector<information_packet_t>*) >& callback) {
@@ -160,16 +153,6 @@ void ORBHardware::addParameterPacketRequest(const boost::function<void (std::vec
 
 void ORBHardware::clearParameterPacketRequest() {
     callback_add_parameter.clear();
-}
-
-void ORBHardware::addAliveOperation(const boost::function<bool (const ros::TimerEvent&, std::vector<information_packet_t>*) >& callback, bool start) {
-    callback_alive_event = callback;
-    if (start)
-        timer_.start();
-}
-
-void ORBHardware::clearAliveOperation() {
-    callback_alive_event.clear();
 }
 
 void ORBHardware::addTimerEvent(const boost::function<void (const ros::TimerEvent&) >& callback) {
@@ -198,41 +181,8 @@ std::vector<information_packet_t> ORBHardware::updatePacket() {
     return list_packet;
 }
 
-bool ORBHardware::aliveOperation(const ros::TimerEvent& event, std::vector<information_packet_t>* list_packet) {
-    if (callback_alive_event) {
-        old_time_alive += event.current_real - event.last_real;
-        if (old_time_alive >= alive_callback_time) {
-            old_time_alive = reset_time_alive;
-            return callback_alive_event(event, list_packet);
-        } else return true;
-    } else if (list_packet->size() != 0) {
-        return true;
-    } else return false;
-}
-
-void ORBHardware::timerCallback(const ros::TimerEvent& event) {
-    vector<information_packet_t> list_packet = updatePacket();
-    double rate = 1;
-    nh_.getParam("timer/rate", rate);
-    timer_.setPeriod(ros::Duration(1 / rate));
-    if (aliveOperation(event, &list_packet)) {
-        //        ROS_INFO("Start streaming");
-        try {
-            serial_->parserSendPacket(list_packet, 3, boost::posix_time::millisec(200));
-            if (callback_timer_event)
-                callback_timer_event(event);
-        } catch (std::exception& e) {
-            ROS_ERROR("%s", e.what());
-        }
-    } else {
-        ROS_INFO("Wait user");
-        timer_.stop();
-    }
-}
-
 void ORBHardware::connectCallback(const ros::SingleSubscriberPublisher& pub) {
     ROS_INFO("Connect: %s - %s", pub.getSubscriberName().c_str(), pub.getTopic().c_str());
-    timer_.start();
 }
 
 float ORBHardware::getTimeProcess(float process_time) {

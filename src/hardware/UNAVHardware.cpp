@@ -29,7 +29,6 @@ UNAVHardware::UNAVHardware(const ros::NodeHandle& nh, ParserPacket* serial)
     addVectorPacketRequest(&UNAVHardware::updatePacket, this);
     addParameterPacketRequest(&UNAVHardware::addParameter, this);
     addTimerEvent(&UNAVHardware::timerEvent, this);
-    addAliveOperation(&UNAVHardware::aliveOperation, this);
 
     //Open Service
     srv_pid = nh_.advertiseService("pid", &UNAVHardware::pidServiceCallback, this);
@@ -48,7 +47,6 @@ UNAVHardware::~UNAVHardware() {
     clearVectorPacketRequest();
     clearParameterPacketRequest();
     clearTimerEvent();
-    clearAliveOperation();
 }
 
 void UNAVHardware::addParameter(std::vector<information_packet_t>* list_send) {
@@ -148,90 +146,77 @@ void UNAVHardware::addParameter(std::vector<information_packet_t>* list_send) {
 
 void UNAVHardware::motionPacket(const unsigned char& command, const abstract_message_u* packet) {
     switch (command) {
-        case CONSTRAINT:
-            nh_.setParam(joint_string + "/constraint/" + right_string, packet->constraint.max_right);
-            nh_.setParam(joint_string + "/constraint/" + left_string, packet->constraint.max_left);
-            break;
-        case PARAMETER_UNICYCLE:
-            nh_.setParam("structure/" + wheelbase_string, packet->parameter_unicycle.wheelbase);
-            nh_.setParam("structure/" + radius_string + "/" + right_string, packet->parameter_unicycle.radius_r);
-            nh_.setParam("structure/" + radius_string + "/" + left_string, packet->parameter_unicycle.radius_l);
-            nh_.setParam("odo_mis_step", packet->parameter_unicycle.sp_min);
-            break;
-        case PARAMETER_MOTOR_L:
-            nh_.setParam(joint_string + "/" + left_string + "/k_vel", packet->parameter_motor.k_vel);
-            nh_.setParam(joint_string + "/" + left_string + "/k_ang", packet->parameter_motor.k_ang);
-            nh_.setParam(joint_string + "/" + left_string + "/encoder_swap", packet->parameter_motor.versus);
-            nh_.setParam(joint_string + "/" + left_string + "/default_enable", packet->parameter_motor.enable_set);
-            break;
-        case PARAMETER_MOTOR_R:
-            nh_.setParam(joint_string + "/" + right_string + "/k_vel", packet->parameter_motor.k_vel);
-            nh_.setParam(joint_string + "/" + right_string + "/k_ang", packet->parameter_motor.k_ang);
-            nh_.setParam(joint_string + "/" + right_string + "/versus", packet->parameter_motor.versus);
-            nh_.setParam(joint_string + "/" + right_string + "/default_enable", packet->parameter_motor.enable_set);
-            break;
-        case EMERGENCY:
-            nh_.setParam(emergency_string + "/bridge_off", packet->emergency.bridge_off);
-            nh_.setParam(emergency_string + "/slope_time", packet->emergency.slope_time);
-            nh_.setParam(emergency_string + "/timeout", ((double) packet->emergency.timeout) / 1000.0);
+    case CONSTRAINT:
+        nh_.setParam(joint_string + "/constraint/" + right_string, packet->constraint.max_right);
+        nh_.setParam(joint_string + "/constraint/" + left_string, packet->constraint.max_left);
         break;
-        case PID_CONTROL_L:
-            name_pid = "pid/" + left_string + "/";
-            nh_.setParam(name_pid + "P", packet->pid.kp);
-            nh_.setParam(name_pid + "I", packet->pid.ki);
-            nh_.setParam(name_pid + "D", packet->pid.kd);
-            break;
-        case PID_CONTROL_R:
-            name_pid = "pid/" + right_string + "/";
-            nh_.setParam(name_pid + "P", packet->pid.kp);
-            nh_.setParam(name_pid + "I", packet->pid.ki);
-            nh_.setParam(name_pid + "D", packet->pid.kd);
-            break;
-        case VEL_MOTOR_MIS_L:
-
-            break;
-        case VEL_MOTOR_MIS_R:
-
-            break;
-        case MOTOR_L:
-            motor_left.reference = ((double) packet->motor.refer_vel) / 1000;
-            motor_left.control = ((double) packet->motor.control_vel) * (1000.0 / INT16_MAX);
-            motor_left.measure = ((double) packet->motor.measure_vel) / 1000;
-            motor_left.current = ((double) packet->motor.current) / 1000;
-            //pub_motor_left.publish(motor_left);
-            break;
-        case MOTOR_R:
-            motor_right.reference = ((double) packet->motor.refer_vel) / 1000;
-            motor_right.control = ((double) packet->motor.control_vel) * (1000.0 / INT16_MAX);
-            motor_right.measure = ((double) packet->motor.measure_vel) / 1000;
-            motor_right.current = ((double) packet->motor.current) / 1000;
-            //pub_motor_right.publish(motor_right);
-            break;
-        case COORDINATE:
-            pose.x = packet->coordinate.x;
-            pose.y = packet->coordinate.y;
-            pose.theta = packet->coordinate.theta;
-            pose.space = packet->coordinate.space;
-            //pub_pose.publish(pose);
-            break;
-        case VELOCITY:
-            twist.linear.x = packet->velocity.v;
-            twist.angular.z = packet->velocity.w;
-            //pub_twist.publish(twist);
-            break;
-        case VELOCITY_MIS:
-            meas_velocity = packet->velocity;
-            break;
-        case ENABLE:
-            enable_motors.enable = packet->enable;
-            //pub_enable.publish(enable_motors);
-            break;
+    case PARAMETER_UNICYCLE:
+        nh_.setParam("structure/" + wheelbase_string, packet->parameter_unicycle.wheelbase);
+        nh_.setParam("structure/" + radius_string + "/" + right_string, packet->parameter_unicycle.radius_r);
+        nh_.setParam("structure/" + radius_string + "/" + left_string, packet->parameter_unicycle.radius_l);
+        nh_.setParam("odo_mis_step", packet->parameter_unicycle.sp_min);
+        break;
+    case PARAMETER_MOTOR_L:
+        nh_.setParam(joint_string + "/" + left_string + "/k_vel", packet->parameter_motor.k_vel);
+        nh_.setParam(joint_string + "/" + left_string + "/k_ang", packet->parameter_motor.k_ang);
+        nh_.setParam(joint_string + "/" + left_string + "/encoder_swap", packet->parameter_motor.versus);
+        nh_.setParam(joint_string + "/" + left_string + "/default_enable", packet->parameter_motor.enable_set);
+        break;
+    case PARAMETER_MOTOR_R:
+        nh_.setParam(joint_string + "/" + right_string + "/k_vel", packet->parameter_motor.k_vel);
+        nh_.setParam(joint_string + "/" + right_string + "/k_ang", packet->parameter_motor.k_ang);
+        nh_.setParam(joint_string + "/" + right_string + "/versus", packet->parameter_motor.versus);
+        nh_.setParam(joint_string + "/" + right_string + "/default_enable", packet->parameter_motor.enable_set);
+        break;
+    case EMERGENCY:
+        nh_.setParam(emergency_string + "/bridge_off", packet->emergency.bridge_off);
+        nh_.setParam(emergency_string + "/slope_time", packet->emergency.slope_time);
+        nh_.setParam(emergency_string + "/timeout", ((double) packet->emergency.timeout) / 1000.0);
+        break;
+    case PID_CONTROL_L:
+        name_pid = "pid/" + left_string + "/";
+        nh_.setParam(name_pid + "P", packet->pid.kp);
+        nh_.setParam(name_pid + "I", packet->pid.ki);
+        nh_.setParam(name_pid + "D", packet->pid.kd);
+        break;
+    case PID_CONTROL_R:
+        name_pid = "pid/" + right_string + "/";
+        nh_.setParam(name_pid + "P", packet->pid.kp);
+        nh_.setParam(name_pid + "I", packet->pid.ki);
+        nh_.setParam(name_pid + "D", packet->pid.kd);
+        break;
+//------------------------------- MOTOR INFORMATION ----------------------------------------//
+    case VEL_MOTOR_MIS_L:
+        joints_[0].velocity = ((double) packet->motor_control) / 1000;
+        break;
+    case VEL_MOTOR_MIS_R:
+        joints_[1].velocity = ((double) packet->motor_control) / 1000;
+        break;
+    case MOTOR_L:
+        motor_left.reference = ((double) packet->motor.refer_vel) / 1000;
+        motor_left.control = ((double) packet->motor.control_vel) * (1000.0 / INT16_MAX);
+        motor_left.measure = ((double) packet->motor.measure_vel) / 1000;
+        motor_left.current = ((double) packet->motor.current) / 1000;
+        //pub_motor_left.publish(motor_left);
+        break;
+    case MOTOR_R:
+        motor_right.reference = ((double) packet->motor.refer_vel) / 1000;
+        motor_right.control = ((double) packet->motor.control_vel) * (1000.0 / INT16_MAX);
+        motor_right.measure = ((double) packet->motor.measure_vel) / 1000;
+        motor_right.current = ((double) packet->motor.current) / 1000;
+        //pub_motor_right.publish(motor_right);
+        break;
+    case COORDINATE:
+    case VELOCITY:
+    case VELOCITY_MIS:
+    case ENABLE:
+    default:
+        break;
     }
 }
 
 void UNAVHardware::registerControlInterfaces() {
-    ros::V_string joint_names = boost::assign::list_of("front_left_wheel")
-        ("front_right_wheel")("rear_left_wheel")("rear_right_wheel");
+    ros::V_string joint_names = boost::assign::list_of("left")("right");
     for (unsigned int i = 0; i < joint_names.size(); i++)
     {
       hardware_interface::JointStateHandle joint_state_handle(joint_names[i],
@@ -247,10 +232,19 @@ void UNAVHardware::registerControlInterfaces() {
 }
 
 void UNAVHardware::updateJointsFromHardware() {
-
+    //Send a list of request about position and velocities
+    std::vector<information_packet_t> list_send;
+    //list_send->push_back(serial_->createPacket(POS_MOTOR_MIS_L, REQUEST, HASHMAP_MOTION));
+    //list_send->push_back(serial_->createPacket(POS_MOTOR_MIS_R, REQUEST, HASHMAP_MOTION));
+    list_send.push_back(serial_->createPacket(VEL_MOTOR_MIS_L, REQUEST, HASHMAP_MOTION));
+    list_send.push_back(serial_->createPacket(VEL_MOTOR_MIS_R, REQUEST, HASHMAP_MOTION));
+    //TODO Add a function to collect all commands
+    ROS_INFO("Update Joints");
 }
 
 void UNAVHardware::writeCommandsToHardware() {
+    ROS_INFO("Write to Hardware");
+
 
 }
 

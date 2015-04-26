@@ -7,6 +7,7 @@
 
 #include <ros/ros.h>
 #include "hardware/ORBHardware.h"
+#include "hardware/UNAVHardware.h"
 #include "controller_manager/controller_manager.h"
 #include "ros/callback_queue.h"
 
@@ -37,31 +38,31 @@ serial_port_t GetSerialPort(const char *c_port) {
 /**
 * Control loop for Husky, not realtime safe
 */
-//void controlLoop(unav_hardware &orb,
-//                 controller_manager::ControllerManager &cm,
-//                 time_source::time_point &last_time)
-//{
+void controlLoop(UNAVHardware &orb,
+                 controller_manager::ControllerManager &cm,
+                 time_source::time_point &last_time)
+{
 
-//  // Calculate monotonic time difference
-//  time_source::time_point this_time = time_source::now();
-//  boost::chrono::duration<double> elapsed_duration = this_time - last_time;
-//  ros::Duration elapsed(elapsed_duration.count());
-//  last_time = this_time;
+  // Calculate monotonic time difference
+  time_source::time_point this_time = time_source::now();
+  boost::chrono::duration<double> elapsed_duration = this_time - last_time;
+  ros::Duration elapsed(elapsed_duration.count());
+  last_time = this_time;
 
-//  // Process control loop
-//  orb.reportLoopDuration(elapsed);
-//  orb.updateJointsFromHardware();
-//  cm.update(ros::Time::now(), elapsed);
-//  orb.writeCommandsToHardware();
-//}
+  // Process control loop
+  orb.reportLoopDuration(elapsed);
+  orb.updateJointsFromHardware();
+  cm.update(ros::Time::now(), elapsed);
+  orb.writeCommandsToHardware();
+}
 
 /**
 * Diagnostics loop for ORB boards, not realtime safe
 */
-//void diagnosticLoop(orb_hardware::ORBHardware &orb)
-//{
-//  orb.updateDiagnostics();
-//}
+void diagnosticLoop(UNAVHardware &orb)
+{
+  orb.updateDiagnostics();
+}
 
 int main(int argc, char **argv) {
 
@@ -100,28 +101,51 @@ int main(int argc, char **argv) {
         }
 
         // Initialize robot hardware and link to controller manager
-        ORBHardware *interface;
+        //        if (board_type_string.compare("Motor Control") == 0){
+        //            ROS_INFO("Find Controller for %s", board_type_string.c_str());
+        //            //interface = new unav_hardware(nh, private_nh, serial, control_frequency);
+        //        } else if (board_type_string.compare("Sensor Board") == 0) {
+        //            ROS_INFO("Find Controller for %s", board_type_string.c_str());
+        //            //TODO
+        //        }else {
+        //            ROS_INFO("Standard Controller");
+        //            interface = new ORBHardware(nh, serial);
+        //            ROS_INFO("Found: %s", interface->getTypeBoard().c_str());
+        //        }
 
-        if (board_type_string.compare("Motor Control") == 0){
+        //if (board_type_string.compare("Motor Control") == 0){
             ROS_INFO("Find Controller for %s", board_type_string.c_str());
-            //interface = new unav_hardware(nh, private_nh, serial, control_frequency);
-        } else if (board_type_string.compare("Sensor Board") == 0) {
-            ROS_INFO("Find Controller for %s", board_type_string.c_str());
-            //TODO
-        }else {
-            ROS_INFO("Standard Controller");
-            interface = new ORBHardware(nh, serial);
-            ROS_INFO("Found: %s", interface->getTypeBoard().c_str());
-        }
+            UNAVHardware interface(nh, serial);
+            controller_manager::ControllerManager cm(&interface, nh);
 
-        controller_manager::ControllerManager cm(interface, nh);
+            // Setup separate queue and single-threaded spinner to process timer callbacks
+            // that interface with Husky hardware - libhorizon_legacy not threadsafe. This
+            // avoids having to lock around hardware access, but precludes realtime safety
+            // in the control loop.
+            ros::CallbackQueue unav_queue;
+            ros::AsyncSpinner unav_spinner(1, &unav_queue);
+
+            time_source::time_point last_time = time_source::now();
+            ros::TimerOptions control_timer(
+                ros::Duration(1 / control_frequency),
+                boost::bind(controlLoop, boost::ref(interface), boost::ref(cm), boost::ref(last_time)),
+                &unav_queue);
+            ros::Timer control_loop = nh.createTimer(control_timer);
+
+            ros::TimerOptions diagnostic_timer(
+                ros::Duration(1 / diagnostic_frequency),
+                boost::bind(diagnosticLoop, boost::ref(interface)),
+                &unav_queue);
+            ros::Timer diagnostic_loop = nh.createTimer(diagnostic_timer);
+
+            unav_spinner.start();
+        //}
 
         std::string name_node = ros::this_node::getName();
         ROS_INFO("Started %s", name_node.c_str());
 
         // Process remainder of ROS callbacks separately, mainly ControlManager related
         ros::spin();
-        ROS_INFO("Find Controller for %s", board_type_string.c_str());
 
     } catch (std::exception &e) {
         serial->close();

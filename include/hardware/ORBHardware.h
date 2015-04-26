@@ -29,6 +29,10 @@ class ORBHardware : public hardware_interface::RobotHW {
 public:
     ORBHardware(const ros::NodeHandle& nh, ParserPacket* serial);
 
+    void updateDiagnostics();
+
+    void reportLoopDuration(const ros::Duration &duration);
+
     virtual ~ORBHardware();
 
     void loadParameter();
@@ -50,13 +54,6 @@ public:
     }
     void clearParameterPacketRequest();
 
-    void addAliveOperation(const boost::function<bool (const ros::TimerEvent&, std::vector<information_packet_t>*) >& callback, bool start=false);
-
-    template <class T> void addAliveOperation(bool(T::*fp)(const ros::TimerEvent&, std::vector<information_packet_t>*), T* obj, bool start=false) {
-        addAliveOperation(boost::bind(fp, obj, _1, _2), start);
-    }
-    void clearAliveOperation();
-
     void addTimerEvent(const boost::function<void (const ros::TimerEvent&) >& callback);
 
     template <class T> void addTimerEvent(void(T::*fp)(const ros::TimerEvent&), T* obj) {
@@ -68,7 +65,6 @@ protected:
     //Initialization object
     ros::NodeHandle nh_; //NameSpace for bridge controller
     ParserPacket* serial_; //Serial object to comunicate with PIC device
-    ros::Timer timer_;
     std::string name_board, version, name_author, compiled, type_board;
 private:
 
@@ -79,7 +75,6 @@ private:
     callback_add_event_t callback_alive_event;
     callback_timer_event_t callback_timer_event;
 
-    ros::Duration old_time_alive, reset_time_alive, alive_callback_time;
     ros::ServiceServer srv_board, srv_process;
     ros::Publisher pub_time_process;
 
@@ -89,9 +84,7 @@ private:
     bool init_number_process;
     std::map<std::string, int> map_error_serial;
 
-    bool aliveOperation(const ros::TimerEvent& event, std::vector<information_packet_t>* list_packet);
     std::vector<information_packet_t> updatePacket();
-    void timerCallback(const ros::TimerEvent& event);
 
     float getTimeProcess(float process_time);
     void errorPacket(const unsigned char& command, const abstract_message_u* packet);

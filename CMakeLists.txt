@@ -126,11 +126,23 @@ set(serial_SRC
     src/serial_bridge_node.cpp
 )
 
-
 ## Declare a cpp executable
 add_executable(serial_bridge_node ${serial_SRC})
 target_link_libraries(serial_bridge_node ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 add_dependencies(serial_bridge_node serial_bridge_gencpp)
+
+set(hardware_unav_SRC
+    src/async_serial/AsyncSerial.cpp
+    src/async_serial/PacketSerial.cpp
+    src/async_serial/ParserPacket.cpp
+    src/serial_controller/UnavInterface.cpp
+    src/unav_hwinterface.cpp
+)
+
+## Declare a cpp executable
+add_executable(hardware_unav ${hardware_unav_SRC})
+target_link_libraries(hardware_unav ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+add_dependencies(hardware_unav hardware_unav_gencpp)
 
 #############
 ## Install ##

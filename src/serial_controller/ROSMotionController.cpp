@@ -50,11 +50,11 @@ ROSMotionController::ROSMotionController(const ros::NodeHandle& nh, ParserPacket
 
     //Open Subscriber
     //- Command
-    sub_pose = nh_.subscribe("/cmd_pose", 1, &ROSMotionController::poseCallback, this);
-    sub_enable = nh_.subscribe("/cmd_enable", 1, &ROSMotionController::enableCallback, this);
+    sub_pose = nh_.subscribe("cmd_pose", 1, &ROSMotionController::poseCallback, this);
+    sub_enable = nh_.subscribe("cmd_enable", 1, &ROSMotionController::enableCallback, this);
     //-- Conventional (Using TF, NAV)
-    sub_pose_estimate = nh_.subscribe("/cmd_odom", 1, &ROSMotionController::poseTFCallback, this);
-    sub_twist = nh_.subscribe("/cmd_vel", 1, &ROSMotionController::twistCallback, this);
+    sub_pose_estimate = nh_.subscribe("cmd_odom", 1, &ROSMotionController::poseTFCallback, this);
+    sub_twist = nh_.subscribe("cmd_vel", 1, &ROSMotionController::twistCallback, this);
 
     //Open Service
     srv_pid = nh_.advertiseService("pid", &ROSMotionController::pidServiceCallback, this);
@@ -258,7 +258,8 @@ void ROSMotionController::timerEvent(const ros::TimerEvent& event) {
         sendOdometry(&meas_velocity, &pose);
     }
     // Send JointState message
-    if (pub_joint.getNumSubscribers() >= 1) {
+    //if (pub_joint.getNumSubscribers() >= 1)
+    {
         sendJointState(&motor_left, &motor_right);
     }
 }

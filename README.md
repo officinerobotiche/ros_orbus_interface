@@ -2,10 +2,10 @@
 
 With this node you can control with ROS all boards with orbus protocoll, in particular:
 - [**µNAV**](http://unav.officinerobotiche.it) The motion control board for two DC brushed motors.
-- [**NavigationBoard**](http://raffaello.officinerobotiche.it/boards/old-boards/motion-control/) A board to read all data from infrared sensor
+- [**Navigation Board**](http://raffaello.officinerobotiche.it/boards/old-boards/navigation-board/) A board to read all data from infrared sensor
 
 # Release
-- [**Download last stable release**](https://github.com/officinerobotiche/uNAV.X/releases)
+- [**Download last stable release**](https://github.com/officinerobotiche/ros_serial_bridge/releases)
 - [wiki] with all detailed information about firmware
 
 # Installation

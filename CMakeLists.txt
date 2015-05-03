@@ -135,9 +135,9 @@ set(serial_SRC
 )
 
 ## Declare a cpp executable
-add_executable(serial_bridge_node ${serial_SRC})
-target_link_libraries(serial_bridge_node ${catkin_LIBRARIES} ${Boost_LIBRARIES})
-add_dependencies(serial_bridge_node serial_bridge_gencpp)
+#add_executable(serial_bridge_node ${serial_SRC})
+#target_link_libraries(serial_bridge_node ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+#add_dependencies(serial_bridge_node serial_bridge_gencpp)
 
 set(hardware_unav_SRC
     src/async_serial/AsyncSerial.cpp

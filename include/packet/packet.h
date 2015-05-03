@@ -37,9 +37,8 @@
  * Other messages for this board are in packet/unav.h
  */
 
-#include <stdint.h>
-
 #define MOTION
+#define MOTOR
 #define NAVIGATION_BOARD
 
 /*******/
@@ -50,6 +49,11 @@
 #ifdef NAVIGATION_BOARD
 #include "packet/navigation.h"
 #endif
+
+//TO BE SPLIT
+//#ifdef MOTOR
+//#include "packet/motor.h"
+//#endif
 
 /** Buffers dimension */
 // Dimension for UART transmit buffer
@@ -80,7 +84,7 @@
 /**
  * Define messages about parameter system:
      * * Clock of System timer
- * * Colck in milliseconds
+     * * Clock in milliseconds
  */
 typedef struct parameter_system {
     int16_t step_timer;
@@ -136,8 +140,8 @@ typedef struct process {
 /**** EO Messages ****/
 
 /**
- * This is a definition for convertion packets in a big data packet to send in 
- * a serial communication. 
+ * This is a definition for convertion packets in a big data packet to send in
+ * a serial communication.
  * For all packet we have this transformation:
  * 1. UNION abstract_packet_u
  * 2. STRUCT information_packet_t
@@ -170,6 +174,9 @@ typedef union abstract_message {
     error_pkg_t error_pkg;
     parameter_system_t parameter_system;
     process_buffer_t process_name;
+#ifdef MOTOR
+    ABSTRACT_MESSAGE_MOTOR
+#endif
 #ifdef MOTION
     ABSTRACT_MESSAGE_MOTION
 #endif
@@ -235,12 +242,12 @@ static unsigned int hashmap_default[HASHMAP_DEFAULT_NUMBER];
 /**
  * Table with convertion number message in a length for data messages
  */
-#define INITIALIZE_HASHMAP_DEFAULT hashmap_default[SERVICES] = LNG_SERVICES;    \
-                                   hashmap_default[TIME_PROCESS] = LNG_PROCESS; \
-                                   hashmap_default[PRIORITY_PROCESS] = LNG_PROCESS; \
-                                   hashmap_default[FRQ_PROCESS] = LNG_PROCESS; \
+#define INITIALIZE_HASHMAP_DEFAULT hashmap_default[SERVICES] = LNG_SERVICES;                 \
+                                   hashmap_default[TIME_PROCESS] = LNG_PROCESS;              \
+                                   hashmap_default[PRIORITY_PROCESS] = LNG_PROCESS;          \
+                                   hashmap_default[FRQ_PROCESS] = LNG_PROCESS;               \
                                    hashmap_default[PARAMETER_SYSTEM] = LNG_PARAMETER_SYSTEM; \
-                                   hashmap_default[ERROR_SERIAL] = LNG_ERROR_PKG;       \
+                                   hashmap_default[ERROR_SERIAL] = LNG_ERROR_PKG;            \
                                    hashmap_default[NAME_PROCESS] = LNG_NAME_PROCESS;
 
 

@@ -204,12 +204,14 @@ void UNAVHardware::motionPacket(const unsigned char& command, const abstract_mes
 //------------------------------- MOTOR INFORMATION ----------------------------------------//
     case VEL_MOTOR_MIS_L:
         joints_[0].velocity = ((double) packet->motor_control) / 1000;
+        ROS_INFO_STREAM("Velocity: " << joints_[0].velocity);
         break;
     case VEL_MOTOR_MIS_R:
         joints_[1].velocity = ((double) packet->motor_control) / 1000;
         break;
     case MOTOR_L:
         measure[REF_MOTOR_LEFT] = packet->motor;
+        ROS_INFO_STREAM("Velocity: " << ((double) packet->motor.velocity) / 1000 << " - Position: " << packet->motor.position);
         //pub_motor_left.publish(motor_left);
         break;
     case MOTOR_R:
@@ -246,8 +248,18 @@ void UNAVHardware::updateJointsFromHardware() {
     std::vector<information_packet_t> list_send;
     //list_send->push_back(serial_->createPacket(POS_MOTOR_MIS_L, REQUEST, HASHMAP_MOTION));
     //list_send->push_back(serial_->createPacket(POS_MOTOR_MIS_R, REQUEST, HASHMAP_MOTION));
-    list_send.push_back(serial_->createPacket(VEL_MOTOR_MIS_L, REQUEST, HASHMAP_MOTION));
-    list_send.push_back(serial_->createPacket(VEL_MOTOR_MIS_R, REQUEST, HASHMAP_MOTION));
+    list_send.push_back(serial_->createPacket(MOTOR_L, REQUEST, HASHMAP_MOTION));
+    list_send.push_back(serial_->createPacket(MOTOR_R, REQUEST, HASHMAP_MOTION));
+    state_controller_t status = STATE_CONTROL_VELOCITY;
+    motor_control_t velocity = 1000;
+    list_send.push_back(serial_->createDataPacket(ENABLE_MOTOR_L, HASHMAP_MOTION, (abstract_message_u*) & status));
+
+    list_send.push_back(serial_->createDataPacket(VEL_MOTOR_L, HASHMAP_MOTION, (abstract_message_u*) & velocity));
+    try {
+        serial_->parserSendPacket(list_send, 3, boost::posix_time::millisec(200));
+    } catch (exception &e) {
+        ROS_ERROR("%s", e.what());
+    }
     //TODO Add a function to collect all commands
     ROS_INFO("Update Joints");
 }

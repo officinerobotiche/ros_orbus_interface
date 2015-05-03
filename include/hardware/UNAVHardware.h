@@ -13,23 +13,21 @@
 #include <ros_serial_bridge/Pose.h>
 #include <ros_serial_bridge/Enable.h>
 #include <ros_serial_bridge/Motor.h>
-#include <nav_msgs/Odometry.h>
-#include <sensor_msgs/JointState.h>
-#include <geometry_msgs/Twist.h>
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
-#include <tf/transform_broadcaster.h>
+//#include <nav_msgs/Odometry.h>
+//#include <sensor_msgs/JointState.h>
+//#include <geometry_msgs/Twist.h>
+//#include <geometry_msgs/PoseWithCovarianceStamped.h>
+//#include <tf/transform_broadcaster.h>
 //#include <tf2_ros/transform_broadcaster.h>
 
 #include "hardware_interface/joint_state_interface.h"
 #include "hardware_interface/joint_command_interface.h"
 
 #define NUM_MOTORS 2
-#define REF_MOTOR_LEFT 0
-#define REF_MOTOR_RIGHT 1
 
 const std::string joint_string = "joint_states";
-const std::string odometry_string = "odometry";
-const std::string base_link_string = "base_link";
+//const std::string odometry_string = "odometry";
+//const std::string base_link_string = "base_link";
 const std::string paramenter_unicycle_string = "unicycle";
 const std::string emergency_string = "emergency";
 
@@ -61,7 +59,7 @@ private:
     motor_t measure[NUM_MOTORS];
     motor_t reference[NUM_MOTORS];
 
-    geometry_msgs::Twist twist;
+    //geometry_msgs::Twist twist;
     velocity_t meas_velocity;
     ros_serial_bridge::Pose pose;
     //ros_serial_bridge::Motor motor_left, motor_right;
@@ -71,7 +69,7 @@ private:
     ros::Time old_time;
     double k_ele_left, k_ele_right;
     double positon_joint_left, positon_joint_right;
-    sensor_msgs::JointState joint;
+    //sensor_msgs::JointState joint;
 
     void registerControlInterfaces();
 
@@ -86,8 +84,6 @@ private:
     void motionPacket(const unsigned char& command, const abstract_message_u* packet);
     void updatePacket(std::vector<information_packet_t>* list_send);
     void addParameter(std::vector<information_packet_t>* list_send);
-
-    void ConverToMotorVelocity(const geometry_msgs::Twist* msg, motor_control_t *motor_ref);
 
     pid_control_t get_pid(std::string name);
     parameter_motor_t get_motor_parameter(std::string name);

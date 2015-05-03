@@ -15,6 +15,11 @@
 
 using namespace std;
 
+namespace
+{
+  const uint8_t LEFT = 0, RIGHT = 1;
+}
+
 UNAVHardware::UNAVHardware(const ros::NodeHandle& nh, ParserPacket* serial)
 : ORBHardware(nh, serial), positon_joint_left(0), positon_joint_right(0) {
 
@@ -115,28 +120,13 @@ void UNAVHardware::addParameter(std::vector<information_packet_t>* list_send) {
         ROS_INFO("Sync parameter parameter motor/%s: ROBOT -> ROS",right_string.c_str());
         list_send->push_back(serial_->createPacket(PARAMETER_MOTOR_R, REQUEST, HASHMAP_MOTION));
     }
-    //Names TF
-    if (nh_.hasParam(tf_string)) {
-        ROS_INFO("Sync parameter %s: load", tf_string.c_str());
-        nh_.param<std::string>(tf_string + "/" + odometry_string, tf_odometry_string_, tf_odometry_string_);
-        nh_.param<std::string>(tf_string + "/" + base_link_string, tf_base_link_string_, tf_base_link_string_);
-        nh_.param<std::string>(tf_string + "/" + joint_string, tf_joint_string_, tf_joint_string_);
-    } else {
-        ROS_INFO("Sync parameter %s: set", tf_string.c_str());
-        tf_odometry_string_ = odometry_string;
-        tf_base_link_string_ = base_link_string;
-        tf_joint_string_ = joint_string;
-        nh_.setParam(tf_string + "/" + odometry_string, tf_odometry_string_);
-        nh_.setParam(tf_string + "/" + base_link_string, tf_base_link_string_);
-        nh_.setParam(tf_string + "/" + joint_string, tf_joint_string_);
-    }
     //Names ele
     if (!nh_.hasParam(joint_string + "/back_emf")) {
         ROS_INFO("Sync parameter %s/back_emf: set", joint_string.c_str());
         nh_.setParam(joint_string + "/back_emf/" + left_string, 1.0);
         nh_.setParam(joint_string + "/back_emf/" + right_string, 1.0);
     }
-    //Set timer rate
+    //Set emergency
     if (nh_.hasParam(emergency_string)) {
         ROS_INFO("Sync parameter %s: ROS -> ROBOT", emergency_string.c_str());
         emergency_t emergency = get_emergency();
@@ -145,13 +135,6 @@ void UNAVHardware::addParameter(std::vector<information_packet_t>* list_send) {
         ROS_INFO("Sync parameter %s: ROBOT -> ROS", emergency_string.c_str());
         list_send->push_back(serial_->createPacket(EMERGENCY, REQUEST, HASHMAP_MOTION));
     }
-    joint.header.frame_id = tf_joint_string_;
-    joint.name.resize(2);
-    joint.effort.resize(2);
-    joint.velocity.resize(2);
-    joint.position.resize(2);
-    joint.name[0] = left_string;
-    joint.name[1] = right_string;
 }
 
 void UNAVHardware::motionPacket(const unsigned char& command, const abstract_message_u* packet) {
@@ -203,20 +186,22 @@ void UNAVHardware::motionPacket(const unsigned char& command, const abstract_mes
         break;
 //------------------------------- MOTOR INFORMATION ----------------------------------------//
     case VEL_MOTOR_MIS_L:
-        joints_[0].velocity = ((double) packet->motor_control) / 1000;
-        ROS_INFO_STREAM("Velocity: " << joints_[0].velocity);
+        joints_[LEFT].velocity = ((double) packet->motor_control) / 1000;
         break;
     case VEL_MOTOR_MIS_R:
-        joints_[1].velocity = ((double) packet->motor_control) / 1000;
+        joints_[RIGHT].velocity = ((double) packet->motor_control) / 1000;
         break;
     case MOTOR_L:
-        measure[REF_MOTOR_LEFT] = packet->motor;
-        ROS_INFO_STREAM("Velocity: " << ((double) packet->motor.velocity) / 1000 << " - Position: " << packet->motor.position);
-        //pub_motor_left.publish(motor_left);
+        measure[LEFT] = packet->motor;
+        joints_[LEFT].effort = measure[LEFT].torque;
+        joints_[LEFT].position = measure[LEFT].position;
+        joints_[LEFT].velocity = ((double) measure[LEFT].velocity) / 1000;
         break;
     case MOTOR_R:
-        measure[REF_MOTOR_RIGHT] = packet->motor;
-        //pub_motor_right.publish(motor_right);
+        measure[RIGHT] = packet->motor;
+        joints_[RIGHT].effort = measure[RIGHT].torque;
+        joints_[RIGHT].position = measure[RIGHT].position;
+        joints_[RIGHT].velocity = ((double) measure[RIGHT].velocity) / 1000;
         break;
     case COORDINATE:
     case VELOCITY:
@@ -246,8 +231,6 @@ void UNAVHardware::registerControlInterfaces() {
 void UNAVHardware::updateJointsFromHardware() {
     //Send a list of request about position and velocities
     std::vector<information_packet_t> list_send;
-    //list_send->push_back(serial_->createPacket(POS_MOTOR_MIS_L, REQUEST, HASHMAP_MOTION));
-    //list_send->push_back(serial_->createPacket(POS_MOTOR_MIS_R, REQUEST, HASHMAP_MOTION));
     list_send.push_back(serial_->createPacket(MOTOR_L, REQUEST, HASHMAP_MOTION));
     list_send.push_back(serial_->createPacket(MOTOR_R, REQUEST, HASHMAP_MOTION));
     state_controller_t status = STATE_CONTROL_VELOCITY;
@@ -326,36 +309,6 @@ void UNAVHardware::updatePacket(std::vector<information_packet_t>* list_send) {
 //        list_send->push_back(serial_->createPacket(MOTOR_R, REQUEST, HASHMAP_MOTION));
 //    }
     //    ROS_INFO("[ %s]", packet_string.c_str());
-}
-
-void UNAVHardware::ConverToMotorVelocity(const geometry_msgs::Twist* msg, motor_control_t *motor_ref) {
-    parameter_unicycle_t parameter_unicycle = get_unicycle_parameter();
-    // wl = 1/rl [ 1, -d/2]
-    // wr = 1/rr [ 1,  d/2]
-    long int motor_ref_long[2];
-    //Left motor
-    motor_ref_long[0] = (long int) ((1.0f / parameter_unicycle.radius_l)*(msg->linear.x - (0.5f*parameter_unicycle.wheelbase * (msg->angular.z)))*1000);
-    //Right Motor
-    motor_ref_long[1] = (long int) ((1.0f / parameter_unicycle.radius_r)*(msg->linear.x + (0.5f*parameter_unicycle.wheelbase * (msg->angular.z)))*1000);
-
-    // >>>>> Saturation on 16 bit values
-    if(motor_ref_long[0] > 32767) {
-        motor_ref[0] = 32767;
-    } else if (motor_ref_long[0] < -32768) {
-        motor_ref_long[0] = -32768;
-    } else {
-        motor_ref[0] = (int16_t) motor_ref_long[0];
-    }
-
-    if(motor_ref_long[1] > 32767) {
-        motor_ref[1] = 32767;
-    } else if (motor_ref_long[1] < -32768) {
-        motor_ref_long[1] = -32768;
-    } else {
-        motor_ref[1] = (int16_t) motor_ref_long[1];
-    }
-    // <<<<< Saturation on 16 bit values
-
 }
 
 pid_control_t UNAVHardware::get_pid(std::string name) {

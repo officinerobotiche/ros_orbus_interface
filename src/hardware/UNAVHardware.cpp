@@ -21,7 +21,7 @@ namespace
 }
 
 UNAVHardware::UNAVHardware(const ros::NodeHandle& nh, ParserPacket* serial)
-: ORBHardware(nh, serial), positon_joint_left(0), positon_joint_right(0) {
+: ORBHardware(nh, serial) {
 
     string param_type_board = "Motor Control";
     if (type_board.compare(param_type_board) == 0) {
@@ -44,8 +44,8 @@ UNAVHardware::UNAVHardware(const ros::NodeHandle& nh, ParserPacket* serial)
 
     registerControlInterfaces();
 
-    status[LEFT] = STATE_CONTROL_DISABLE;
-    status[RIGHT] = STATE_CONTROL_DISABLE;
+    joints_[LEFT].state = STATE_CONTROL_DISABLE;
+    joints_[RIGHT].state = STATE_CONTROL_DISABLE;
 }
 
 UNAVHardware::~UNAVHardware() {
@@ -201,16 +201,14 @@ void UNAVHardware::motorPacket(const unsigned char& command, const abstract_mess
         joints_[RIGHT].velocity = ((double) packet->motor_control) / 1000;
         break;
     case MOTOR_L:
-        measure[LEFT] = packet->motor;
-        joints_[LEFT].effort = measure[LEFT].torque;
-        joints_[LEFT].position = measure[LEFT].position;
-        joints_[LEFT].velocity = ((double) measure[LEFT].velocity) / 1000;
+        joints_[LEFT].effort = packet->motor.torque;
+        joints_[LEFT].position = packet->motor.position;
+        joints_[LEFT].velocity = ((double) packet->motor.velocity) / 1000;
         break;
     case MOTOR_R:
-        measure[RIGHT] = packet->motor;
-        joints_[RIGHT].effort = measure[RIGHT].torque;
-        joints_[RIGHT].position = measure[RIGHT].position;
-        joints_[RIGHT].velocity = ((double) measure[RIGHT].velocity) / 1000;
+        joints_[RIGHT].effort = packet->motor.torque;
+        joints_[RIGHT].position = packet->motor.position;
+        joints_[RIGHT].velocity = ((double) packet->motor.velocity) / 1000;
         break;
     }
 }

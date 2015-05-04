@@ -54,21 +54,16 @@ private:
     std::string tf_odometry_string_, tf_base_link_string_, tf_joint_string_;
 
     motor_control_t velocity_ref[NUM_MOTORS];
-    state_controller_t status[NUM_MOTORS];
+    //state_controller_t status[NUM_MOTORS];
 
-    motor_t measure[NUM_MOTORS];
-    motor_t reference[NUM_MOTORS];
+    //motor_t measure[NUM_MOTORS];
+    //motor_t reference[NUM_MOTORS];
 
-    //geometry_msgs::Twist twist;
     velocity_t meas_velocity;
-    ros_serial_bridge::Pose pose;
-    //ros_serial_bridge::Motor motor_left, motor_right;
-    ros_serial_bridge::Enable enable_motors;
     std::string name_pid;
     
     ros::Time old_time;
     double k_ele_left, k_ele_right;
-    double positon_joint_left, positon_joint_right;
     //sensor_msgs::JointState joint;
 
     void registerControlInterfaces();
@@ -97,6 +92,7 @@ private:
     */
     struct Joint
     {
+      state_controller_t state;
       double position;
       double position_offset;
       double velocity;

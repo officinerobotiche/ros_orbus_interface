@@ -30,15 +30,15 @@
 #define STATE_CONTROL_VELOCITY 3
 #define STATE_CONTROL_TORQUE 4
 
-typedef struct _hash_motor {
-    uint8_t hash_motor : 4;
-    uint8_t number : 4;
-} hash_motor_t;
+//typedef struct _hash_motor {
+//    uint8_t hash_motor : 4;
+//    uint8_t number : 4;
+//} hash_motor_t;
 
-typedef union _hash_map {
-    hash_motor_t bitset;
-    uint8_t hash;
-} _hash_map_t;
+//typedef union _hash_map {
+//    hash_motor_t bitset;
+//    uint8_t hash;
+//} _hash_map_t;
 
 /**
  * Message for emergency configuration
@@ -136,16 +136,16 @@ typedef struct parameter_motor {
 #define CONSTRAINT_R 16
 #define EMERGENCY_R 17
 
-//Numbers and names associated at all processes
-#define PROCESS_MOTOR_LENGTH 2
-#define PROCESS_PID_LEFT 0
-#define PID_LEFT_STRING "PID/Left"
-#define PROCESS_PID_RIGHT 1
-#define PID_RIGHT_STRING "PID/Right"
+////Numbers and names associated at all processes
+//#define PROCESS_MOTOR_LENGTH 2
+//#define PROCESS_PID_LEFT 0
+//#define PID_LEFT_STRING "PID/Left"
+//#define PROCESS_PID_RIGHT 1
+//#define PID_RIGHT_STRING "PID/Right"
 
 //Name for HASHMAP with information about motion messages
 #define HASHMAP_MOTOR 'G'
-#define HASHMAP_MOTOR_NUMBER 20
+#define HASHMAP_MOTOR_NUMBER 30
 
 // Definition on communication/parsing_packet.c
 static unsigned int hashmap_motor[HASHMAP_MOTOR_NUMBER];
@@ -153,23 +153,23 @@ static unsigned int hashmap_motor[HASHMAP_MOTOR_NUMBER];
 /**
  * Table with conversion number message in a length for data messages
  */
-#define INITIALIZE_HASHMAP_MOTOR    hashmap_motion[PARAMETER_MOTOR_L] = LNG_PARAMETER_MOTOR;       \
-                                    hashmap_motion[PARAMETER_MOTOR_R] = LNG_PARAMETER_MOTOR;       \
-                                    hashmap_motion[PID_CONTROL_L] = LNG_PID_CONTROL;               \
-                                    hashmap_motion[PID_CONTROL_R] = LNG_PID_CONTROL;               \
-                                    hashmap_motion[MOTOR_L] = LNG_MOTOR;                           \
-                                    hashmap_motion[MOTOR_R] = LNG_MOTOR;                           \
-                                    hashmap_motion[VEL_MOTOR_L] = LNG_MOTOR_CONTROL;               \
-                                    hashmap_motion[VEL_MOTOR_R] = LNG_MOTOR_CONTROL;               \
-                                    hashmap_motion[VEL_MOTOR_MIS_L] = LNG_MOTOR_CONTROL;           \
-                                    hashmap_motion[VEL_MOTOR_MIS_R] = LNG_MOTOR_CONTROL;           \
-                                    hashmap_motion[ENABLE_MOTOR_L] = LNG_MOTOR_CONTROL;            \
-                                    hashmap_motion[ENABLE_MOTOR_R] = LNG_MOTOR_CONTROL;            \
-                                    hashmap_motion[POS_MOTOR_MIS_L] = LNG_MOTOR_CONTROL;           \
-                                    hashmap_motion[POS_MOTOR_MIS_R] = LNG_MOTOR_CONTROL;           \
-                                    hashmap_motion[CONSTRAINT_L] = LNG_MOTOR;                      \
-                                    hashmap_motion[CONSTRAINT_R] = LNG_MOTOR;                      \
-                                    hashmap_motion[EMERGENCY_L] = LNG_EMERGENCY;                   \
-                                    hashmap_motion[EMERGENCY_R] = LNG_EMERGENCY;
+#define INITIALIZE_HASHMAP_MOTOR    hashmap_motor[PARAMETER_MOTOR_L] = LNG_PARAMETER_MOTOR;       \
+                                    hashmap_motor[PARAMETER_MOTOR_R] = LNG_PARAMETER_MOTOR;       \
+                                    hashmap_motor[PID_CONTROL_L] = LNG_PID_CONTROL;               \
+                                    hashmap_motor[PID_CONTROL_R] = LNG_PID_CONTROL;               \
+                                    hashmap_motor[MOTOR_L] = LNG_MOTOR;                           \
+                                    hashmap_motor[MOTOR_R] = LNG_MOTOR;                           \
+                                    hashmap_motor[VEL_MOTOR_L] = LNG_MOTOR_CONTROL;               \
+                                    hashmap_motor[VEL_MOTOR_R] = LNG_MOTOR_CONTROL;               \
+                                    hashmap_motor[VEL_MOTOR_MIS_L] = LNG_MOTOR_CONTROL;           \
+                                    hashmap_motor[VEL_MOTOR_MIS_R] = LNG_MOTOR_CONTROL;           \
+                                    hashmap_motor[ENABLE_MOTOR_L] = LNG_MOTOR_CONTROL;            \
+                                    hashmap_motor[ENABLE_MOTOR_R] = LNG_MOTOR_CONTROL;            \
+                                    hashmap_motor[POS_MOTOR_MIS_L] = LNG_MOTOR_CONTROL;           \
+                                    hashmap_motor[POS_MOTOR_MIS_R] = LNG_MOTOR_CONTROL;           \
+                                    hashmap_motor[CONSTRAINT_L] = LNG_MOTOR;                      \
+                                    hashmap_motor[CONSTRAINT_R] = LNG_MOTOR;                      \
+                                    hashmap_motor[EMERGENCY_L] = LNG_EMERGENCY;                   \
+                                    hashmap_motor[EMERGENCY_R] = LNG_EMERGENCY;
 
 #endif	/* MOTOR_H */

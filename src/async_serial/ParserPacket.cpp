@@ -109,6 +109,7 @@ private:
 ParserPacket::ParserPacket() : PacketSerial(), parser_impl(new ParserPacketImpl) {
     INITIALIZE_HASHMAP_DEFAULT
     INITIALIZE_HASHMAP_MOTION
+    INITIALIZE_HASHMAP_MOTOR
     INITIALIZE_HASHMAP_NAVIGATION
     setAsyncPacketCallback(&ParserPacket::actionAsync, this);
 }

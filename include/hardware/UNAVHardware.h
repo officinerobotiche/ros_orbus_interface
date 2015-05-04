@@ -78,10 +78,11 @@ private:
     bool pidServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
     bool parameterServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
     bool constraintServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
-    bool emergencyServiceCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
+    bool emergencyServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
 
     bool aliveOperation(const ros::TimerEvent& event, std::vector<information_packet_t>* list_send);
     void motionPacket(const unsigned char& command, const abstract_message_u* packet);
+    void motorPacket(const unsigned char& command, const abstract_message_u* packet);
     void updatePacket(std::vector<information_packet_t>* list_send);
     void addParameter(std::vector<information_packet_t>* list_send);
 
@@ -89,7 +90,7 @@ private:
     parameter_motor_t get_motor_parameter(std::string name);
     parameter_unicycle_t get_unicycle_parameter();
     motor_t get_constraint(std::string name);
-    emergency_t get_emergency();
+    emergency_t get_emergency(std::string name);
 
     /**
     * Joint structure that is hooked to ros_control's InterfaceManager, to allow control via diff_drive_controller

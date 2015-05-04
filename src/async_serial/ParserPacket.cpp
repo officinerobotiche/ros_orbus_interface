@@ -229,6 +229,9 @@ information_packet_t ParserPacket::createPacket(unsigned char command, unsigned 
             case HASHMAP_MOTION:
                 information.length = LNG_HEAD_INFORMATION_PACKET + hashmap_motion[command];
                 break;
+            case HASHMAP_MOTOR:
+                information.length = LNG_HEAD_INFORMATION_PACKET + hashmap_motor[command];
+                break;
             case HASHMAP_NAVIGATION:
                 information.length = LNG_HEAD_INFORMATION_PACKET + hashmap_navigation[command];
                 break;

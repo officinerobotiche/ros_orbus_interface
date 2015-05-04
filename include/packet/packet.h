@@ -49,11 +49,9 @@
 #ifdef NAVIGATION_BOARD
 #include "packet/navigation.h"
 #endif
-
-//TO BE SPLIT
-//#ifdef MOTOR
-//#include "packet/motor.h"
-//#endif
+#ifdef MOTOR
+#include "packet/motor.h"
+#endif
 
 /** Buffers dimension */
 // Dimension for UART transmit buffer

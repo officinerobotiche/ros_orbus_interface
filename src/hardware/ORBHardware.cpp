@@ -45,7 +45,7 @@ ORBHardware::ORBHardware(const ros::NodeHandle& nh, ParserPacket* serial)
             boost::bind(&ORBHardware::connectCallback, this, _1));
     //Services
     srv_board = nh_.advertiseService("service_serial", &ORBHardware::service_Callback, this);
-    srv_process = nh_.advertiseService("process", &ORBHardware::processServiceCallback, this);
+    //srv_process = nh_.advertiseService("process", &ORBHardware::processServiceCallback, this);
 
     map_error_serial[ERROR_TIMEOUT_SYNC_PACKET_STRING] = 0;
     map_error_serial[ERROR_MAX_ASYNC_CALLBACK_STRING] = 0;
@@ -70,18 +70,18 @@ ORBHardware::~ORBHardware() {
 
 void ORBHardware::loadParameter() {
     //Name process
-    if (nh_.hasParam("process/length")) {
-        nh_.getParam("process/length", number_process);
-        time_process.name.resize(number_process);
-        time_process.process.resize(number_process);
-        for (int i = 0; i < number_process; ++i) {
-            ostringstream convert; // stream used for the conversion
-            convert << i; // insert the textual representation of 'repeat' in the characters in the stream
-            nh_.getParam("process/" + convert.str(), time_process.name[i]);
-        }
-    } else {
-        requestNameProcess();
-    }
+//    if (nh_.hasParam("process/length")) {
+//        nh_.getParam("process/length", number_process);
+//        time_process.name.resize(number_process);
+//        time_process.process.resize(number_process);
+//        for (int i = 0; i < number_process; ++i) {
+//            ostringstream convert; // stream used for the conversion
+//            convert << i; // insert the textual representation of 'repeat' in the characters in the stream
+//            nh_.getParam("process/" + convert.str(), time_process.name[i]);
+//        }
+//    } else {
+//        requestNameProcess();
+//    }
     vector<information_packet_t> list_packet;
     if (nh_.hasParam("time")) {
         ROS_INFO("Sync parameter time: load");
@@ -92,26 +92,26 @@ void ORBHardware::loadParameter() {
         ROS_INFO("Sync parameter time: ROBOT -> ROS");
         list_packet.push_back(serial_->createPacket(PARAMETER_SYSTEM, REQUEST));
     }
-    //Parameter frequency
-    if (nh_.hasParam("frequency")) {
-        ROS_INFO("Sync parameter frequency: ROS -> ROBOT");
-        ROS_INFO("TODO Sync frequency");
-        //        process_t process = get_process("frequency");
-        //        list_packet.push_back(serial_->createDataPacket(FRQ_PROCESS, HASHMAP_DEFAULT, (abstract_packet_t*) & process));
-    } else {
-        ROS_INFO("Sync parameter frequency: ROBOT -> ROS");
-        list_packet.push_back(serial_->createPacket(FRQ_PROCESS, REQUEST));
-    }
-    //Parameter priority
-    if (nh_.hasParam("priority")) {
-        ROS_INFO("Sync parameter /priority: ROS -> ROBOT");
-        ROS_INFO("TODO Sync /priority");
-        //        process_t process = get_process("priority");
-        //        list_packet.push_back(serial_->createDataPacket(PRIORITY_PROCESS, HASHMAP_DEFAULT, (abstract_packet_t*) & process));
-    } else {
-        ROS_INFO("Sync parameter /priority: ROBOT -> ROS");
-        list_packet.push_back(serial_->createPacket(PRIORITY_PROCESS, REQUEST));
-    }
+//    //Parameter frequency
+//    if (nh_.hasParam("frequency")) {
+//        ROS_INFO("Sync parameter frequency: ROS -> ROBOT");
+//        ROS_INFO("TODO Sync frequency");
+//        //        process_t process = get_process("frequency");
+//        //        list_packet.push_back(serial_->createDataPacket(FRQ_PROCESS, HASHMAP_DEFAULT, (abstract_packet_t*) & process));
+//    } else {
+//        ROS_INFO("Sync parameter frequency: ROBOT -> ROS");
+//        list_packet.push_back(serial_->createPacket(FRQ_PROCESS, REQUEST));
+//    }
+//    //Parameter priority
+//    if (nh_.hasParam("priority")) {
+//        ROS_INFO("Sync parameter /priority: ROS -> ROBOT");
+//        ROS_INFO("TODO Sync /priority");
+//        //        process_t process = get_process("priority");
+//        //        list_packet.push_back(serial_->createDataPacket(PRIORITY_PROCESS, HASHMAP_DEFAULT, (abstract_packet_t*) & process));
+//    } else {
+//        ROS_INFO("Sync parameter /priority: ROBOT -> ROS");
+//        list_packet.push_back(serial_->createPacket(PRIORITY_PROCESS, REQUEST));
+//    }
     //Add other parameter request
     if (callback_add_parameter)
         callback_add_parameter(&list_packet);
@@ -175,9 +175,9 @@ std::vector<information_packet_t> ORBHardware::updatePacket() {
     std::vector<information_packet_t> list_packet;
     if (callback_add_packet)
         callback_add_packet(&list_packet);
-    if (pub_time_process.getNumSubscribers() >= 1) {
-        list_packet.push_back(serial_->createPacket(TIME_PROCESS, REQUEST));
-    }
+//    if (pub_time_process.getNumSubscribers() >= 1) {
+//        list_packet.push_back(serial_->createPacket(TIME_PROCESS, REQUEST));
+//    }
     return list_packet;
 }
 
@@ -205,25 +205,40 @@ void ORBHardware::defaultPacket(const unsigned char& command, const abstract_mes
         case SERVICES:
             decodeServices(packet->services.command, &packet->services.buffer[0]);
             break;
-        case TIME_PROCESS:
-            time_process.idle = getTimeProcess(packet->process.idle);
-            time_process.parse_packet = getTimeProcess(packet->process.parse_packet);
-            for (int i = 0; i < number_process; ++i) {
-                time_process.process[i] = getTimeProcess(packet->process.process[i]);
-            }
-            pub_time_process.publish(time_process);
-            break;
-        case PRIORITY_PROCESS:
-            for (int i = 0; i < packet->process.length; i++) {
-                nh_.setParam("priority/" + time_process.name[i], packet->process.process[i]);
-            }
-            nh_.setParam("priority/parse", packet->process.parse_packet);
-            break;
-        case FRQ_PROCESS:
-            for (int i = 0; i < packet->process.length; i++) {
-                nh_.setParam("frequency/" + time_process.name[i], packet->process.process[i]);
-            }
-            break;
+//        case TIME_PROCESS:
+//            time_process.idle = getTimeProcess(packet->process.idle);
+//            time_process.parse_packet = getTimeProcess(packet->process.parse_packet);
+//            for (int i = 0; i < number_process; ++i) {
+//                time_process.process[i] = getTimeProcess(packet->process.process[i]);
+//            }
+//            pub_time_process.publish(time_process);
+//            break;
+//        case PRIORITY_PROCESS:
+//            for (int i = 0; i < packet->process.length; i++) {
+//                nh_.setParam("priority/" + time_process.name[i], packet->process.process[i]);
+//            }
+//            nh_.setParam("priority/parse", packet->process.parse_packet);
+//            break;
+//        case FRQ_PROCESS:
+//            for (int i = 0; i < packet->process.length; i++) {
+//                nh_.setParam("frequency/" + time_process.name[i], packet->process.process[i]);
+//            }
+//            break;
+//    case NAME_PROCESS:
+//        if (init_number_process) {
+//            number_process = packet->process_name.name;
+//            nh_.setParam("process/length", number_process);
+//            time_process.name.resize(number_process);
+//            time_process.process.resize(number_process);
+//            init_number_process = false;
+//        } else {
+//            string name(packet->process_name.buffer);
+//            time_process.name[packet->process_name.name] = name;
+//            ostringstream convert; // stream used for the conversion
+//            convert << packet->process_name.name; // insert the textual representation of 'repeat' in the characters in the stream
+//            nh_.setParam("process/" + convert.str(), name);
+//        }
+//        break;
         case PARAMETER_SYSTEM:
             step_timer = packet->parameter_system.step_timer;
             tm_mill = packet->parameter_system.int_tm_mill;
@@ -237,21 +252,6 @@ void ORBHardware::defaultPacket(const unsigned char& command, const abstract_mes
                 string name = getNameError(-(i + 1));
                 if (name.compare(" ") != 0)
                     map_error_serial[name] = packet->error_pkg.number[i];
-            }
-            break;
-        case NAME_PROCESS:
-            if (init_number_process) {
-                number_process = packet->process_name.name;
-                nh_.setParam("process/length", number_process);
-                time_process.name.resize(number_process);
-                time_process.process.resize(number_process);
-                init_number_process = false;
-            } else {
-                string name(packet->process_name.buffer);
-                time_process.name[packet->process_name.name] = name;
-                ostringstream convert; // stream used for the conversion
-                convert << packet->process_name.name; // insert the textual representation of 'repeat' in the characters in the stream
-                nh_.setParam("process/" + convert.str(), name);
             }
             break;
     }
@@ -288,21 +288,21 @@ std::string ORBHardware::getNameError(int number) {
     }
 }
 
-information_packet_t ORBHardware::encodeNameProcess(int number) {
-    process_buffer_t name_process;
-    name_process.name = number;
-    return serial_->createDataPacket(NAME_PROCESS, HASHMAP_DEFAULT, (abstract_message_u*) & name_process);
-}
+//information_packet_t ORBHardware::encodeNameProcess(int number) {
+//    process_buffer_t name_process;
+//    name_process.name = number;
+//    return serial_->createDataPacket(NAME_PROCESS, HASHMAP_DEFAULT, (abstract_message_u*) & name_process);
+//}
 
-void ORBHardware::requestNameProcess() {
-    vector<information_packet_t> list_name;
-    init_number_process = true;
-    serial_->parserSendPacket(encodeNameProcess(-1), 3, boost::posix_time::millisec(200));
-    for (int i = 0; i < number_process; ++i) {
-        list_name.push_back(encodeNameProcess(i));
-    }
-    serial_->parserSendPacket(list_name, 3, boost::posix_time::millisec(200));
-}
+//void ORBHardware::requestNameProcess() {
+//    vector<information_packet_t> list_name;
+//    init_number_process = true;
+//    serial_->parserSendPacket(encodeNameProcess(-1), 3, boost::posix_time::millisec(200));
+//    for (int i = 0; i < number_process; ++i) {
+//        list_name.push_back(encodeNameProcess(i));
+//    }
+//    serial_->parserSendPacket(list_name, 3, boost::posix_time::millisec(200));
+//}
 
 information_packet_t ORBHardware::encodeServices(char command, unsigned char* buffer, size_t len) {
     services_t service;
@@ -387,38 +387,38 @@ bool ORBHardware::service_Callback(ros_serial_bridge::Service::Request &req, ros
     return true;
 }
 
-process_t ORBHardware::get_process(std::string name) {
-    process_t process;
-    int temp;
-    process.idle = 0;
-    for (int i = 0; i < number_process; ++i) {
-        nh_.getParam(name + "/" + time_process.name[i], temp);
-        process.process[i] = temp;
-    }
-    if (name.compare("priority") == 0) {
-        nh_.getParam(name + "/parse", temp);
-        process.parse_packet = temp;
-    } else process.parse_packet = 0;
-    return process;
-}
+//process_t ORBHardware::get_process(std::string name) {
+//    process_t process;
+//    int temp;
+//    process.idle = 0;
+//    for (int i = 0; i < number_process; ++i) {
+//        nh_.getParam(name + "/" + time_process.name[i], temp);
+//        process.process[i] = temp;
+//    }
+//    if (name.compare("priority") == 0) {
+//        nh_.getParam(name + "/parse", temp);
+//        process.parse_packet = temp;
+//    } else process.parse_packet = 0;
+//    return process;
+//}
 
-bool ORBHardware::processServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&) {
-    std::string name = req.name;
-    process_t process;
-    std::vector<information_packet_t> list_send;
-    ROS_INFO("PROCESS UPDATE");
-    if ((name.compare("priority") == 0) || (name.compare(all_string) == 0)) {
-        process = get_process("priority");
-        list_send.push_back(serial_->createDataPacket(PRIORITY_PROCESS, HASHMAP_DEFAULT, (abstract_message_u*) & process));
-    }
-    if ((name.compare("frequency") == 0) || (name.compare(all_string) == 0)) {
-        process = get_process("frequency");
-        list_send.push_back(serial_->createDataPacket(FRQ_PROCESS, HASHMAP_DEFAULT, (abstract_message_u*) & process));
-    }
-    try {
-        serial_->parserSendPacket(list_send, 3, boost::posix_time::millisec(200));
-    } catch (exception &e) {
-        ROS_ERROR("%s", e.what());
-    }
-    return true;
-}
+//bool ORBHardware::processServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&) {
+//    std::string name = req.name;
+//    process_t process;
+//    std::vector<information_packet_t> list_send;
+//    ROS_INFO("PROCESS UPDATE");
+//    if ((name.compare("priority") == 0) || (name.compare(all_string) == 0)) {
+//        process = get_process("priority");
+//        list_send.push_back(serial_->createDataPacket(PRIORITY_PROCESS, HASHMAP_DEFAULT, (abstract_message_u*) & process));
+//    }
+//    if ((name.compare("frequency") == 0) || (name.compare(all_string) == 0)) {
+//        process = get_process("frequency");
+//        list_send.push_back(serial_->createDataPacket(FRQ_PROCESS, HASHMAP_DEFAULT, (abstract_message_u*) & process));
+//    }
+//    try {
+//        serial_->parserSendPacket(list_send, 3, boost::posix_time::millisec(200));
+//    } catch (exception &e) {
+//        ROS_ERROR("%s", e.what());
+//    }
+//    return true;
+//}

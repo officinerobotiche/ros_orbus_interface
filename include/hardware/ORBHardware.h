@@ -98,9 +98,9 @@ private:
     void resetBoard(unsigned int repeat = 3);
     void decodeServices(const char command, const unsigned char* buffer);
 
-    process_t get_process(std::string name);
+    //process_t get_process(std::string name);
 
-    bool processServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
+    //bool processServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
     bool service_Callback(ros_serial_bridge::Service::Request &req, ros_serial_bridge::Service::Response &msg);
 };
 

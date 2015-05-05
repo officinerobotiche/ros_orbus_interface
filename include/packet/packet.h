@@ -46,11 +46,11 @@
 #ifdef MOTION
 #include "packet/motion.h"
 #endif
-#ifdef NAVIGATION_BOARD
-#include "packet/navigation.h"
-#endif
 #ifdef MOTOR
 #include "packet/motor.h"
+#endif
+#ifdef NAVIGATION_BOARD
+#include "packet/navigation.h"
 #endif
 
 /** Buffers dimension */
@@ -68,7 +68,7 @@
 #define SERVICE_BUFF 20
 
 /** Type of option messages */
-// Requesta data
+// Request data
 #define REQUEST 'R'
 // Messages with data
 #define DATA 'D'
@@ -113,14 +113,13 @@ typedef struct services {
 } services_t;
 #define LNG_SERVICES sizeof(services_t)
 
-/**
- * Services messages for all names processes
- */
-typedef struct process_buffer {
-    int16_t name;
-    char buffer[BUFF_NAME_PROCESS];
-} process_buffer_t;
-#define LNG_NAME_PROCESS sizeof(process_buffer_t)
+
+typedef struct process_state {
+    uint8_t hashmap;
+    uint8_t number;
+    uint8_t data;
+} process_state_t;
+#define LNG_PROCESS_STATE sizeof(process_state_t)
 
 /**
  * Information about processes on board. We have standards process:
@@ -128,17 +127,17 @@ typedef struct process_buffer {
  * * time for parsing packet
  * * list for others processes
  */
-typedef struct process {
-    int16_t length;
-    int16_t idle;
-    int16_t parse_packet;
-    int16_t process[BUFF_ALL_PROCESS];
-} process_t;
-#define LNG_PROCESS sizeof(process_t)
+typedef struct process_name {
+    uint8_t hashmap;
+    uint8_t number;
+    char data[BUFF_NAME_PROCESS];
+} process_name_t;
+#define LNG_PROCESS_NAME sizeof(process_name_t)
+
 /**** EO Messages ****/
 
 /**
- * This is a definition for convertion packets in a big data packet to send in
+ * This is a definition for conversion packets in a big data packet to send in
  * a serial communication.
  * For all packet we have this transformation:
  * 1. UNION abstract_packet_u
@@ -151,7 +150,7 @@ typedef struct process {
  */
 
 /**
- * Struct with information about packet to send with serial port:
+ * Structure with information about packet to send with serial port:
  * * length of packet
  * * buffer with data
  * * time to send packet (NOT IN USE)
@@ -163,15 +162,15 @@ typedef struct packet_data {
 } packet_t;
 
 /**
- * Union for convertion all type of packets in a standard packets
+ * Union for conversion all type of packets in a standard packets
  */
 typedef union abstract_message {
     //unsigned char buffer[MAX_RX_BUFF];
-    process_t process;
+    process_name_t process_name;
+    process_state_t process_state;
     services_t services;
     error_pkg_t error_pkg;
     parameter_system_t parameter_system;
-    process_buffer_t process_name;
 #ifdef MOTOR
     ABSTRACT_MESSAGE_MOTOR
 #endif
@@ -215,12 +214,13 @@ typedef union buffer_packet {
 
 //Number association for standard messages
 #define SERVICES 0
-#define TIME_PROCESS 1
-#define PRIORITY_PROCESS 2
-#define FRQ_PROCESS 3
-#define PARAMETER_SYSTEM 4
-#define ERROR_SERIAL 5
-#define NAME_PROCESS 6
+#define PROCESS_NAME 1
+#define PROCESS_TIME 2
+#define PROCESS_PRIORITY 3
+#define PROCESS_FRQ 4
+#define PROCESS_NUMBER 5
+#define PARAMETER_SYSTEM 6
+#define ERROR_SERIAL 7
 
 //Names for type service's messages
 #define RESET '*'
@@ -241,12 +241,13 @@ static unsigned int hashmap_default[HASHMAP_DEFAULT_NUMBER];
  * Table with convertion number message in a length for data messages
  */
 #define INITIALIZE_HASHMAP_DEFAULT hashmap_default[SERVICES] = LNG_SERVICES;                 \
-                                   hashmap_default[TIME_PROCESS] = LNG_PROCESS;              \
-                                   hashmap_default[PRIORITY_PROCESS] = LNG_PROCESS;          \
-                                   hashmap_default[FRQ_PROCESS] = LNG_PROCESS;               \
+                                   hashmap_default[PROCESS_NAME] = LNG_PROCESS_NAME;         \
+                                   hashmap_default[PROCESS_TIME] = LNG_PROCESS_STATE;        \
+                                   hashmap_default[PROCESS_PRIORITY] = LNG_PROCESS_STATE;    \
+                                   hashmap_default[PROCESS_FRQ] = LNG_PROCESS_STATE;         \
+                                   hashmap_default[PROCESS_NUMBER] = LNG_PROCESS_STATE;      \
                                    hashmap_default[PARAMETER_SYSTEM] = LNG_PARAMETER_SYSTEM; \
-                                   hashmap_default[ERROR_SERIAL] = LNG_ERROR_PKG;            \
-                                   hashmap_default[NAME_PROCESS] = LNG_NAME_PROCESS;
+                                   hashmap_default[ERROR_SERIAL] = LNG_ERROR_PKG;
 
 
 #endif	/* PACKET_H */

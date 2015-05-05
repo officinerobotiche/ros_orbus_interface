@@ -30,15 +30,15 @@
 #define STATE_CONTROL_VELOCITY 3
 #define STATE_CONTROL_TORQUE 4
 
-//typedef struct _hash_motor {
-//    uint8_t hash_motor : 4;
-//    uint8_t number : 4;
-//} hash_motor_t;
+typedef struct _hash_motor {
+    uint8_t hash_motor : 4;
+    uint8_t number : 4;
+} hash_motor_t;
 
-//typedef union _hash_map {
-//    hash_motor_t bitset;
-//    uint8_t hash;
-//} _hash_map_t;
+typedef union _hash_map {
+    hash_motor_t bitset;
+    uint8_t hash;
+} _hash_map_t;
 
 /**
  * Message for emergency configuration
@@ -135,13 +135,6 @@ typedef struct parameter_motor {
 #define POS_MOTOR_MIS_R 15
 #define CONSTRAINT_R 16
 #define EMERGENCY_R 17
-
-////Numbers and names associated at all processes
-//#define PROCESS_MOTOR_LENGTH 2
-//#define PROCESS_PID_LEFT 0
-//#define PID_LEFT_STRING "PID/Left"
-//#define PROCESS_PID_RIGHT 1
-//#define PID_RIGHT_STRING "PID/Right"
 
 //Name for HASHMAP with information about motion messages
 #define HASHMAP_MOTOR 'G'

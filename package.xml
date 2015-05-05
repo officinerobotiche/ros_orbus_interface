@@ -39,39 +39,30 @@
     <!--   <run_depend>message_runtime</run_depend> -->
     <!-- Use test_depend for packages you need only for testing: -->
     <!--   <test_depend>gtest</test_depend> -->
+
     <buildtool_depend>catkin</buildtool_depend>
-  
-    <build_depend>geometry_msgs</build_depend>
-    <build_depend>std_srvs</build_depend>
-    <build_depend>std_msgs</build_depend>
+
+    <build_depend>controller_manager</build_depend>
+    <build_depend>diagnostic_updater</build_depend>
+    <build_depend>diagnostic_msgs</build_depend>
+    <build_depend>hardware_interface</build_depend>
     <build_depend>roscpp</build_depend>
-    <build_depend>message_generation</build_depend>
-    <build_depend>tf</build_depend>
-    <build_depend>nav_msgs</build_depend>
+    <build_depend>roslaunch</build_depend>
+    <build_depend>roslint</build_depend>
+    <build_depend>sensor_msgs</build_depend>
+    <build_depend>dynamic_reconfigure</build_depend>
 
-  <build_depend>controller_manager</build_depend>
-  <build_depend>diagnostic_updater</build_depend>
-  <build_depend>diagnostic_msgs</build_depend>
-  <build_depend>hardware_interface</build_depend>
-  <build_depend>roslaunch</build_depend>
-  <build_depend>roslint</build_depend>
-  <build_depend>sensor_msgs</build_depend>
-
+    <run_depend>controller_manager</run_depend>
+    <run_depend>diagnostic_updater</run_depend>
+    <run_depend>diagnostic_msgs</run_depend>
+    <run_depend>diagnostic_aggregator</run_depend>
+    <run_depend>diff_drive_controller</run_depend>
     <run_depend>geometry_msgs</run_depend>
-    <run_depend>message_runtime</run_depend>
-    <run_depend>std_msgs</run_depend>
-    <run_depend>std_srvs</run_depend>
+    <run_depend>hardware_interface</run_depend>
     <run_depend>roscpp</run_depend>
-
-  <run_depend>controller_manager</run_depend>
-  <run_depend>diagnostic_updater</run_depend>
-  <run_depend>diagnostic_msgs</run_depend>
-  <run_depend>diagnostic_aggregator</run_depend>
-  <run_depend>diff_drive_controller</run_depend>
-  <run_depend>hardware_interface</run_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>topic_tools</run_depend>
-  <run_depend>sensor_msgs</run_depend>
+    <run_depend>sensor_msgs</run_depend>
+    <run_depend>topic_tools</run_depend>
+    <run_depend>dynamic_reconfigure</run_depend>
 
     <!-- The export tag contains other, unspecified, tags -->
     <export>

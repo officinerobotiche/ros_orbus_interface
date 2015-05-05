@@ -107,9 +107,9 @@ private:
 };
 
 ParserPacket::ParserPacket() : PacketSerial(), parser_impl(new ParserPacketImpl) {
-    INITIALIZE_HASHMAP_DEFAULT
+    HASHMAP_DEFAULT_INITIALIZE
     INITIALIZE_HASHMAP_MOTION
-    INITIALIZE_HASHMAP_MOTOR
+    HASHMAP_MOTOR_INITIALIZE
     INITIALIZE_HASHMAP_NAVIGATION
     setAsyncPacketCallback(&ParserPacket::actionAsync, this);
 }
@@ -121,9 +121,9 @@ ParserPacket::ParserPacket(const std::string& devname,
         asio::serial_port_base::flow_control opt_flow,
         asio::serial_port_base::stop_bits opt_stop)
 : PacketSerial(devname, baud_rate, opt_parity, opt_csize, opt_flow, opt_stop), parser_impl(new ParserPacketImpl) {
-    INITIALIZE_HASHMAP_DEFAULT
+    HASHMAP_DEFAULT_INITIALIZE
     INITIALIZE_HASHMAP_MOTION
-    INITIALIZE_HASHMAP_MOTOR
+    HASHMAP_MOTOR_INITIALIZE
     INITIALIZE_HASHMAP_NAVIGATION
     setAsyncPacketCallback(&ParserPacket::actionAsync, this);
 }
@@ -231,7 +231,9 @@ information_packet_t ParserPacket::createPacket(unsigned char command, unsigned 
                 information.length = LNG_HEAD_INFORMATION_PACKET + hashmap_motion[command];
                 break;
             case HASHMAP_MOTOR:
-                information.length = LNG_HEAD_INFORMATION_PACKET + hashmap_motor[command];
+                motor_command_map_t command_motor;
+                command_motor.command_message = command;
+                information.length = LNG_HEAD_INFORMATION_PACKET + hashmap_motor[command_motor.bitset.command];
                 break;
             case HASHMAP_NAVIGATION:
                 information.length = LNG_HEAD_INFORMATION_PACKET + hashmap_navigation[command];

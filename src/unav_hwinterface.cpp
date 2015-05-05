@@ -83,13 +83,13 @@ int main(int argc, char **argv) {
     double baud_rate;
     bool arduino;
     private_nh.param<std::string>("serial_port", serial_port_string, "/dev/ttyUSB0");
-    private_nh.param<double>("serial_rate", diagnostic_frequency, 115200);
+    private_nh.param<double>("serial_rate", baud_rate, 115200);
     private_nh.param<bool>("serial_arduino", arduino, false);
     ParserPacket* serial;
 
 
 
-    ROS_INFO("Open Serial %s:%d", serial_port_string.c_str(), (int)baud_rate);
+    ROS_INFO_STREAM("Open Serial " << serial_port_string << ":" << baud_rate);
     try {
         serial = new ParserPacket(serial_port_string.c_str(), baud_rate);
         //If protocol on arduino

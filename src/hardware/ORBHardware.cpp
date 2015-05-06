@@ -44,7 +44,7 @@ ORBHardware::ORBHardware(const ros::NodeHandle& nh, const ros::NodeHandle &priva
     //pub_time_process = nh_.advertise<ros_serial_bridge::Process>("process", NUMBER_PUB,
     //        boost::bind(&ORBHardware::connectCallback, this, _1));
     //Services
-    srv_board = nh_.advertiseService("service_serial", &ORBHardware::service_Callback, this);
+    //srv_board = nh_.advertiseService("service_serial", &ORBHardware::service_Callback, this);
     //srv_process = nh_.advertiseService("process", &ORBHardware::processServiceCallback, this);
 
     map_error_serial[ERROR_TIMEOUT_SYNC_PACKET_STRING] = 0;
@@ -371,25 +371,25 @@ std::string ORBHardware::getBoardSerialError() {
     return service_str.str();
 }
 
-bool ORBHardware::service_Callback(ros_serial_bridge::Service::Request &req, ros_serial_bridge::Service::Response & msg) {
-    if (req.name.compare("reset") == 0) {
-        resetBoard();
-        msg.name = "reset";
-    } else if (req.name.compare("version") == 0) {
-        string information_string = "Name Board: " + name_board_ + " " + version_ + "\n" +
-                "Type Board: " + type_board_ + "\n" +
-                name_author_ + " - Build in: " + compiled_ + "\n";
-        msg.name = information_string;
-    } else if(req.name.compare("type") == 0) {
-        string information_string = "Type board: " + type_board_ + "\n";
-        msg.name = information_string;
-    } else if (req.name.compare("serial_info") == 0) {
-        msg.name = getBoardSerialError();
-    } else {
-        msg.name = "HELP, commands: \nversion\ntype\nserial_info\nhelp";
-    }
-    return true;
-}
+//bool ORBHardware::service_Callback(ros_serial_bridge::Service::Request &req, ros_serial_bridge::Service::Response & msg) {
+//    if (req.name.compare("reset") == 0) {
+//        resetBoard();
+//        msg.name = "reset";
+//    } else if (req.name.compare("version") == 0) {
+//        string information_string = "Name Board: " + name_board_ + " " + version_ + "\n" +
+//                "Type Board: " + type_board_ + "\n" +
+//                name_author_ + " - Build in: " + compiled_ + "\n";
+//        msg.name = information_string;
+//    } else if(req.name.compare("type") == 0) {
+//        string information_string = "Type board: " + type_board_ + "\n";
+//        msg.name = information_string;
+//    } else if (req.name.compare("serial_info") == 0) {
+//        msg.name = getBoardSerialError();
+//    } else {
+//        msg.name = "HELP, commands: \nversion\ntype\nserial_info\nhelp";
+//    }
+//    return true;
+//}
 
 //process_t ORBHardware::get_process(std::string name) {
 //    process_t process;

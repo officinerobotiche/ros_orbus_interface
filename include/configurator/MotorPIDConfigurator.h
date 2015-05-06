@@ -34,7 +34,7 @@
 #include <ros/ros.h>
 
 #include <dynamic_reconfigure/server.h>
-#include <ros_serial_bridge/HardWareUnavConfig.h>
+#include <ros_serial_bridge/UnavConfiguratorPIDConfig.h>
 
 class MotorPIDConfigurator {
 public:
@@ -45,6 +45,6 @@ private:
 
     motor_pid_t pid_;
 
-    dynamic_reconfigure::Server<ros_serial_bridge::HardWareUnavConfig> *dsrv_;
-    void reconfigureCB(ros_serial_bridge::HardWareUnavConfig &config, uint32_t level);
+    dynamic_reconfigure::Server<ros_serial_bridge::UnavConfiguratorPIDConfig> *dsrv_;
+    void reconfigureCB(ros_serial_bridge::UnavConfiguratorPIDConfig &config, uint32_t level);
 };

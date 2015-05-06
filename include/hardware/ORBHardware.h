@@ -2,7 +2,7 @@
 #define ORB_HARDWARE_H
 
 #include <ros/ros.h>
-#include <ros_serial_bridge/Service.h>
+//#include <ros_serial_bridge/Service.h>
 //#include <ros_serial_bridge/Process.h>
 //#include <ros_serial_bridge/Update.h>
 #include <std_srvs/Empty.h>
@@ -102,7 +102,7 @@ private:
     //process_t get_process(std::string name);
 
     //bool processServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
-    bool service_Callback(ros_serial_bridge::Service::Request &req, ros_serial_bridge::Service::Response &msg);
+    //bool service_Callback(ros_serial_bridge::Service::Request &req, ros_serial_bridge::Service::Response &msg);
 };
 
 #endif // ORB_HARDWARE_H

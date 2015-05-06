@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
         }
 
         ROS_INFO("Find Controller for %s", board_type_string.c_str());
-        UNAVHardware interface(nh, serial);
+        UNAVHardware interface(nh, private_nh, serial);
         controller_manager::ControllerManager cm(&interface, nh);
 
         // Setup separate queue and single-threaded spinner to process timer callbacks

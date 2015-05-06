@@ -35,14 +35,14 @@ using namespace std;
 
 #define NUMBER_PUB 10
 
-ORBHardware::ORBHardware(const ros::NodeHandle& nh, ParserPacket* serial)
-: nh_(nh), serial_(serial), init_number_process(false), name_board("Nothing"), type_board("Nothing") {
+ORBHardware::ORBHardware(const ros::NodeHandle& nh, const ros::NodeHandle &private_nh, ParserPacket* serial)
+: nh_(nh), private_nh_(private_nh), serial_(serial), init_number_process(false), name_board_("Nothing"), type_board_("Nothing") {
     serial_->addCallback(&ORBHardware::defaultPacket, this);
     serial_->addErrorCallback(&ORBHardware::errorPacket, this);
 
     //Publisher
-    pub_time_process = nh_.advertise<ros_serial_bridge::Process>("process", NUMBER_PUB,
-            boost::bind(&ORBHardware::connectCallback, this, _1));
+    //pub_time_process = nh_.advertise<ros_serial_bridge::Process>("process", NUMBER_PUB,
+    //        boost::bind(&ORBHardware::connectCallback, this, _1));
     //Services
     srv_board = nh_.advertiseService("service_serial", &ORBHardware::service_Callback, this);
     //srv_process = nh_.advertiseService("process", &ORBHardware::processServiceCallback, this);
@@ -59,8 +59,8 @@ ORBHardware::ORBHardware(const ros::NodeHandle& nh, ParserPacket* serial)
     serial->parserSendPacket(list_packet);
 
     if (!nh.hasParam("info/type_board"))
-        if (type_board.compare("Nothing") != 0)
-            nh_.setParam("info/type_board", type_board);
+        if (type_board_.compare("Nothing") != 0)
+            nh_.setParam("info/type_board", type_board_);
 }
 
 ORBHardware::~ORBHardware() {
@@ -69,6 +69,10 @@ ORBHardware::~ORBHardware() {
 }
 
 void ORBHardware::loadParameter() {
+    // Build a list of packets
+    vector<packet_information_t> list_packet;
+
+
     //Name process
 //    if (nh_.hasParam("process/length")) {
 //        nh_.getParam("process/length", number_process);
@@ -82,16 +86,16 @@ void ORBHardware::loadParameter() {
 //    } else {
 //        requestNameProcess();
 //    }
-    vector<packet_information_t> list_packet;
-    if (nh_.hasParam("time")) {
-        ROS_INFO("Sync parameter time: load");
-        nh_.getParam("time/step", step_timer);
-        nh_.getParam("time/tm_mill", tm_mill);
-        nh_.getParam("time/k_time", k_time);
-    } else {
-        ROS_INFO("Sync parameter time: ROBOT -> ROS");
-        list_packet.push_back(serial_->createPacket(SYSTEM_PARAMETER, PACKET_REQUEST));
-    }
+//    vector<packet_information_t> list_packet;
+//    if (nh_.hasParam("time")) {
+//        ROS_INFO("Sync parameter time: load");
+//        nh_.getParam("time/step", step_timer);
+//        nh_.getParam("time/tm_mill", tm_mill);
+//        nh_.getParam("time/k_time", k_time);
+//    } else {
+//        ROS_INFO("Sync parameter time: ROBOT -> ROS");
+//        list_packet.push_back(serial_->createPacket(SYSTEM_PARAMETER, PACKET_REQUEST));
+//    }
 //    //Parameter frequency
 //    if (nh_.hasParam("frequency")) {
 //        ROS_INFO("Sync parameter frequency: ROS -> ROBOT");
@@ -116,7 +120,7 @@ void ORBHardware::loadParameter() {
     if (callback_add_parameter)
         callback_add_parameter(&list_packet);
     try {
-        ROS_INFO("Sync parameter");
+        ROS_INFO("Sync parameters");
         serial_->parserSendPacket(list_packet, 3, boost::posix_time::millisec(200));
     } catch (exception &e) {
         ROS_ERROR("%s", e.what());
@@ -164,11 +168,11 @@ void ORBHardware::clearTimerEvent() {
 }
 
 std::string ORBHardware::getNameBoard() {
-    return name_board;
+    return name_board_;
 }
 
 std::string ORBHardware::getTypeBoard() {
-    return type_board;
+    return type_board_;
 }
 
 std::vector<packet_information_t> ORBHardware::updatePacket() {
@@ -320,24 +324,24 @@ void ORBHardware::resetBoard(unsigned int repeat) {
 void ORBHardware::decodeServices(const char command, const unsigned char* buffer) {
     switch (command) {
         case SERVICE_CODE_VERSION:
-            this->version.clear();
-            this->version.append((char*) buffer);
+            this->version_.clear();
+            this->version_.append((char*) buffer);
             break;
         case SERVICE_CODE_AUTHOR:
-            this->name_author.clear();
-            this->name_author.append((char*) buffer);
+            this->name_author_.clear();
+            this->name_author_.append((char*) buffer);
             break;
         case SERVICE_CODE_BOARD_NAME:
-            this->name_board.clear();
-            this->name_board.append((char*) buffer);
+            this->name_board_.clear();
+            this->name_board_.append((char*) buffer);
             break;
         case SERVICE_CODE_DATE:
-            this->compiled.clear();
-            this->compiled.append((char*) buffer, MAX_BUFF_SERVICE);
+            this->compiled_.clear();
+            this->compiled_.append((char*) buffer, MAX_BUFF_SERVICE);
             break;
         case SERVICE_CODE_BOARD_TYPE:
-            this->type_board.clear();
-            this->type_board.append((char*) buffer);
+            this->type_board_.clear();
+            this->type_board_.append((char*) buffer);
             break;
     }
 }
@@ -372,12 +376,12 @@ bool ORBHardware::service_Callback(ros_serial_bridge::Service::Request &req, ros
         resetBoard();
         msg.name = "reset";
     } else if (req.name.compare("version") == 0) {
-        string information_string = "Name Board: " + name_board + " " + version + "\n" +
-                "Type Board: " + type_board + "\n" +
-                name_author + " - Build in: " + compiled + "\n";
+        string information_string = "Name Board: " + name_board_ + " " + version_ + "\n" +
+                "Type Board: " + type_board_ + "\n" +
+                name_author_ + " - Build in: " + compiled_ + "\n";
         msg.name = information_string;
     } else if(req.name.compare("type") == 0) {
-        string information_string = "Type board: " + type_board + "\n";
+        string information_string = "Type board: " + type_board_ + "\n";
         msg.name = information_string;
     } else if (req.name.compare("serial_info") == 0) {
         msg.name = getBoardSerialError();

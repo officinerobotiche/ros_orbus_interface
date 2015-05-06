@@ -3,8 +3,8 @@
 
 #include <ros/ros.h>
 #include <ros_serial_bridge/Service.h>
-#include <ros_serial_bridge/Process.h>
-#include <ros_serial_bridge/Update.h>
+//#include <ros_serial_bridge/Process.h>
+//#include <ros_serial_bridge/Update.h>
 #include <std_srvs/Empty.h>
 #include "../async_serial/ParserPacket.h"
 #include "hardware_interface/robot_hw.h"
@@ -27,7 +27,7 @@ public:
 
 class ORBHardware : public hardware_interface::RobotHW {
 public:
-    ORBHardware(const ros::NodeHandle& nh, ParserPacket* serial);
+    ORBHardware(const ros::NodeHandle& nh, const ros::NodeHandle& private_nh, ParserPacket* serial);
 
     void updateDiagnostics();
 
@@ -64,8 +64,9 @@ public:
 protected:
     //Initialization object
     ros::NodeHandle nh_; //NameSpace for bridge controller
+    ros::NodeHandle private_nh_; //Private NameSpace for bridge controller
     ParserPacket* serial_; //Serial object to comunicate with PIC device
-    std::string name_board, version, name_author, compiled, type_board;
+    std::string name_board_, version_, name_author_, compiled_, type_board_;
 private:
 
     typedef boost::function<void (std::vector<packet_information_t>*) > callback_add_packet_t;
@@ -78,7 +79,7 @@ private:
     ros::ServiceServer srv_board, srv_process;
     ros::Publisher pub_time_process;
 
-    ros_serial_bridge::Process time_process;
+    //ros_serial_bridge::Process time_process;
     double step_timer, tm_mill, k_time;
     int number_process;
     bool init_number_process;

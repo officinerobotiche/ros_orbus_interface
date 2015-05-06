@@ -10,9 +10,14 @@
 
 #include "ORBHardware.h"
 
-#include <ros_serial_bridge/Pose.h>
-#include <ros_serial_bridge/Enable.h>
-#include <ros_serial_bridge/Motor.h>
+#include "hardware_interface/joint_state_interface.h"
+#include "hardware_interface/joint_command_interface.h"
+
+#include "configurator/MotorPIDConfigurator.h"
+
+//#include <ros_serial_bridge/Pose.h>
+//#include <ros_serial_bridge/Enable.h>
+//#include <ros_serial_bridge/Motor.h>
 //#include <nav_msgs/Odometry.h>
 //#include <sensor_msgs/JointState.h>
 //#include <geometry_msgs/Twist.h>
@@ -20,8 +25,7 @@
 //#include <tf/transform_broadcaster.h>
 //#include <tf2_ros/transform_broadcaster.h>
 
-#include "hardware_interface/joint_state_interface.h"
-#include "hardware_interface/joint_command_interface.h"
+
 
 #define NUM_MOTORS 2
 
@@ -36,7 +40,7 @@ const std::string radius_string = "radius";
 
 class UNAVHardware : public ORBHardware {
 public:
-    UNAVHardware(const ros::NodeHandle& nh, ParserPacket* serial);
+    UNAVHardware(const ros::NodeHandle& nh, const ros::NodeHandle& private_nh, ParserPacket* serial);
     virtual ~UNAVHardware();
 
     void updateJointsFromHardware();
@@ -52,7 +56,7 @@ private:
     hardware_interface::VelocityJointInterface velocity_joint_interface_;
 
     //Service
-    ros::ServiceServer srv_pid, srv_parameter, srv_constraint, srv_emergency;
+    //ros::ServiceServer srv_pid, srv_parameter, srv_constraint, srv_emergency;
 
    // std::string tf_odometry_string_, tf_base_link_string_, tf_joint_string_;
 
@@ -62,7 +66,7 @@ private:
     //motor_t measure[NUM_MOTORS];
     //motor_t reference[NUM_MOTORS];
 
-    velocity_t meas_velocity;
+    //velocity_t meas_velocity;
     //std::string name_pid;
     
     //ros::Time old_time;
@@ -73,12 +77,12 @@ private:
 
     //void timerEvent(const ros::TimerEvent& event);
 
-    bool pidServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
-    bool parameterServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
-    bool constraintServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
-    bool emergencyServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
+//    bool pidServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
+//    bool parameterServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
+//    bool constraintServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
+//    bool emergencyServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
 
-    bool aliveOperation(const ros::TimerEvent& event, std::vector<packet_information_t>* list_send);
+//    bool aliveOperation(const ros::TimerEvent& event, std::vector<packet_information_t>* list_send);
     void motionPacket(const unsigned char& command, const message_abstract_u* packet);
     void motorPacket(const unsigned char& command, const message_abstract_u* packet);
     void updatePacket(std::vector<packet_information_t>* list_send);
@@ -93,8 +97,13 @@ private:
     * Joint structure that is hooked to ros_control's InterfaceManager, to allow control via diff_drive_controller
     */
     struct Joint
-    {
+    { 
+      // Saved PID
+
+      MotorPIDConfigurator *configurator_pid;
+      // Actual state
       motor_state_t state;
+
       double position;
       double position_offset;
       double velocity;

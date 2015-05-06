@@ -28,7 +28,10 @@ find_package(Boost REQUIRED
 ## Declare ROS messages, services and actions ##
 ################################################
 
-
+# dynamic reconfigure
+generate_dynamic_reconfigure_options(
+    cfg/HardWareUnav.cfg
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -73,6 +76,8 @@ set(hardware_unav_SRC
     src/async_serial/AsyncSerial.cpp
     src/async_serial/PacketSerial.cpp
     src/async_serial/ParserPacket.cpp
+    src/configurator/MotorPIDConfigurator.cpp
+    src/configurator/MotorParamConfigurator.cpp
     src/hardware/ORBHardware.cpp
     src/hardware/UNAVHardware.cpp
     src/unav_hwinterface.cpp

@@ -55,7 +55,7 @@ UNAVHardware::~UNAVHardware() {
     clearTimerEvent();
 }
 
-void UNAVHardware::addParameter(std::vector<information_packet_t>* list_send) {
+void UNAVHardware::addParameter(std::vector<packet_information_t>* list_send) {
     motor_command_map_t command;
     for(int i=0; i < NUM_MOTORS; ++i) {
         command.bitset.motor = i;
@@ -144,7 +144,7 @@ void UNAVHardware::addParameter(std::vector<information_packet_t>* list_send) {
 //    }
 }
 
-void UNAVHardware::motorPacket(const unsigned char& command, const abstract_message_u* packet) {
+void UNAVHardware::motorPacket(const unsigned char& command, const message_abstract_u* packet) {
     motor_command_.command_message = command;
     switch (motor_command_.bitset.command) {
     case MOTOR_CONSTRAINT:
@@ -181,7 +181,7 @@ void UNAVHardware::motorPacket(const unsigned char& command, const abstract_mess
     }
 }
 
-void UNAVHardware::motionPacket(const unsigned char& command, const abstract_message_u* packet) {
+void UNAVHardware::motionPacket(const unsigned char& command, const message_abstract_u* packet) {
     switch (command) {
     case PARAMETER_UNICYCLE:
 //        nh_.setParam("structure/" + wheelbase_string, packet->parameter_unicycle.wheelbase);
@@ -217,12 +217,12 @@ void UNAVHardware::registerControlInterfaces() {
 void UNAVHardware::updateJointsFromHardware() {
     ROS_INFO("Update Joints");
     //Send a list of request about position and velocities
-    std::vector<information_packet_t> list_send;
+    std::vector<packet_information_t> list_send;
     motor_command_map_t motor_command;
     motor_command.bitset.command = MOTOR;
     for(int i = 0; i < NUM_MOTORS; ++i) {
         motor_command.bitset.motor = i;
-        list_send.push_back(serial_->createPacket(motor_command.command_message, REQUEST, HASHMAP_MOTOR));
+        list_send.push_back(serial_->createPacket(motor_command.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
     }
     try {
         serial_->parserSendPacket(list_send, 3, boost::posix_time::millisec(200));
@@ -237,7 +237,7 @@ void UNAVHardware::writeCommandsToHardware() {
     ROS_INFO("Write to Hardware");
     motor_state_t status = STATE_CONTROL_VELOCITY;
     motor_control_t velocity = 1000;
-    std::vector<information_packet_t> list_send;
+    std::vector<packet_information_t> list_send;
     motor_command_map_t motor_command;
     unsigned char command;
     for(int i = 0; i < NUM_MOTORS; ++i) {
@@ -245,11 +245,11 @@ void UNAVHardware::writeCommandsToHardware() {
         motor_command.bitset.command = MOTOR_STATE;
         command = motor_command.command_message;
         ROS_INFO_STREAM("Number: " << (int)command);
-        list_send.push_back(serial_->createDataPacket(command, HASHMAP_MOTOR, (abstract_message_u*) & status));
+        list_send.push_back(serial_->createDataPacket(command, HASHMAP_MOTOR, (message_abstract_u*) & status));
         motor_command.bitset.command = MOTOR_VEL_REF;
         command = motor_command.command_message;
         ROS_INFO_STREAM("Number: " << (int)command);
-        list_send.push_back(serial_->createDataPacket(command, HASHMAP_MOTOR, (abstract_message_u*) & velocity));
+        list_send.push_back(serial_->createDataPacket(command, HASHMAP_MOTOR, (message_abstract_u*) & velocity));
     }
     try {
         serial_->parserSendPacket(list_send, 3, boost::posix_time::millisec(200));
@@ -269,7 +269,7 @@ void UNAVHardware::writeCommandsToHardware() {
 //    }
 //}
 
-bool UNAVHardware::aliveOperation(const ros::TimerEvent& event, std::vector<information_packet_t>* list_send) {
+bool UNAVHardware::aliveOperation(const ros::TimerEvent& event, std::vector<packet_information_t> *list_send) {
 //    if (sub_twist.getNumPublishers() >= 1) {
 //        list_send->push_back(serial_->createDataPacket(VEL_MOTOR_L, HASHMAP_MOTION, (abstract_message_u*) & velocity_ref[0]));
 //        list_send->push_back(serial_->createDataPacket(VEL_MOTOR_R, HASHMAP_MOTION, (abstract_message_u*) & velocity_ref[1]));
@@ -287,7 +287,7 @@ bool UNAVHardware::aliveOperation(const ros::TimerEvent& event, std::vector<info
 //    }
 }
 
-void UNAVHardware::updatePacket(std::vector<information_packet_t>* list_send) {
+void UNAVHardware::updatePacket(std::vector<packet_information_t>* list_send) {
     std::string packet_string;
 //    if ((pub_pose.getNumSubscribers() >= 1) || (pub_odom.getNumSubscribers() >= 1)) {
 //        packet_string += "Odo ";
@@ -343,7 +343,7 @@ motor_parameter_t UNAVHardware::get_motor_parameter(std::string name) {
     nh_.getParam(joint_string + "/" + name + "/volt_bridge", temp);
     parameter.volt_bridge = temp;
     nh_.getParam(joint_string + "/" + name + "/versus", temp2);
-    parameter.versus = temp2;
+    parameter.rotation = temp2;
     nh_.getParam(joint_string + "/" + name + "/default_enable", temp2);
     parameter.enable_set = temp2;
     return parameter;
@@ -388,7 +388,7 @@ motor_t UNAVHardware::get_constraint(std::string name) {
 bool UNAVHardware::pidServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&) {
     std::string name = req.name;
     motor_pid_t pid;
-    std::vector<information_packet_t> list_send;
+    std::vector<packet_information_t> list_send;
     ROS_INFO("PID UPDATE");
 //    if ((name.compare(left_string) == 0) || (name.compare(all_string) == 0)) {
 //        pid = get_pid(left_string);
@@ -409,7 +409,7 @@ bool UNAVHardware::pidServiceCallback(ros_serial_bridge::Update::Request &req, r
 bool UNAVHardware::parameterServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&) {
     std::string name = req.name;
 //    parameter_motor_t parameter_motor;
-    std::vector<information_packet_t> list_send;
+    std::vector<packet_information_t> list_send;
     ROS_INFO("PARAMETER UPDATE");
 //    if ((name.compare(left_string) == 0) || (name.compare(all_string) == 0)) {
 //        parameter_motor = get_motor_parameter(left_string);
@@ -435,7 +435,7 @@ bool UNAVHardware::constraintServiceCallback(ros_serial_bridge::Update::Request 
     //motor_t constraint = get_constraint();
     std::string name = req.name;
 //    motor_t constraint;
-    std::vector<information_packet_t> list_send;
+    std::vector<packet_information_t> list_send;
     ROS_INFO("CONSTRAINT UPDATE");
 //    if ((name.compare(left_string) == 0) || (name.compare(all_string) == 0)) {
 //        constraint = get_constraint(left_string);
@@ -456,7 +456,7 @@ bool UNAVHardware::constraintServiceCallback(ros_serial_bridge::Update::Request 
 bool UNAVHardware::emergencyServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&) {
     std::string name = req.name;
 //    emergency_t emergency;
-    std::vector<information_packet_t> list_send;
+    std::vector<packet_information_t> list_send;
 //    if ((name.compare(left_string) == 0) || (name.compare(all_string) == 0)) {
 //        emergency = get_emergency(left_string);
 //        list_send.push_back(serial_->createDataPacket(EMERGENCY_L, HASHMAP_MOTOR, (abstract_message_u*) & emergency));

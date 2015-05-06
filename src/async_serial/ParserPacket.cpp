@@ -26,22 +26,22 @@ public:
     ParserPacketImpl() : counter_default(0), counter_error(0) {
     }
 
-    void sendPacket(std::vector<information_packet_t> list_packet) {
-        for (vector<information_packet_t>::iterator list_iter = list_packet.begin(); list_iter != list_packet.end(); ++list_iter) {
-            information_packet_t packet = (*list_iter);
+    void sendPacket(std::vector<packet_information_t> list_packet) {
+        for (vector<packet_information_t>::iterator list_iter = list_packet.begin(); list_iter != list_packet.end(); ++list_iter) {
+            packet_information_t packet = (*list_iter);
             switch (packet.option) {
-                case NACK:
-                    sendDataCallBack(counter_error, packet.command, &packet.packet, data_error_packet_functions);
+                case PACKET_NACK:
+                    sendDataCallBack(counter_error, packet.command, &packet.message, data_error_packet_functions);
                     break;
-                case DATA:
+                case PACKET_DATA:
                     sendToCallback(&packet);
                     break;
             }
         }
     }
 
-    void addCallback(const boost::function<void (const unsigned char&, const abstract_message_u*) >& callback, unsigned char type) {
-        if (type == HASHMAP_DEFAULT) {
+    void addCallback(const boost::function<void (const unsigned char&, const message_abstract_u*) >& callback, unsigned char type) {
+        if (type == HASHMAP_SYSTEM) {
             addCallBack("Default", &counter_default, data_default_packet_functions, callback);
         } else {
             this->type = type;
@@ -49,12 +49,12 @@ public:
         }
     }
 
-    void addErrorCallback(const boost::function<void (const unsigned char&, const abstract_message_u*) >& callback) {
+    void addErrorCallback(const boost::function<void (const unsigned char&, const message_abstract_u*) >& callback) {
         addCallBack("Error", &counter_error, data_error_packet_functions, callback);
     }
 
     void clearCallback(unsigned char type) {
-        if (type == HASHMAP_DEFAULT)
+        if (type == HASHMAP_SYSTEM)
             clearCallback(&counter_default, data_default_packet_functions);
         else
             data_other_packet_callback.clear();
@@ -67,7 +67,7 @@ public:
 private:
 
     /// Read complete callback - Array of callback
-    typedef boost::function<void (const unsigned char&, const abstract_message_u*) > callback_data_packet_t;
+    typedef boost::function<void (const unsigned char&, const message_abstract_u*) > callback_data_packet_t;
 
     void clearCallback(unsigned int* counter, boost::array<callback_data_packet_t, NUMBER_CALLBACK >& array) {
         for (int i = 0; i < (*counter); ++i) {
@@ -77,7 +77,7 @@ private:
         counter = 0;
     }
 
-    void addCallBack(string name, unsigned int* counter, boost::array<callback_data_packet_t, NUMBER_CALLBACK >& array, const boost::function<void (const unsigned char&, const abstract_message_u*) >& callback) {
+    void addCallBack(string name, unsigned int* counter, boost::array<callback_data_packet_t, NUMBER_CALLBACK >& array, const boost::function<void (const unsigned char&, const message_abstract_u*) >& callback) {
         if (*counter == 10)
             throw (parser_exception("Max callback packet " + name));
         else {
@@ -85,14 +85,14 @@ private:
         }
     }
 
-    void sendToCallback(information_packet_t* packet) {
-        if (packet->type == HASHMAP_DEFAULT) {
-            sendDataCallBack(counter_default, packet->command, &packet->packet, data_default_packet_functions);
+    void sendToCallback(packet_information_t* packet) {
+        if (packet->type == HASHMAP_SYSTEM) {
+            sendDataCallBack(counter_default, packet->command, &packet->message, data_default_packet_functions);
         } else if (packet->type == type)
-            if (data_other_packet_callback) data_other_packet_callback(packet->command, &packet->packet);
+            if (data_other_packet_callback) data_other_packet_callback(packet->command, &packet->message);
     }
 
-    void sendDataCallBack(unsigned int counter, unsigned char& command, abstract_message_u* packet, boost::array<callback_data_packet_t, NUMBER_CALLBACK > array) {
+    void sendDataCallBack(unsigned int counter, unsigned char& command, message_abstract_u* packet, boost::array<callback_data_packet_t, NUMBER_CALLBACK > array) {
         for (int i = 0; i < counter; ++i) {
             callback_data_packet_t callback = array[i];
             if (callback)
@@ -107,7 +107,7 @@ private:
 };
 
 ParserPacket::ParserPacket() : PacketSerial(), parser_impl(new ParserPacketImpl) {
-    HASHMAP_DEFAULT_INITIALIZE
+    HASHMAP_SYSTEM_INITIALIZE
     INITIALIZE_HASHMAP_MOTION
     HASHMAP_MOTOR_INITIALIZE
     INITIALIZE_HASHMAP_NAVIGATION
@@ -121,7 +121,7 @@ ParserPacket::ParserPacket(const std::string& devname,
         asio::serial_port_base::flow_control opt_flow,
         asio::serial_port_base::stop_bits opt_stop)
 : PacketSerial(devname, baud_rate, opt_parity, opt_csize, opt_flow, opt_stop), parser_impl(new ParserPacketImpl) {
-    HASHMAP_DEFAULT_INITIALIZE
+    HASHMAP_SYSTEM_INITIALIZE
     INITIALIZE_HASHMAP_MOTION
     HASHMAP_MOTOR_INITIALIZE
     INITIALIZE_HASHMAP_NAVIGATION
@@ -153,7 +153,7 @@ void ParserPacket::actionAsync(const packet_t* packet) {
     parser_impl->sendPacket(parsing(*packet));
 }
 
-void ParserPacket::parserSendPacket(vector<information_packet_t> list_send, const unsigned int repeat, const boost::posix_time::millisec& wait_duration) {
+void ParserPacket::parserSendPacket(vector<packet_information_t> list_send, const unsigned int repeat, const boost::posix_time::millisec& wait_duration) {
     if (!list_send.empty()) {
         packet_t packet = encoder(list_send);
         packet_t receive = sendSyncPacket(packet, repeat, wait_duration);
@@ -161,7 +161,7 @@ void ParserPacket::parserSendPacket(vector<information_packet_t> list_send, cons
     }
 }
 
-void ParserPacket::parserSendPacket(information_packet_t send, const unsigned int repeat, const boost::posix_time::millisec& wait_duration) {
+void ParserPacket::parserSendPacket(packet_information_t send, const unsigned int repeat, const boost::posix_time::millisec& wait_duration) {
     if (send.length != 0) {
         packet_t packet = encoder(send);
         packet_t receive = sendSyncPacket(packet, repeat, wait_duration);
@@ -169,63 +169,63 @@ void ParserPacket::parserSendPacket(information_packet_t send, const unsigned in
     }
 }
 
-vector<information_packet_t> ParserPacket::parsing(packet_t packet_receive) {
+vector<packet_information_t> ParserPacket::parsing(packet_t packet_receive) {
     int i;
-    vector<information_packet_t> list_data;
+    vector<packet_information_t> list_data;
     for (i = 0; i < packet_receive.length;) {
-        buffer_packet_u buffer_packet;
+        packet_buffer_u buffer_packet;
         memcpy(&buffer_packet.buffer, &packet_receive.buffer[i], packet_receive.buffer[i]);
-        list_data.push_back(buffer_packet.information_packet);
+        list_data.push_back(buffer_packet.packet_information);
         i += packet_receive.buffer[i];
     }
     return list_data;
 }
 
-packet_t ParserPacket::encoder(vector<information_packet_t> list_send) {
+packet_t ParserPacket::encoder(vector<packet_information_t> list_send) {
     packet_t packet_send;
     packet_send.length = 0;
-    for (vector<information_packet_t>::iterator list_iter = list_send.begin(); list_iter != list_send.end(); ++list_iter) {
-        buffer_packet_u buffer_packet;
-        buffer_packet.information_packet = (*list_iter);
-        memcpy(&packet_send.buffer[packet_send.length], &buffer_packet.buffer, buffer_packet.information_packet.length);
+    for (vector<packet_information_t>::iterator list_iter = list_send.begin(); list_iter != list_send.end(); ++list_iter) {
+        packet_buffer_u buffer_packet;
+        buffer_packet.packet_information = (*list_iter);
+        memcpy(&packet_send.buffer[packet_send.length], &buffer_packet.buffer, buffer_packet.packet_information.length);
 
-        packet_send.length += buffer_packet.information_packet.length;
+        packet_send.length += buffer_packet.packet_information.length;
     }
     return packet_send;
 }
 
-packet_t ParserPacket::encoder(information_packet_t *list_send, size_t len) {
+packet_t ParserPacket::encoder(packet_information_t *list_send, size_t len) {
     packet_t packet_send;
     packet_send.length = 0;
     for (int i = 0; i < len; ++i) {
-        buffer_packet_u buffer_packet;
-        buffer_packet.information_packet = list_send[i];
+        packet_buffer_u buffer_packet;
+        buffer_packet.packet_information = list_send[i];
 
-        memcpy(&packet_send.buffer[packet_send.length], &buffer_packet.buffer, buffer_packet.information_packet.length);
+        memcpy(&packet_send.buffer[packet_send.length], &buffer_packet.buffer, buffer_packet.packet_information.length);
 
-        packet_send.length += buffer_packet.information_packet.length;
+        packet_send.length += buffer_packet.packet_information.length;
     }
     return packet_send;
 }
 
-packet_t ParserPacket::encoder(information_packet_t send) {
+packet_t ParserPacket::encoder(packet_information_t send) {
     packet_t packet_send;
     packet_send.length = send.length;
-    buffer_packet_u buffer_packet;
-    buffer_packet.information_packet = send;
-    memcpy(&packet_send.buffer, &buffer_packet.buffer, buffer_packet.information_packet.length);
+    packet_buffer_u buffer_packet;
+    buffer_packet.packet_information = send;
+    memcpy(&packet_send.buffer, &buffer_packet.buffer, buffer_packet.packet_information.length);
     return packet_send;
 }
 
-information_packet_t ParserPacket::createPacket(unsigned char command, unsigned char option, unsigned char type, abstract_message_u * packet) {
-    information_packet_t information;
+packet_information_t ParserPacket::createPacket(unsigned char command, unsigned char option, unsigned char type, message_abstract_u * packet) {
+    packet_information_t information;
     information.command = command;
     information.option = option;
     information.type = type;
-    if (option == DATA) {
+    if (option == PACKET_DATA) {
         switch (type) {
-            case HASHMAP_DEFAULT:
-                information.length = LNG_HEAD_INFORMATION_PACKET + hashmap_default[command];
+            case HASHMAP_SYSTEM:
+                information.length = LNG_HEAD_INFORMATION_PACKET + hashmap_system[command];
                 break;
             case HASHMAP_MOTION:
                 information.length = LNG_HEAD_INFORMATION_PACKET + hashmap_motion[command];
@@ -246,20 +246,20 @@ information_packet_t ParserPacket::createPacket(unsigned char command, unsigned 
         information.length = LNG_HEAD_INFORMATION_PACKET;
     }
     if (packet != NULL) {
-        memcpy(&information.packet, packet, sizeof (abstract_message_u));
+        memcpy(&information.message, packet, sizeof (message_abstract_u));
     }
     return information;
 }
 
-information_packet_t ParserPacket::createDataPacket(unsigned char command, unsigned char type, abstract_message_u * packet) {
-    return createPacket(command, DATA, type, packet);
+packet_information_t ParserPacket::createDataPacket(unsigned char command, unsigned char type, message_abstract_u * packet) {
+    return createPacket(command, PACKET_DATA, type, packet);
 }
 
-void ParserPacket::addCallback(const boost::function<void (const unsigned char&, const abstract_message_u*) >& callback, unsigned char type) {
+void ParserPacket::addCallback(const boost::function<void (const unsigned char&, const message_abstract_u*) >& callback, unsigned char type) {
     parser_impl->addCallback(callback, type);
 }
 
-void ParserPacket::addErrorCallback(const boost::function<void (const unsigned char&, const abstract_message_u*) >& callback) {
+void ParserPacket::addErrorCallback(const boost::function<void (const unsigned char&, const message_abstract_u*) >& callback) {
     parser_impl->addErrorCallback(callback);
 }
 

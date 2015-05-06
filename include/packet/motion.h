@@ -104,4 +104,3 @@ static unsigned int hashmap_motion[HASHMAP_MOTION_NUMBER];
                                     hashmap_motion[VELOCITY_MIS] = LNG_VELOCITY;
 
 #endif	/* MOTION_H */
-

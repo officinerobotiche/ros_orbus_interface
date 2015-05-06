@@ -40,16 +40,16 @@ public:
     std::string getNameBoard();
     std::string getTypeBoard();
 
-    void addVectorPacketRequest(const boost::function<void (std::vector<information_packet_t>*) >& callback);
+    void addVectorPacketRequest(const boost::function<void (std::vector<packet_information_t>*) >& callback);
 
-    template <class T> void addVectorPacketRequest(void(T::*fp)(std::vector<information_packet_t>*), T* obj) {
+    template <class T> void addVectorPacketRequest(void(T::*fp)(std::vector<packet_information_t>*), T* obj) {
         addVectorPacketRequest(boost::bind(fp, obj, _1));
     }
     void clearVectorPacketRequest();
 
-    void addParameterPacketRequest(const boost::function<void (std::vector<information_packet_t>*) >& callback);
+    void addParameterPacketRequest(const boost::function<void (std::vector<packet_information_t>*) >& callback);
 
-    template <class T> void addParameterPacketRequest(void(T::*fp)(std::vector<information_packet_t>*), T* obj) {
+    template <class T> void addParameterPacketRequest(void(T::*fp)(std::vector<packet_information_t>*), T* obj) {
         addParameterPacketRequest(boost::bind(fp, obj, _1));
     }
     void clearParameterPacketRequest();
@@ -68,9 +68,9 @@ protected:
     std::string name_board, version, name_author, compiled, type_board;
 private:
 
-    typedef boost::function<void (std::vector<information_packet_t>*) > callback_add_packet_t;
+    typedef boost::function<void (std::vector<packet_information_t>*) > callback_add_packet_t;
     typedef boost::function<void (const ros::TimerEvent&) > callback_timer_event_t;
-    typedef boost::function<bool (const ros::TimerEvent&, std::vector<information_packet_t>*) > callback_add_event_t;
+    typedef boost::function<bool (const ros::TimerEvent&, std::vector<packet_information_t>*) > callback_add_event_t;
     callback_add_packet_t callback_add_packet, callback_add_parameter;
     callback_add_event_t callback_alive_event;
     callback_timer_event_t callback_timer_event;
@@ -84,17 +84,17 @@ private:
     bool init_number_process;
     std::map<std::string, int> map_error_serial;
 
-    std::vector<information_packet_t> updatePacket();
+    std::vector<packet_information_t> updatePacket();
 
     float getTimeProcess(float process_time);
-    void errorPacket(const unsigned char& command, const abstract_message_u* packet);
-    void defaultPacket(const unsigned char& command, const abstract_message_u* packet);
+    void errorPacket(const unsigned char& command, const message_abstract_u* packet);
+    void defaultPacket(const unsigned char& command, const message_abstract_u* packet);
 
     std::string getNameError(int number);
     std::string getBoardSerialError();
-    information_packet_t encodeNameProcess(int number);
+    packet_information_t encodeNameProcess(int number);
     void requestNameProcess();
-    information_packet_t encodeServices(char command, unsigned char* buffer = NULL, size_t len = 0);
+    packet_information_t encodeServices(char command, unsigned char* buffer = NULL, size_t len = 0);
     void resetBoard(unsigned int repeat = 3);
     void decodeServices(const char command, const unsigned char* buffer);
 

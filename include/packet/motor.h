@@ -23,23 +23,23 @@
 /**
  * Define to select state of control for single motor
  */
-#define STATE_CONTROL_EMERGENCY -1
-#define STATE_CONTROL_DISABLE 0
-#define STATE_CONTROL_DIRECT 1
-#define STATE_CONTROL_POSITION 2
-#define STATE_CONTROL_VELOCITY 3
-#define STATE_CONTROL_TORQUE 4
+#define STATE_CONTROL_EMERGENCY     -1  ///< Motors slow down to zero speed, then the bridge is turned off
+#define STATE_CONTROL_DISABLE       0   ///< Motors disabled
+#define STATE_CONTROL_DIRECT        1   ///< Motors controlled using direct PWM signals
+#define STATE_CONTROL_POSITION      2   ///< Motors controlled in position
+#define STATE_CONTROL_VELOCITY      3   ///< Motors controlled in velocity
+#define STATE_CONTROL_TORQUE        4   ///< Motors controller in torque
 
 /**
- * This uniun convert a command message in a number motor and type of command
+ * This union converts a command message in a motor index and type of command
  * - [#] maximum motor 2^4 = 16
  * - [#] maximum command 2^4 = 16
  */
 typedef union _motor_command_map {
 
     struct {
-        unsigned char motor : 4;
-        unsigned char command : 4;
+        unsigned char motor : 4;    ///< Motor index
+        unsigned char command : 4;  ///< Motor command
     } bitset;
     unsigned char command_message;
 } motor_command_map_t;
@@ -52,14 +52,14 @@ typedef int16_t motor_control_t;
 #define LNG_MOTOR_CONTROL sizeof(motor_control_t)
 
 /**
- * Message to state single motor
+ * Message to get stateus of a single motor
  * - [#] state of control
  */
 typedef int8_t motor_state_t;
 #define LNG_MOTOR_STATE sizeof(motor_state_t)
 
 /**
- * Message for state motor controller, information about:
+ * Message for the status of the motor controller, information about:
  * - [#]       state motor - type of control
  * - [mV]      mean voltage applied in the bridge - PWM
  * - [Nm]      torque
@@ -78,20 +78,26 @@ typedef struct _motor {
 #define LNG_MOTOR sizeof(motor_t)
 
 /**
- * Parameter definition for motor:
+ * Parameters definition for motor:
  * - [#]     Encoder CPR
  * - [#]     Gear ratio
  * - [mV]    Supplied voltage in H-bridge
- * - [0,  1] Position encoder respect to gear [0 after, 1 before]
- * - [-1, 1] Versus rotation motor [1 counterclockwise, -1 clockwise]
- * - [0,  1] Default logic value for enable H-bridge [0 low, 1 high]
+ * - [ 0, 1] Position encoder respect to gear [0 after, 1 before]
+ * - [-1, 1] Positive versus of the rotation of the motor [-1 clockwise, 1 counterclockwise]
+ * - [ 0, 1] Default logic value to enable the H-bridge [0 low, 1 high]
  */
+#define MOTOR_GEAR_ENC_AFTER 0
+#define MOTOR_GEAR_ENC_BEFORE 1
+#define MOTOR_ROTATION_CLOCKWISE -1
+#define MOTOR_ROTATION_COUNTERCLOCKWISE 1
+#define MOTOR_ENABLE_LOW 0
+#define MOTOR_ENABLE_HIGH 1
 typedef struct _motor_parameter {
     uint16_t cpr;
     float ratio;
     motor_control_t volt_bridge;
     uint8_t encoder_pos;
-    int8_t versus;
+    int8_t rotation;
     uint8_t enable_set;
 } motor_parameter_t;
 #define LNG_MOTOR_PARAMETER sizeof(motor_parameter_t)
@@ -99,18 +105,18 @@ typedef struct _motor_parameter {
 /**
  * Message for emergency configuration
  * - [s]  Time to put velocity motor to zero
- * - [s]  Time to disable bridge
- * - [ms] Timeout to start emergency stop motors
+ * - [s]  Time to disable bridge (TODO after the speed reaches zero?)
+ * - [ms] Timeout to start emergency stop of the motors
  */
 typedef struct _motor_emergency {
     float slope_time;
     float bridge_off;
-    int16_t timeout;
+    uint16_t timeout;
 } motor_emergency_t;
 #define LNG_MOTOR_EMERGENCY sizeof(motor_emergency_t)
 
 /**
- * Message for definition gain for PID controller
+ * Message to define the gains for a PID controller
  * - [X] K_p [physic dimension depends to type of control]
  * - [X] K_i [physic dimension depends to type of control]
  * - [X] K_d [physic dimension depends to type of control]
@@ -131,16 +137,16 @@ typedef struct _motor_pid {
         motor_pid_t motor_pid;                   \
         motor_control_t motor_control;
 
-//Numbers associated for motor messages
-#define MOTOR 0
-#define MOTOR_PARAMETER 1
-#define MOTOR_CONSTRAINT 2
-#define MOTOR_EMERGENCY 3
-#define MOTOR_STATE 4
-#define MOTOR_VEL_PID 5
-#define MOTOR_VEL_REF 6
-#define MOTOR_VEL_MEAS 7
-#define MOTOR_POS_MEAS 8
+//Numbers associated for motor messages to be used in the structure @ref motor_command_map_t as value for @ref command
+#define MOTOR               0 ///< TODO Explain what this means
+#define MOTOR_PARAMETER     1 ///< TODO Explain what this means
+#define MOTOR_CONSTRAINT    2 ///< TODO Explain what this means
+#define MOTOR_EMERGENCY     3 ///< TODO Explain what this means
+#define MOTOR_STATE         4 ///< TODO Explain what this means
+#define MOTOR_VEL_PID       5 ///< TODO Explain what this means
+#define MOTOR_VEL_REF       6 ///< TODO Explain what this means
+#define MOTOR_VEL_MEAS      7 ///< TODO Explain what this means
+#define MOTOR_POS_MEAS      8 ///< TODO Explain what this means
 
 //Name for HASHMAP with information about motion messages
 #define HASHMAP_MOTOR 'G'

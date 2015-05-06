@@ -185,7 +185,7 @@ bool PacketSerial::pkg_header(unsigned char rxchar) {
 }
 
 bool PacketSerial::pkg_length(unsigned char rxchar) {
-    if (rxchar > MAX_RX_BUFF) {
+    if (rxchar > MAX_BUFF_RX) {
         throw (packet_exception(ERROR_LENGTH_STRING));
     } else {
         pkg_parse = &PacketSerial::pkg_data;

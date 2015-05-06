@@ -78,11 +78,11 @@ private:
     bool constraintServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
     bool emergencyServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
 
-    bool aliveOperation(const ros::TimerEvent& event, std::vector<information_packet_t>* list_send);
-    void motionPacket(const unsigned char& command, const abstract_message_u* packet);
-    void motorPacket(const unsigned char& command, const abstract_message_u* packet);
-    void updatePacket(std::vector<information_packet_t>* list_send);
-    void addParameter(std::vector<information_packet_t>* list_send);
+    bool aliveOperation(const ros::TimerEvent& event, std::vector<packet_information_t>* list_send);
+    void motionPacket(const unsigned char& command, const message_abstract_u* packet);
+    void motorPacket(const unsigned char& command, const message_abstract_u* packet);
+    void updatePacket(std::vector<packet_information_t>* list_send);
+    void addParameter(std::vector<packet_information_t>* list_send);
 
     motor_pid_t get_pid(std::string name);
     motor_parameter_t get_motor_parameter(std::string name);

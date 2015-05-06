@@ -50,12 +50,12 @@ ORBHardware::ORBHardware(const ros::NodeHandle& nh, ParserPacket* serial)
     map_error_serial[ERROR_TIMEOUT_SYNC_PACKET_STRING] = 0;
     map_error_serial[ERROR_MAX_ASYNC_CALLBACK_STRING] = 0;
 
-    vector<information_packet_t> list_packet;
-    list_packet.push_back(encodeServices(VERSION_CODE));
-    list_packet.push_back(encodeServices(AUTHOR_CODE));
-    list_packet.push_back(encodeServices(NAME_BOARD));
-    list_packet.push_back(encodeServices(DATE_CODE));
-    list_packet.push_back(encodeServices(TYPE_BOARD));
+    vector<packet_information_t> list_packet;
+    list_packet.push_back(encodeServices(SERVICE_CODE_VERSION));
+    list_packet.push_back(encodeServices(SERVICE_CODE_AUTHOR));
+    list_packet.push_back(encodeServices(SERVICE_CODE_BOARD_NAME));
+    list_packet.push_back(encodeServices(SERVICE_CODE_DATE));
+    list_packet.push_back(encodeServices(SERVICE_CODE_BOARD_TYPE));
     serial->parserSendPacket(list_packet);
 
     if (!nh.hasParam("info/type_board"))
@@ -82,7 +82,7 @@ void ORBHardware::loadParameter() {
 //    } else {
 //        requestNameProcess();
 //    }
-    vector<information_packet_t> list_packet;
+    vector<packet_information_t> list_packet;
     if (nh_.hasParam("time")) {
         ROS_INFO("Sync parameter time: load");
         nh_.getParam("time/step", step_timer);
@@ -90,7 +90,7 @@ void ORBHardware::loadParameter() {
         nh_.getParam("time/k_time", k_time);
     } else {
         ROS_INFO("Sync parameter time: ROBOT -> ROS");
-        list_packet.push_back(serial_->createPacket(PARAMETER_SYSTEM, REQUEST));
+        list_packet.push_back(serial_->createPacket(SYSTEM_PARAMETER, PACKET_REQUEST));
     }
 //    //Parameter frequency
 //    if (nh_.hasParam("frequency")) {
@@ -139,7 +139,7 @@ void ORBHardware::reportLoopDuration(const ros::Duration &duration)
 
 }
 
-void ORBHardware::addVectorPacketRequest(const boost::function<void (std::vector<information_packet_t>*) >& callback) {
+void ORBHardware::addVectorPacketRequest(const boost::function<void (std::vector<packet_information_t>*) >& callback) {
     callback_add_packet = callback;
 }
 
@@ -147,7 +147,7 @@ void ORBHardware::clearVectorPacketRequest() {
     callback_add_packet.clear();
 }
 
-void ORBHardware::addParameterPacketRequest(const boost::function<void (std::vector<information_packet_t>*) >& callback) {
+void ORBHardware::addParameterPacketRequest(const boost::function<void (std::vector<packet_information_t>*) >& callback) {
     callback_add_parameter = callback;
 }
 
@@ -171,8 +171,8 @@ std::string ORBHardware::getTypeBoard() {
     return type_board;
 }
 
-std::vector<information_packet_t> ORBHardware::updatePacket() {
-    std::vector<information_packet_t> list_packet;
+std::vector<packet_information_t> ORBHardware::updatePacket() {
+    std::vector<packet_information_t> list_packet;
     if (callback_add_packet)
         callback_add_packet(&list_packet);
 //    if (pub_time_process.getNumSubscribers() >= 1) {
@@ -196,14 +196,14 @@ float ORBHardware::getTimeProcess(float process_time) {
     return k_time*process_time;
 }
 
-void ORBHardware::errorPacket(const unsigned char& command, const abstract_message_u* packet) {
+void ORBHardware::errorPacket(const unsigned char& command, const message_abstract_u* packet) {
     ROS_ERROR("Error on command: %d", command);
 }
 
-void ORBHardware::defaultPacket(const unsigned char& command, const abstract_message_u* packet) {
+void ORBHardware::defaultPacket(const unsigned char& command, const message_abstract_u* packet) {
     switch (command) {
-        case SERVICES:
-            decodeServices(packet->services.command, &packet->services.buffer[0]);
+        case SYSTEM_SERVICE:
+            decodeServices(packet->system_service.command, &packet->system_service.buffer[0]);
             break;
 //        case TIME_PROCESS:
 //            time_process.idle = getTimeProcess(packet->process.idle);
@@ -239,19 +239,19 @@ void ORBHardware::defaultPacket(const unsigned char& command, const abstract_mes
 //            nh_.setParam("process/" + convert.str(), name);
 //        }
 //        break;
-        case PARAMETER_SYSTEM:
-            step_timer = packet->parameter_system.step_timer;
-            tm_mill = packet->parameter_system.int_tm_mill;
+        case SYSTEM_PARAMETER:
+            step_timer = packet->system_parameter.step_timer;
+            tm_mill = packet->system_parameter.int_tm_mill;
             k_time = 1 / (step_timer / tm_mill);
             nh_.setParam("time/step", step_timer);
             nh_.setParam("time/tm_mill", tm_mill);
             nh_.setParam("time/k_time", k_time);
             break;
-        case ERROR_SERIAL:
-            for (int i = 0; i < BUFF_SERIAL_ERROR; ++i) {
+        case SYSTEM_SERIAL_ERROR:
+            for (int i = 0; i < SYSTEM_SERIAL_ERROR; ++i) {
                 string name = getNameError(-(i + 1));
                 if (name.compare(" ") != 0)
-                    map_error_serial[name] = packet->error_pkg.number[i];
+                    map_error_serial[name] = packet->system_error_serial.number[i];
             }
             break;
     }
@@ -304,38 +304,38 @@ std::string ORBHardware::getNameError(int number) {
 //    serial_->parserSendPacket(list_name, 3, boost::posix_time::millisec(200));
 //}
 
-information_packet_t ORBHardware::encodeServices(char command, unsigned char* buffer, size_t len) {
-    services_t service;
+packet_information_t ORBHardware::encodeServices(char command, unsigned char* buffer, size_t len) {
+    system_service_t service;
     service.command = command;
     if (buffer != NULL)
         memcpy(service.buffer, buffer, len);
-    return serial_->createDataPacket(SERVICES, HASHMAP_DEFAULT, (abstract_message_u*) & service);
+    return serial_->createDataPacket(SYSTEM_SERVICE, HASHMAP_SYSTEM, (message_abstract_u*) & service);
 }
 
 void ORBHardware::resetBoard(unsigned int repeat) {
     for (int i = 0; i < repeat; i++)
-        serial_->sendAsyncPacket(serial_->encoder(encodeServices(RESET)));
+        serial_->sendAsyncPacket(serial_->encoder(encodeServices(SERVICE_RESET)));
 }
 
 void ORBHardware::decodeServices(const char command, const unsigned char* buffer) {
     switch (command) {
-        case VERSION_CODE:
+        case SERVICE_CODE_VERSION:
             this->version.clear();
             this->version.append((char*) buffer);
             break;
-        case AUTHOR_CODE:
+        case SERVICE_CODE_AUTHOR:
             this->name_author.clear();
             this->name_author.append((char*) buffer);
             break;
-        case NAME_BOARD:
+        case SERVICE_CODE_BOARD_NAME:
             this->name_board.clear();
             this->name_board.append((char*) buffer);
             break;
-        case DATE_CODE:
+        case SERVICE_CODE_DATE:
             this->compiled.clear();
-            this->compiled.append((char*) buffer, SERVICE_BUFF);
+            this->compiled.append((char*) buffer, MAX_BUFF_SERVICE);
             break;
-        case TYPE_BOARD:
+        case SERVICE_CODE_BOARD_TYPE:
             this->type_board.clear();
             this->type_board.append((char*) buffer);
             break;
@@ -344,7 +344,7 @@ void ORBHardware::decodeServices(const char command, const unsigned char* buffer
 
 std::string ORBHardware::getBoardSerialError() {
     try {
-        serial_->parserSendPacket(serial_->createPacket(ERROR_SERIAL, REQUEST), 3, boost::posix_time::millisec(200));
+        serial_->parserSendPacket(serial_->createPacket(SYSTEM_SERIAL_ERROR, PACKET_REQUEST), 3, boost::posix_time::millisec(200));
     } catch (std::exception& e) {
         ROS_ERROR("%s", e.what());
     }

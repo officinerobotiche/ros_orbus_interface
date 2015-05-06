@@ -85,8 +85,6 @@ add_dependencies(hardware_unav hardware_unav_gencpp)
 
 roslint_cpp(${hardware_unav_SRC})
 
-roslaunch_add_file_check(launch)
-
 #############
 ## Install ##
 #############

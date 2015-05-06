@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
     <name>ros_serial_bridge</name>
-    <version>2.0.0</version>
+    <version>0.4.0</version>
     <description>The serial_bridge package</description>
 
     <!-- One maintainer tag required, multiple allowed, one person per tag --> 

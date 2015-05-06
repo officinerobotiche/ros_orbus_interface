@@ -1,9 +1,19 @@
-/* 
- * File:   ROSController.cpp
- * Author: raffaello
- * 
- * Created on 13 November 2013, 10:33
- */
+/*
+ * Copyright (C) 2014 Officine Robotiche
+ * Author: Raffaello Bonghi
+ * email:  raffaello.bonghi@officinerobotiche.it
+ * Permission is granted to copy, distribute, and/or modify this program
+ * under the terms of the GNU Lesser General Public License, version 2 or any
+ * later version published by the Free Software Foundation.
+ *
+ * A copy of the license can be found at
+ * https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ * Public License for more details
+*/
 
 #include "serial_controller/ROSController.h"
 
@@ -17,7 +27,7 @@ ROSController::ROSController(const ros::NodeHandle& nh, ParserPacket* serial)
     serial_->addErrorCallback(&ROSController::errorPacket, this);
 
     //Publisher
-    pub_time_process = nh_.advertise<serial_bridge::Process>("process", NUMBER_PUB,
+    pub_time_process = nh_.advertise<ros_serial_bridge::Process>("process", NUMBER_PUB,
             boost::bind(&ROSController::connectCallback, this, _1));
     //Services
     srv_board = nh_.advertiseService("service_serial", &ROSController::service_Callback, this);
@@ -222,11 +232,11 @@ float ROSController::getTimeProcess(float process_time) {
     return k_time*process_time;
 }
 
-void ROSController::errorPacket(const unsigned char& command, const abstract_packet_t* packet) {
+void ROSController::errorPacket(const unsigned char& command, const abstract_message_u* packet) {
     ROS_ERROR("Error on command: %d", command);
 }
 
-void ROSController::defaultPacket(const unsigned char& command, const abstract_packet_t* packet) {
+void ROSController::defaultPacket(const unsigned char& command, const abstract_message_u* packet) {
     switch (command) {
         case SERVICES:
             decodeServices(packet->services.command, &packet->services.buffer[0]);
@@ -317,7 +327,7 @@ std::string ROSController::getNameError(int number) {
 information_packet_t ROSController::encodeNameProcess(int number) {
     process_buffer_t name_process;
     name_process.name = number;
-    return serial_->createDataPacket(NAME_PROCESS, HASHMAP_DEFAULT, (abstract_packet_t*) & name_process);
+    return serial_->createDataPacket(NAME_PROCESS, HASHMAP_DEFAULT, (abstract_message_u*) & name_process);
 }
 
 void ROSController::requestNameProcess() {
@@ -335,7 +345,7 @@ information_packet_t ROSController::encodeServices(char command, unsigned char* 
     service.command = command;
     if (buffer != NULL)
         memcpy(service.buffer, buffer, len);
-    return serial_->createDataPacket(SERVICES, HASHMAP_DEFAULT, (abstract_packet_t*) & service);
+    return serial_->createDataPacket(SERVICES, HASHMAP_DEFAULT, (abstract_message_u*) & service);
 }
 
 void ROSController::resetBoard(unsigned int repeat) {
@@ -393,7 +403,7 @@ std::string ROSController::getBoardSerialError() {
     return service_str.str();
 }
 
-bool ROSController::service_Callback(serial_bridge::Service::Request &req, serial_bridge::Service::Response & msg) {
+bool ROSController::service_Callback(ros_serial_bridge::Service::Request &req, ros_serial_bridge::Service::Response & msg) {
     if (req.name.compare("reset") == 0) {
         resetBoard();
         msg.name = "reset";
@@ -428,18 +438,18 @@ process_t ROSController::get_process(std::string name) {
     return process;
 }
 
-bool ROSController::processServiceCallback(serial_bridge::Update::Request &req, serial_bridge::Update::Response&) {
+bool ROSController::processServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&) {
     std::string name = req.name;
     process_t process;
     std::vector<information_packet_t> list_send;
     ROS_INFO("PROCESS UPDATE");
     if ((name.compare("priority") == 0) || (name.compare(all_string) == 0)) {
         process = get_process("priority");
-        list_send.push_back(serial_->createDataPacket(PRIORITY_PROCESS, HASHMAP_DEFAULT, (abstract_packet_t*) & process));
+        list_send.push_back(serial_->createDataPacket(PRIORITY_PROCESS, HASHMAP_DEFAULT, (abstract_message_u*) & process));
     }
     if ((name.compare("frequency") == 0) || (name.compare(all_string) == 0)) {
         process = get_process("frequency");
-        list_send.push_back(serial_->createDataPacket(FRQ_PROCESS, HASHMAP_DEFAULT, (abstract_packet_t*) & process));
+        list_send.push_back(serial_->createDataPacket(FRQ_PROCESS, HASHMAP_DEFAULT, (abstract_message_u*) & process));
     }
     try {
         serial_->parserSendPacket(list_send, 3, boost::posix_time::millisec(200));

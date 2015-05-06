@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
     <name>ros_serial_bridge</name>
-    <version>2.0.0</version>
+    <version>0.4.0</version>
     <description>The serial_bridge package</description>
 
     <!-- One maintainer tag required, multiple allowed, one person per tag --> 
@@ -41,7 +41,6 @@
     <!--   <test_depend>gtest</test_depend> -->
     <buildtool_depend>catkin</buildtool_depend>
   
-    <build_depend>ncurses++</build_depend>
     <build_depend>geometry_msgs</build_depend>
     <build_depend>std_srvs</build_depend>
     <build_depend>std_msgs</build_depend>
@@ -50,7 +49,6 @@
     <build_depend>tf</build_depend>
     <build_depend>nav_msgs</build_depend>
 
-    <run_depend>ncurses++</run_depend>
     <run_depend>geometry_msgs</run_depend>
     <run_depend>message_runtime</run_depend>
     <run_depend>std_msgs</run_depend>

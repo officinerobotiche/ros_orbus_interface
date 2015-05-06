@@ -1,21 +1,30 @@
-/* 
- * File:   ROSController.h
- * Author: raffaello
+/*
+ * Copyright (C) 2014 Officine Robotiche
+ * Author: Raffaello Bonghi
+ * email:  raffaello.bonghi@officinerobotiche.it
+ * Permission is granted to copy, distribute, and/or modify this program
+ * under the terms of the GNU Lesser General Public License, version 2 or any
+ * later version published by the Free Software Foundation.
  *
- * Created on 13 November 2013, 10:33
- */
+ * A copy of the license can be found at
+ * https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ * Public License for more details
+*/
 
 #ifndef ROSCONTROLLER_H
 #define	ROSCONTROLLER_H
 
 #include <ros/ros.h>
-#include <serial_bridge/Service.h>
-#include <serial_bridge/Process.h>
-#include <serial_bridge/Update.h>
+#include <ros_serial_bridge/Service.h>
+#include <ros_serial_bridge/Process.h>
+#include <ros_serial_bridge/Update.h>
 #include <std_srvs/Empty.h>
 #include "../async_serial/ParserPacket.h"
 
-const std::string command_string = "command";
 const std::string measure_string = "measure";
 const std::string left_string = "Left";
 const std::string right_string = "Right";
@@ -90,7 +99,7 @@ private:
     ros::ServiceServer srv_board, srv_process;
     ros::Publisher pub_time_process;
 
-    serial_bridge::Process time_process;
+    ros_serial_bridge::Process time_process;
     double step_timer, tm_mill, k_time;
     int number_process;
     bool init_number_process;
@@ -101,8 +110,8 @@ private:
     void timerCallback(const ros::TimerEvent& event);
 
     float getTimeProcess(float process_time);
-    void errorPacket(const unsigned char& command, const abstract_packet_t* packet);
-    void defaultPacket(const unsigned char& command, const abstract_packet_t* packet);
+    void errorPacket(const unsigned char& command, const abstract_message_u* packet);
+    void defaultPacket(const unsigned char& command, const abstract_message_u* packet);
 
     std::string getNameError(int number);
     std::string getBoardSerialError();
@@ -114,8 +123,8 @@ private:
 
     process_t get_process(std::string name);
 
-    bool processServiceCallback(serial_bridge::Update::Request &req, serial_bridge::Update::Response&);
-    bool service_Callback(serial_bridge::Service::Request &req, serial_bridge::Service::Response &msg);
+    bool processServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
+    bool service_Callback(ros_serial_bridge::Service::Request &req, ros_serial_bridge::Service::Response &msg);
 };
 
 #endif	/* ROSCONTROLLER_H */

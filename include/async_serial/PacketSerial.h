@@ -1,8 +1,16 @@
-/* 
- * File:   PacketSerial.h
- * Author: raffaello
+/*
+ * Copyright (C) 2014 Officine Robotiche
+ * Author: Raffaello Bonghi
+ * email:  raffaello.bonghi@officinerobotiche.it
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Lesser General Public License
+ * (LGPL) version 2.1 which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/lgpl-2.1.html
  *
- * Created on 06 November 2013, 19:20
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
  */
 
 #ifndef PACKETSERIAL_H
@@ -11,6 +19,9 @@
 #include "AsyncSerial.h"
 #include "packet/packet.h"
 
+/**
+ * Header 
+ */
 #define HEADER_SYNC '#'
 #define HEADER_ASYNC '@'
 #define HEAD_PKG 2
@@ -61,6 +72,15 @@ class PacketSerial : public AsyncSerial {
 public:
     PacketSerial();
 
+    /**
+     * 
+     * @param devname
+     * @param baud_rate
+     * @param opt_parity
+     * @param opt_csize
+     * @param opt_flow
+     * @param opt_stop
+     */
     PacketSerial(const std::string& devname, unsigned int baud_rate,
             boost::asio::serial_port_base::parity opt_parity =
             boost::asio::serial_port_base::parity(
@@ -78,15 +98,15 @@ public:
 
     /**
      * Write data asynchronously. Returns immediately.
-     * \param data to be sent through the serial device
+     * @param data to be sent through the serial device
      */
     void writePacket(packet_t packet, unsigned char header = HEADER_SYNC);
 
     /**
      * Read some data, blocking
-     * \return the receive buffer. It is empty if no data is available
-     * \throws boost::system::system_error if any error
-     * \throws timeout_exception in case of timeout
+     * @return the receive buffer. It is empty if no data is available
+     * @throws boost::system::system_error if any error
+     * @throws timeout_exception in case of timeout
      */
     packet_t readPacket(const boost::posix_time::millisec& wait_duration = boost::posix_time::millisec(1000));
 
@@ -111,8 +131,9 @@ public:
     void clearAsyncPacketCallback();
 
     /**
+     * Get a list map errors.
      * 
-     * @return 
+     * @return a map with string name and numbers errors.
      */
     std::map<std::string, int> getMapError();
 

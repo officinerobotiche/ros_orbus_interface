@@ -44,7 +44,7 @@ typedef struct autosend {
 typedef uint8_t enable_sensor_t;
 #define LNG_ENABLE_SENSOR sizeof(enable_sensor_t)
 
-#define ABSTRACT_PACKET_NAVIGATION              \
+#define ABSTRACT_MESSAGE_NAVIGATION             \
         sensor_t sensor;                        \
         humidity_t humidity;                    \
         infrared_t infrared;                    \

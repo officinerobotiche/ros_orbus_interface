@@ -8,7 +8,7 @@
 #include "serial_controller/ROSSensorController.h"
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/Temperature.h>
-#include <serial_bridge/Sensor.h>
+#include <ros_serial_bridge/Sensor.h>
 
 #define NUMBER_PUB 10
 
@@ -34,11 +34,11 @@ ROSSensorController::ROSSensorController(const ros::NodeHandle& nh, ParserPacket
             boost::bind(&ROSController::connectCallback, this, _1));
     pub_temperature = nh_.advertise<sensor_msgs::Temperature>(default_temperature_string, NUMBER_PUB,
             boost::bind(&ROSController::connectCallback, this, _1));
-    pub_sensors = nh_.advertise<serial_bridge::Sensor>(default_sensor_string, NUMBER_PUB,
+    pub_sensors = nh_.advertise<ros_serial_bridge::Sensor>(default_sensor_string, NUMBER_PUB,
             boost::bind(&ROSController::connectCallback, this, _1));
     //Open Subscriber
     //-Command
-    sub_enable = nh_.subscribe(command_string + "/" + enable_sensors, 1, &ROSSensorController::enableCallback, this);
+    sub_enable = nh_.subscribe("/" + enable_sensors, 1, &ROSSensorController::enableCallback, this);
 
     //Open Service
     srv_parameter = nh_.advertiseService(default_parameter_string, &ROSSensorController::parameterCallback, this);
@@ -74,10 +74,10 @@ bool ROSSensorController::aliveOperation(const ros::TimerEvent& event, std::vect
     vector<information_packet_t> list;
     if (enable) {
         //        ROS_INFO("Enable");
-        list.push_back(serial_->createDataPacket(ENABLE_SENSOR, HASHMAP_NAVIGATION, (abstract_packet_t*) & enable));
+        list.push_back(serial_->createDataPacket(ENABLE_SENSOR, HASHMAP_NAVIGATION, (abstract_message_u*) & enable));
     }
     if (autosend.pkgs[0] != -1) {
-        list.push_back(serial_->createDataPacket(ENABLE_AUTOSEND, HASHMAP_NAVIGATION, (abstract_packet_t*) & autosend));
+        list.push_back(serial_->createDataPacket(ENABLE_AUTOSEND, HASHMAP_NAVIGATION, (abstract_message_u*) & autosend));
         //        ROS_INFO("Auto send %d", ((unsigned int)autosend.pkgs[0]));
     }
     serial_->sendAsyncPacket(serial_->encoder(list));
@@ -102,12 +102,12 @@ void ROSSensorController::updatePacket(std::vector<information_packet_t>* list_s
     if (new_enable != enable) {
         enable = new_enable;
         //        ROS_INFO("Update packet enable");
-        list_send->push_back(serial_->createDataPacket(ENABLE_SENSOR, HASHMAP_NAVIGATION, (abstract_packet_t*) & enable));
+        list_send->push_back(serial_->createDataPacket(ENABLE_SENSOR, HASHMAP_NAVIGATION, (abstract_message_u*) & enable));
     }
     if (!compareAutosend(new_autosend, autosend)) {
         autosend = new_autosend;
         //        ROS_INFO("Update packet autosend");
-        list_send->push_back(serial_->createDataPacket(ENABLE_AUTOSEND, HASHMAP_NAVIGATION, (abstract_packet_t*) & autosend));
+        list_send->push_back(serial_->createDataPacket(ENABLE_AUTOSEND, HASHMAP_NAVIGATION, (abstract_message_u*) & autosend));
     }
 }
 
@@ -165,7 +165,7 @@ void ROSSensorController::addParameter(std::vector<information_packet_t>* list_s
     if (nh_.hasParam(default_parameter_string)) {
         ROS_DEBUG("Sync parameter %s: ROS -> ROBOT", default_parameter_string.c_str());
         parameter_sensor_t parameter = getParameter();
-        list_send->push_back(serial_->createDataPacket(PARAMETER_SENSOR, HASHMAP_NAVIGATION, (abstract_packet_t*) & parameter));
+        list_send->push_back(serial_->createDataPacket(PARAMETER_SENSOR, HASHMAP_NAVIGATION, (abstract_message_u*) & parameter));
     } else {
         ROS_DEBUG("Sync parameter %s: ROBOT -> ROS", default_parameter_string.c_str());
         list_send->push_back(serial_->createPacket(PARAMETER_SENSOR, REQUEST, HASHMAP_NAVIGATION));
@@ -174,8 +174,8 @@ void ROSSensorController::addParameter(std::vector<information_packet_t>* list_s
     list_send->push_back(serial_->createPacket(ENABLE_SENSOR, REQUEST, HASHMAP_NAVIGATION));
 }
 
-void ROSSensorController::sensorPacket(const unsigned char& command, const abstract_packet_t* packet) {
-    serial_bridge::Sensor sensor;
+void ROSSensorController::sensorPacket(const unsigned char& command, const abstract_message_u* packet) {
+    ros_serial_bridge::Sensor sensor;
     sensor_msgs::Temperature temperature;
     switch (command) {
         case ENABLE_SENSOR:
@@ -278,10 +278,10 @@ parameter_sensor_t ROSSensorController::getParameter() {
     return parameter;
 }
 
-void ROSSensorController::enableCallback(const serial_bridge::Enable::ConstPtr &msg) {
+void ROSSensorController::enableCallback(const ros_serial_bridge::Enable::ConstPtr &msg) {
     enable_sensor_t enable = msg->enable;
     try {
-        serial_->parserSendPacket(serial_->createDataPacket(ENABLE_SENSOR, HASHMAP_NAVIGATION, (abstract_packet_t*) & enable), 3, boost::posix_time::millisec(200));
+        serial_->parserSendPacket(serial_->createDataPacket(ENABLE_SENSOR, HASHMAP_NAVIGATION, (abstract_message_u*) & enable), 3, boost::posix_time::millisec(200));
     } catch (exception &e) {
         ROS_ERROR("%s", e.what());
     }
@@ -290,7 +290,7 @@ void ROSSensorController::enableCallback(const serial_bridge::Enable::ConstPtr &
 bool ROSSensorController::parameterCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&) {
     parameter_sensor_t parameter = getParameter();
     try {
-        serial_->parserSendPacket(serial_->createDataPacket(PARAMETER_SENSOR, HASHMAP_NAVIGATION, (abstract_packet_t*) & parameter), 3, boost::posix_time::millisec(200));
+        serial_->parserSendPacket(serial_->createDataPacket(PARAMETER_SENSOR, HASHMAP_NAVIGATION, (abstract_message_u*) & parameter), 3, boost::posix_time::millisec(200));
         return true;
     } catch (exception &e) {
         ROS_ERROR("%s", e.what());

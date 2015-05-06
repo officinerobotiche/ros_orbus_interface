@@ -27,12 +27,9 @@ serial_port_t GetSerialPort(char *c_port) {
     return serial_port;
 }
 
-std::string default_robot_name = "robot";
-std::string robot_name = default_robot_name;
-
 int main(int argc, char **argv) {
 
-    ros::init(argc, argv, "serial_bridge");
+    ros::init(argc, argv, "ros_serial_bridge");
     serial_port_t serial_port1, serial_port2;
     switch (argc) {
         case 1:
@@ -55,12 +52,6 @@ int main(int argc, char **argv) {
 
     ros::NodeHandle nh;
 
-    if (nh.hasParam("info/robot_name")) {
-        nh.getParam("info/robot_name", robot_name);
-    } else {
-        nh.setParam("info/robot_name", default_robot_name);
-    }
-
     int baud_rate = 115200;
     if (nh.hasParam("info/baud_rate")) {
         nh.getParam("info/baud_rate", baud_rate);
@@ -77,7 +68,7 @@ int main(int argc, char **argv) {
         ROS_INFO("Open Serial %s%d:%d", serial_port1.name.c_str(), i, baud_rate);
         try {
             serial = new ParserPacket(serial_port1.name + number.str(), baud_rate);
-            //If protocoll on arduino
+            //If protocol on arduino
             if (nh.hasParam("info/arduino")) {
                 int arduino = 2;
                 nh.getParam("info/arduino", arduino);

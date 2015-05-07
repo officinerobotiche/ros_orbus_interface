@@ -25,6 +25,26 @@
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
-* Please send comments, questions, or patches to code@clearpathrobotics.com
+* Please send comments, questions, or patches to developers@officinerobotiche.it
 *
 */
+
+#include "async_serial/ParserPacket.h"
+
+#include <ros/ros.h>
+
+#include <dynamic_reconfigure/server.h>
+//#include <ros_serial_bridge/UnavConfiguratorPIDConfig.h>
+
+class MotorParamConfigurator {
+public:
+    MotorParamConfigurator(std::string name, ParserPacket* serial_);
+private:
+    //Serial port
+    ParserPacket* serial_;
+
+    motor_pid_t pid_;
+
+//    dynamic_reconfigure::Server<ros_serial_bridge::UnavConfiguratorPIDConfig> *dsrv_;
+//    void reconfigureCB(ros_serial_bridge::UnavConfiguratorPIDConfig &config, uint32_t level);
+};

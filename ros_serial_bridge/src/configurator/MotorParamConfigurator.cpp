@@ -28,3 +28,22 @@
 * Please send comments, questions, or patches to code@clearpathrobotics.com
 *
 */
+
+#include "configurator/MotorParamConfigurator.h"
+
+MotorParamConfigurator::MotorParamConfigurator(std::string name, ParserPacket *serial_)
+    : serial_(serial_)
+{
+
+    //Load dynamic reconfigure
+//    dsrv_ = new dynamic_reconfigure::Server<ros_serial_bridge::UnavConfiguratorPIDConfig>(ros::NodeHandle("~" + name + "/pid"));
+//    dynamic_reconfigure::Server<ros_serial_bridge::UnavConfiguratorPIDConfig>::CallbackType cb = boost::bind(&MotorPIDConfigurator::reconfigureCB, this, _1, _2);
+//    dsrv_->setCallback(cb);
+}
+
+//void MotorPIDConfigurator::reconfigureCB(ros_serial_bridge::UnavConfiguratorPIDConfig &config, uint32_t level) {
+//    ROS_INFO("Reconfigure Request: %f %f %f", config.Kp, config.Ki, config.Kd);
+//    pid_.kp = config.Kp;
+//    pid_.ki = config.Ki;
+//    pid_.kd = config.Kd;
+//}

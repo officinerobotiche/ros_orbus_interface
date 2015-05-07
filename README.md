@@ -1,4 +1,4 @@
-# ![Officine Robotiche][Logo] - ros_orbus_hardware
+# ![Officine Robotiche][Logo] - ros_orbus_interface
 
 With this node you can control with ROS all boards with orbus protocoll, in particular:
 - [**µNAV**](http://unav.officinerobotiche.it) The motion control board for two DC brushed motors.

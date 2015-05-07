@@ -54,11 +54,13 @@ UNAVHardware::~UNAVHardware() {
 void UNAVHardware::addParameter(std::vector<packet_information_t>* list_send) {
     motor_command_map_t command;
     std::string number_motor_string;
-    for(int i=0; i < NUM_MOTORS; ++i) {
+    for(unsigned int i=0; i < NUM_MOTORS; ++i) {
         command.bitset.motor = i;
         number_motor_string = "motor_" + boost::lexical_cast<std::string>(i);
-        //PID
-        joints_[i].configurator_pid = new MotorPIDConfigurator(number_motor_string, serial_);
+        /// PID
+        joints_[i].configurator_pid = new MotorPIDConfigurator(private_nh_, number_motor_string, i, serial_);
+        /// Parameter motor
+        joints_[i].configurator_param = new MotorParamConfigurator(number_motor_string, serial_);
 
     }
 //    if (nh_.hasParam(joint_string + "/constraint")) {

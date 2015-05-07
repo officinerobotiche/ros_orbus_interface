@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(ros_serial_bridge)
+project(orbus_interface)
 
 set(ROS_BUILD_TYPE Debug)
 set(CMAKE_BUILD_TYPE Debug)
@@ -31,6 +31,7 @@ find_package(Boost REQUIRED
 # dynamic reconfigure
 generate_dynamic_reconfigure_options(
     cfg/UnavConfiguratorPID.cfg
+    cfg/UnavConfiguratorParam.cfg
 )
 
 ###################################

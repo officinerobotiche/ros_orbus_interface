@@ -29,21 +29,32 @@
 *
 */
 
-#include "configurator/MotorPIDConfigurator.h"
+#include "async_serial/ParserPacket.h"
 
-MotorPIDConfigurator::MotorPIDConfigurator(std::string name, ParserPacket *serial_)
-    : serial_(serial_)
-{
+#include <ros/ros.h>
 
-    //Load dynamic reconfigure
-    dsrv_ = new dynamic_reconfigure::Server<ros_serial_bridge::UnavConfiguratorPIDConfig>(ros::NodeHandle("~" + name + "/pid"));
-    dynamic_reconfigure::Server<ros_serial_bridge::UnavConfiguratorPIDConfig>::CallbackType cb = boost::bind(&MotorPIDConfigurator::reconfigureCB, this, _1, _2);
-    dsrv_->setCallback(cb);
-}
+#include <dynamic_reconfigure/server.h>
+#include <orbus_interface/UnavConfiguratorPIDConfig.h>
 
-void MotorPIDConfigurator::reconfigureCB(ros_serial_bridge::UnavConfiguratorPIDConfig &config, uint32_t level) {
-    ROS_INFO("Reconfigure Request: %f %f %f", config.Kp, config.Ki, config.Kd);
-    pid_.kp = config.Kp;
-    pid_.ki = config.Ki;
-    pid_.kd = config.Kd;
-}
+class MotorPIDConfigurator {
+public:
+    MotorPIDConfigurator(const ros::NodeHandle& nh, std::string name, unsigned int number, ParserPacket* serial_);
+private:
+    /// Associate name space
+    std::string name_;
+    /// Private namespace
+    ros::NodeHandle nh_;
+    /// Serial port
+    ParserPacket* serial_;
+    /// Command map
+    motor_command_map_t command_;
+    /// Frequency message
+    system_task_t message_frequency_;
+
+    motor_pid_t last_pid_, default_pid_;
+
+    bool setup_;
+
+    dynamic_reconfigure::Server<orbus_interface::UnavConfiguratorPIDConfig> *dsrv_;
+    void reconfigureCB(orbus_interface::UnavConfiguratorPIDConfig &config, uint32_t level);
+};

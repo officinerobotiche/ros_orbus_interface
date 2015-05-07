@@ -29,22 +29,18 @@
 *
 */
 
-#include "async_serial/ParserPacket.h"
+#include "configurator/MotorParamConfigurator.h"
 
-#include <ros/ros.h>
+MotorParamConfigurator::MotorParamConfigurator(std::string name, ParserPacket *serial_)
+    : serial_(serial_)
+{
 
-#include <dynamic_reconfigure/server.h>
-#include <ros_serial_bridge/UnavConfiguratorPIDConfig.h>
+    //Load dynamic reconfigure
+    dsrv_ = new dynamic_reconfigure::Server<orbus_interface::UnavConfiguratorParamConfig>(ros::NodeHandle("~" + name + "/param"));
+    dynamic_reconfigure::Server<orbus_interface::UnavConfiguratorParamConfig>::CallbackType cb = boost::bind(&MotorParamConfigurator::reconfigureCB, this, _1, _2);
+    dsrv_->setCallback(cb);
+}
 
-class MotorPIDConfigurator {
-public:
-    MotorPIDConfigurator(std::string name, ParserPacket* serial_);
-private:
-    //Serial port
-    ParserPacket* serial_;
+void MotorParamConfigurator::reconfigureCB(orbus_interface::UnavConfiguratorParamConfig &config, uint32_t level) {
 
-    motor_pid_t pid_;
-
-    dynamic_reconfigure::Server<ros_serial_bridge::UnavConfiguratorPIDConfig> *dsrv_;
-    void reconfigureCB(ros_serial_bridge::UnavConfiguratorPIDConfig &config, uint32_t level);
-};
+}

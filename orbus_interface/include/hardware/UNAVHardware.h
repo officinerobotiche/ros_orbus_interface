@@ -14,6 +14,7 @@
 #include "hardware_interface/joint_command_interface.h"
 
 #include "configurator/MotorPIDConfigurator.h"
+#include "configurator/MotorParamConfigurator.h"
 
 //#include <ros_serial_bridge/Pose.h>
 //#include <ros_serial_bridge/Enable.h>
@@ -101,6 +102,7 @@ private:
       // Saved PID
 
       MotorPIDConfigurator *configurator_pid;
+      MotorParamConfigurator *configurator_param;
       // Actual state
       motor_state_t state;
 

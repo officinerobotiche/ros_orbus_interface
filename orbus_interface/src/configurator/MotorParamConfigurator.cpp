@@ -33,8 +33,8 @@
 
 using namespace std;
 
-MotorParamConfigurator::MotorParamConfigurator(const ros::NodeHandle &nh, std::string name, unsigned int number, ParserPacket *serial_)
-    : nh_(nh), serial_(serial_)
+MotorParamConfigurator::MotorParamConfigurator(const ros::NodeHandle &nh, std::string name, unsigned int number, ParserPacket *serial)
+    : nh_(nh), serial_(serial)
 {
     //Namespace
     name_ = name;// + "/param";
@@ -49,12 +49,12 @@ MotorParamConfigurator::MotorParamConfigurator(const ros::NodeHandle &nh, std::s
     if (!nh_.hasParam(name_)) {
         /// Build a list of messages
         std::vector<packet_information_t> list_send;
-        list_send.push_back(serial_->createPacket(command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
+        list_send.push_back(serial->createPacket(command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
 
         /// Build a packet
-        packet_t packet = serial_->encoder(list_send);
+        packet_t packet = serial->encoder(list_send);
         /// Receive information
-        vector<packet_information_t> receive = serial_->parsing(serial_->sendSyncPacket(packet));
+        vector<packet_information_t> receive = serial->parsing(serial->sendSyncPacket(packet));
         /// Decode all messages
         for (vector<packet_information_t>::iterator list_iter = receive.begin(); list_iter != receive.end(); ++list_iter) {
             packet_information_t packet = (*list_iter);

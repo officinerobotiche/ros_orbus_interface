@@ -38,7 +38,7 @@
 
 class MotorParamConfigurator {
 public:
-    MotorParamConfigurator(const ros::NodeHandle& nh, std::string name, unsigned int number, ParserPacket* serial_);
+    MotorParamConfigurator(const ros::NodeHandle& nh, std::string name, unsigned int number, ParserPacket* serial);
 private:
 
     /// Associate name space

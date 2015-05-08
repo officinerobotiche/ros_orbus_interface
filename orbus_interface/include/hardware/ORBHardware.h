@@ -2,16 +2,10 @@
 #define ORB_HARDWARE_H
 
 #include <ros/ros.h>
-//#include <ros_serial_bridge/Service.h>
-//#include <ros_serial_bridge/Process.h>
-//#include <ros_serial_bridge/Update.h>
 #include <std_srvs/Empty.h>
 #include "../async_serial/ParserPacket.h"
 #include "hardware_interface/robot_hw.h"
 
-const std::string measure_string = "measure";
-const std::string left_string = "Left";
-const std::string right_string = "Right";
 const std::string all_string = "all";
 const std::string tf_string = "tf";
 

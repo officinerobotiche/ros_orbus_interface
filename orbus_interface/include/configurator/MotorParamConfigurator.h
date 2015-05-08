@@ -38,12 +38,23 @@
 
 class MotorParamConfigurator {
 public:
-    MotorParamConfigurator(std::string name, ParserPacket* serial_);
+    MotorParamConfigurator(const ros::NodeHandle& nh, std::string name, unsigned int number, ParserPacket* serial_);
 private:
-    //Serial port
-    ParserPacket* serial_;
 
-    motor_pid_t pid_;
+    /// Associate name space
+    std::string name_;
+    /// Private namespace
+    ros::NodeHandle nh_;
+    /// Serial port
+    ParserPacket* serial_;
+    /// Command map
+    motor_command_map_t command_;
+    /// Frequency message
+    system_task_t last_frequency_, default_frequency_;
+
+    motor_parameter_t last_param_, default_param_;
+
+    bool setup_;
 
     dynamic_reconfigure::Server<orbus_interface::UnavConfiguratorParamConfig> *dsrv_;
     void reconfigureCB(orbus_interface::UnavConfiguratorParamConfig &config, uint32_t level);

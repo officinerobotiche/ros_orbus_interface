@@ -60,7 +60,7 @@ void UNAVHardware::addParameter(std::vector<packet_information_t>* list_send) {
         /// PID
         joints_[i].configurator_pid = new MotorPIDConfigurator(private_nh_, number_motor_string, i, serial_);
         /// Parameter motor
-        joints_[i].configurator_param = new MotorParamConfigurator(number_motor_string, serial_);
+        joints_[i].configurator_param = new MotorParamConfigurator(private_nh_, number_motor_string, i, serial_);
 
     }
 //    if (nh_.hasParam(joint_string + "/constraint")) {
@@ -200,7 +200,7 @@ void UNAVHardware::motionPacket(const unsigned char& command, const message_abst
 }
 
 void UNAVHardware::registerControlInterfaces() {
-    ros::V_string joint_names = boost::assign::list_of("left")("right");
+    ros::V_string joint_names = boost::assign::list_of("Left")("Right");
     for (unsigned int i = 0; i < joint_names.size(); i++)
     {
       hardware_interface::JointStateHandle joint_state_handle(joint_names[i],

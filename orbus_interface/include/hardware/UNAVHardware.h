@@ -56,6 +56,7 @@ private:
     hardware_interface::JointStateInterface joint_state_interface_;
     hardware_interface::VelocityJointInterface velocity_joint_interface_;
 
+
     //Service
     //ros::ServiceServer srv_pid, srv_parameter, srv_constraint, srv_emergency;
 

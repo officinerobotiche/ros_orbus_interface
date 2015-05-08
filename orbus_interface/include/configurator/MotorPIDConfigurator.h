@@ -49,7 +49,7 @@ private:
     /// Command map
     motor_command_map_t command_;
     /// Frequency message
-    system_task_t message_frequency_;
+    system_task_t last_frequency_, default_frequency_;
 
     motor_pid_t last_pid_, default_pid_;
 

@@ -15,6 +15,7 @@
 
 #include "configurator/MotorPIDConfigurator.h"
 #include "configurator/MotorParamConfigurator.h"
+#include "configurator/MotorEmergencyConfigurator.h"
 
 #define NUM_MOTORS 2
 
@@ -60,11 +61,10 @@ private:
     * Joint structure that is hooked to ros_control's InterfaceManager, to allow control via diff_drive_controller
     */
     struct Joint
-    { 
-      // Saved PID
-
+    {
       MotorPIDConfigurator *configurator_pid;
       MotorParamConfigurator *configurator_param;
+      MotorEmergencyConfigurator *configurator_emergency;
       // Actual state
       motor_state_t state;
 

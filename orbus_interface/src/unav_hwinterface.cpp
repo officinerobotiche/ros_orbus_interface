@@ -15,26 +15,6 @@
 
 typedef boost::chrono::steady_clock time_source;
 
-typedef struct serial_port {
-    std::string name;
-    int number;
-} serial_port_t;
-
-/**
- * @brief GetSerialPort Convert chars to struct serial port
- * @param c_port serial_port
- * @return serial_port_t data
- */
-serial_port_t GetSerialPort(const char *c_port) {
-    serial_port_t serial_port;
-    std::string port(c_port);
-    size_t last_index = port.find_last_not_of("0123456789");
-    serial_port.name = port.substr(0, last_index + 1);
-    std::istringstream(port.substr(last_index + 1)) >> serial_port.number;
-    return serial_port;
-}
-
-
 /**
 * Control loop not realtime safe
 */
@@ -74,10 +54,6 @@ int main(int argc, char **argv) {
     private_nh.param<double>("control_frequency", control_frequency, 10.0);
     private_nh.param<double>("diagnostic_frequency", diagnostic_frequency, 10.0);
 
-    //Board information
-    std::string board_type_string;
-    private_nh.param<std::string>("board_type", board_type_string, "");
-
     //Serial port configuration
     std::string serial_port_string;
     double baud_rate;
@@ -87,20 +63,17 @@ int main(int argc, char **argv) {
     private_nh.param<bool>("serial_arduino", arduino, false);
     ParserPacket* serial;
 
-
-
     ROS_INFO_STREAM("Open Serial " << serial_port_string << ":" << baud_rate);
     try {
         serial = new ParserPacket(serial_port_string.c_str(), baud_rate);
         //If protocol on arduino
         if(arduino) {
             int arduino = 2;
-            ROS_INFO("Wait to start Arduino (%d sec) ... ", arduino);
+            ROS_INFO_STREAM("Wait to start Arduino ("<< arduino << " sec) ... ");
             sleep(arduino);
             ROS_INFO("Serial Arduino started");
         }
 
-        ROS_INFO("Find Controller for %s", board_type_string.c_str());
         UNAVHardware interface(nh, private_nh, serial);
         controller_manager::ControllerManager cm(&interface, nh);
 

@@ -80,12 +80,12 @@ MotorParamConfigurator::MotorParamConfigurator(const ros::NodeHandle &nh, std::s
     }
 
     //Load dynamic reconfigure
-    dsrv_ = new dynamic_reconfigure::Server<orbus_interface::UnavConfiguratorParamConfig>(ros::NodeHandle("~" + name_));
-    dynamic_reconfigure::Server<orbus_interface::UnavConfiguratorParamConfig>::CallbackType cb = boost::bind(&MotorParamConfigurator::reconfigureCB, this, _1, _2);
+    dsrv_ = new dynamic_reconfigure::Server<orbus_interface::UnavParameterConfig>(ros::NodeHandle("~" + name_));
+    dynamic_reconfigure::Server<orbus_interface::UnavParameterConfig>::CallbackType cb = boost::bind(&MotorParamConfigurator::reconfigureCB, this, _1, _2);
     dsrv_->setCallback(cb);
 }
 
-void MotorParamConfigurator::reconfigureCB(orbus_interface::UnavConfiguratorParamConfig &config, uint32_t level) {
+void MotorParamConfigurator::reconfigureCB(orbus_interface::UnavParameterConfig &config, uint32_t level) {
 
     motor_parameter_t param;
     param.cpr = config.CPR;

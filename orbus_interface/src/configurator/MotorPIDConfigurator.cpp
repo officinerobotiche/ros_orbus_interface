@@ -77,12 +77,12 @@ MotorPIDConfigurator::MotorPIDConfigurator(const ros::NodeHandle& nh, std::strin
     }
 
     //Load dynamic reconfigure
-    dsrv_ = new dynamic_reconfigure::Server<orbus_interface::UnavConfiguratorPIDConfig>(ros::NodeHandle("~" + name_));
-    dynamic_reconfigure::Server<orbus_interface::UnavConfiguratorPIDConfig>::CallbackType cb = boost::bind(&MotorPIDConfigurator::reconfigureCB, this, _1, _2);
+    dsrv_ = new dynamic_reconfigure::Server<orbus_interface::UnavPIDConfig>(ros::NodeHandle("~" + name_));
+    dynamic_reconfigure::Server<orbus_interface::UnavPIDConfig>::CallbackType cb = boost::bind(&MotorPIDConfigurator::reconfigureCB, this, _1, _2);
     dsrv_->setCallback(cb);
 }
 
-void MotorPIDConfigurator::reconfigureCB(orbus_interface::UnavConfiguratorPIDConfig &config, uint32_t level) {
+void MotorPIDConfigurator::reconfigureCB(orbus_interface::UnavPIDConfig &config, uint32_t level) {
 
 
     motor_pid_t pid;

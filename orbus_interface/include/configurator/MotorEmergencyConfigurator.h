@@ -25,7 +25,7 @@
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
-* Please send comments, questions, or patches to developers@officinerobotiche.it
+* Please send comments, questions, or patches to code@clearpathrobotics.com
 *
 */
 
@@ -34,13 +34,12 @@
 #include <ros/ros.h>
 
 #include <dynamic_reconfigure/server.h>
-#include <orbus_interface/UnavParameterConfig.h>
+#include <orbus_interface/UnavEmergencyConfig.h>
 
-class MotorParamConfigurator {
+class MotorEmergencyConfigurator {
 public:
-    MotorParamConfigurator(const ros::NodeHandle& nh, std::string name, unsigned int number, ParserPacket* serial);
+    MotorEmergencyConfigurator(const ros::NodeHandle& nh, std::string name, unsigned int number, ParserPacket* serial);
 private:
-
     /// Associate name space
     std::string name_;
     /// Private namespace
@@ -49,13 +48,11 @@ private:
     ParserPacket* serial_;
     /// Command map
     motor_command_map_t command_;
-    /// Frequency message
-    system_task_t last_frequency_, default_frequency_;
 
-    motor_parameter_t last_param_, default_param_;
+    motor_emergency_t last_emer_, default_emer_;
 
     bool setup_;
 
-    dynamic_reconfigure::Server<orbus_interface::UnavParameterConfig> *dsrv_;
-    void reconfigureCB(orbus_interface::UnavParameterConfig &config, uint32_t level);
+    dynamic_reconfigure::Server<orbus_interface::UnavEmergencyConfig> *dsrv_;
+    void reconfigureCB(orbus_interface::UnavEmergencyConfig &config, uint32_t level);
 };

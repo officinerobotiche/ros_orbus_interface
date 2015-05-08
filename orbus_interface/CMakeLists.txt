@@ -30,8 +30,9 @@ find_package(Boost REQUIRED
 
 # dynamic reconfigure
 generate_dynamic_reconfigure_options(
-    cfg/UnavConfiguratorPID.cfg
-    cfg/UnavConfiguratorParam.cfg
+    cfg/UnavPID.cfg
+    cfg/UnavParameter.cfg
+    cfg/UnavEmergency.cfg
 )
 
 ###################################
@@ -68,6 +69,7 @@ add_library(lib_orbus_cpp
 set(hardware_unav_SRC
     src/configurator/MotorPIDConfigurator.cpp
     src/configurator/MotorParamConfigurator.cpp
+    src/configurator/MotorEmergencyConfigurator.cpp
     src/hardware/ORBHardware.cpp
     src/hardware/UNAVHardware.cpp
     src/unav_hwinterface.cpp

@@ -57,10 +57,6 @@ ORBHardware::ORBHardware(const ros::NodeHandle& nh, const ros::NodeHandle &priva
     list_packet.push_back(encodeServices(SERVICE_CODE_DATE));
     list_packet.push_back(encodeServices(SERVICE_CODE_BOARD_TYPE));
     serial->parserSendPacket(list_packet);
-
-    if (!nh.hasParam("info/type_board"))
-        if (type_board_.compare("Nothing") != 0)
-            nh_.setParam("info/type_board", type_board_);
 }
 
 ORBHardware::~ORBHardware() {

@@ -58,7 +58,8 @@ void UNAVHardware::addParameter(std::vector<packet_information_t>* list_send) {
         joints_[i].configurator_pid = new MotorPIDConfigurator(private_nh_, number_motor_string, i, serial_);
         /// Parameter motor
         joints_[i].configurator_param = new MotorParamConfigurator(private_nh_, number_motor_string, i, serial_);
-
+        /// Emergency motor
+        joints_[i].configurator_emergency = new MotorEmergencyConfigurator(private_nh_, number_motor_string, i, serial_);
     }
 //        list_send->push_back(serial_->createDataPacket(command, HASHMAP_MOTOR, (abstract_message_u*) & constraint));
 //        list_send->push_back(serial_->createDataPacket(EMERGENCY_L, HASHMAP_MOTOR, (abstract_message_u*) & emergency));

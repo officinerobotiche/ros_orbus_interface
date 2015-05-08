@@ -38,7 +38,7 @@ generate_dynamic_reconfigure_options(
 ## catkin specific configuration ##
 ###################################
 catkin_package(
-    INCLUDE_DIRS include
+    INCLUDE_DIRS include lib_orb_cpp/include
     LIBRARIES lib_orbus_cpp
     CATKIN_DEPENDS
         diagnostic_updater
@@ -59,21 +59,6 @@ include_directories(include
                     ${catkin_INCLUDE_DIRS}
 )
 
-#### OLD ####
-#set(serial_SRC
-#    src/async_serial/AsyncSerial.cpp#
-#    src/async_serial/PacketSerial.cpp
-#    src/async_serial/ParserPacket.cpp
-#    src/serial_controller/ROSController.cpp
-#    src/serial_controller/ROSMotionController.cpp
-#    src/serial_controller/ROSSensorController.cpp
-#    src/serial_bridge_node.cpp
-#)
-## Declare a cpp executable
-#add_executable(serial_bridge_node ${serial_SRC})
-#target_link_libraries(serial_bridge_node ${catkin_LIBRARIES} ${Boost_LIBRARIES})
-#add_dependencies(serial_bridge_node serial_bridge_gencpp)
-
 add_library(lib_orbus_cpp
    lib_orb_cpp/src/AsyncSerial.cpp
    lib_orb_cpp/src/PacketSerial.cpp
@@ -81,9 +66,6 @@ add_library(lib_orbus_cpp
 )
 
 set(hardware_unav_SRC
-#    src/async_serial/AsyncSerial.cpp
-#    src/async_serial/PacketSerial.cpp
-#    src/async_serial/ParserPacket.cpp
     src/configurator/MotorPIDConfigurator.cpp
     src/configurator/MotorParamConfigurator.cpp
     src/hardware/ORBHardware.cpp

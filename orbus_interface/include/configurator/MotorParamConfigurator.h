@@ -29,7 +29,7 @@
 *
 */
 
-#include "async_serial/ParserPacket.h"
+#include "ParserPacket.h"
 
 #include <ros/ros.h>
 

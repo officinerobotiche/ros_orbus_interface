@@ -44,13 +44,13 @@
 /*******/
 
 #ifdef PACKETS_MOTION
-#include "async_serial/packet/motion.h"
+#include "packet/motion.h"
 #endif
 #ifdef PACKETS_MOTOR
-#include "async_serial/packet/motor.h"
+#include "packet/motor.h"
 #endif
 #ifdef PACKETS_NAVIGATION
-#include "async_serial/packet/navigation.h"
+#include "packet/navigation.h"
 #endif
 
 /** Buffer dimensions */

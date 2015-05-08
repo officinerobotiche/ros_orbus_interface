@@ -38,8 +38,8 @@ generate_dynamic_reconfigure_options(
 ## catkin specific configuration ##
 ###################################
 catkin_package(
-#    INCLUDE_DIRS include
-#    LIBRARIES serial_bridge
+    INCLUDE_DIRS include lib_orb_cpp/include
+    LIBRARIES lib_orbus_cpp
     CATKIN_DEPENDS
         diagnostic_updater
         dynamic_reconfigure
@@ -54,29 +54,18 @@ catkin_package(
 ## Build ##
 ###########
 include_directories(include
+                    lib_orb_cpp/include
                     ${Boost_INCLUDE_DIRS}
                     ${catkin_INCLUDE_DIRS}
 )
 
-#### OLD ####
-#set(serial_SRC
-#    src/async_serial/AsyncSerial.cpp#
-#    src/async_serial/PacketSerial.cpp
-#    src/async_serial/ParserPacket.cpp
-#    src/serial_controller/ROSController.cpp
-#    src/serial_controller/ROSMotionController.cpp
-#    src/serial_controller/ROSSensorController.cpp
-#    src/serial_bridge_node.cpp
-#)
-## Declare a cpp executable
-#add_executable(serial_bridge_node ${serial_SRC})
-#target_link_libraries(serial_bridge_node ${catkin_LIBRARIES} ${Boost_LIBRARIES})
-#add_dependencies(serial_bridge_node serial_bridge_gencpp)
+add_library(lib_orbus_cpp
+   lib_orb_cpp/src/AsyncSerial.cpp
+   lib_orb_cpp/src/PacketSerial.cpp
+   lib_orb_cpp/src/ParserPacket.cpp
+)
 
 set(hardware_unav_SRC
-    src/async_serial/AsyncSerial.cpp
-    src/async_serial/PacketSerial.cpp
-    src/async_serial/ParserPacket.cpp
     src/configurator/MotorPIDConfigurator.cpp
     src/configurator/MotorParamConfigurator.cpp
     src/hardware/ORBHardware.cpp
@@ -86,7 +75,7 @@ set(hardware_unav_SRC
 
 ## Declare a cpp executable
 add_executable(hardware_unav ${hardware_unav_SRC})
-target_link_libraries(hardware_unav ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(hardware_unav lib_orbus_cpp ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 add_dependencies(hardware_unav hardware_unav_gencpp)
 
 roslint_cpp(${hardware_unav_SRC})
@@ -95,16 +84,16 @@ roslint_cpp(${hardware_unav_SRC})
 ## Install ##
 #############
 
-install(TARGETS hardware_unav
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
+#install(TARGETS lib_orbus_cpp hardware_unav
+#  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 
-install(DIRECTORY include/${PROJECT_NAME}/
-        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+#install(DIRECTORY include/${PROJECT_NAME}/
+#        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
 
-install(DIRECTORY launch config
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+#install(DIRECTORY launch config
+#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 #############
 ## Testing ##

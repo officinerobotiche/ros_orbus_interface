@@ -13,7 +13,7 @@
  * Lesser General Public License for more details.
  */
 
-#include "async_serial/PacketSerial.h"
+#include "PacketSerial.h"
 
 #include <string>
 #include <algorithm>

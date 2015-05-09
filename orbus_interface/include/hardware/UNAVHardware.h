@@ -35,6 +35,8 @@ private:
 
     //Decode a motor command
     motor_command_map_t motor_command_;
+    //List to send messages to serial
+    std::vector<packet_information_t> list_send_;
 
     // ROS Control interfaces
     hardware_interface::JointStateInterface joint_state_interface_;

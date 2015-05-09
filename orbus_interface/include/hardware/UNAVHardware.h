@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   UNAVHardware.h
  * Author: raffaello
  *
@@ -30,7 +30,7 @@ public:
     virtual ~UNAVHardware();
 
     void updateJointsFromHardware();
-    void writeCommandsToHardware();
+    void writeCommandsToHardware(ros::Duration period);
 
 private:
 
@@ -43,6 +43,7 @@ private:
     hardware_interface::JointStateInterface joint_state_interface_;
     hardware_interface::VelocityJointInterface velocity_joint_interface_;
 
+    joint_limits_interface::VelocityJointSoftLimitsInterface vel_limits_interface_;
     //Service
     //ros::ServiceServer srv_pid, srv_parameter, srv_constraint, srv_emergency;
 

@@ -33,7 +33,7 @@ void controlLoop(UNAVHardware &orb,
   orb.reportLoopDuration(elapsed);
   orb.updateJointsFromHardware();
   cm.update(ros::Time::now(), elapsed);
-  orb.writeCommandsToHardware();
+  orb.writeCommandsToHardware(elapsed);
 }
 
 /**

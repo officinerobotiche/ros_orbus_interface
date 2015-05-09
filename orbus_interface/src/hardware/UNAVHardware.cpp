@@ -63,25 +63,23 @@ void UNAVHardware::registerControlInterfaces() {
         hardware_interface::JointHandle joint_handle(
                     joint_state_handle, &joints_[i].velocity_command);
         velocity_joint_interface_.registerHandle(joint_handle);
+
+        /// Add a velocity joint limits infomations
+        /// Populate with any of the methods presented in the previous example...
+        joint_limits_interface::JointLimits limits;
+        joint_limits_interface::SoftJointLimits soft_limits;
+
+        joint_limits_interface::VelocityJointSoftLimitsHandle handle(joint_handle, // We read the state and read/write the command
+                                                                     limits,       // Limits spec
+                                                                     soft_limits);  // Soft limits spec
+
+        vel_limits_interface_.registerHandle(handle);
+
     }
     /// Register interfaces
     registerInterface(&joint_state_interface_);
     registerInterface(&velocity_joint_interface_);
 
-    hardware_interface::PositionJointInterface pos_cmd_interface_;
-    joint_limits_interface::PositionJointSoftLimitsInterface jnt_limits_interface_;
-    // Get joint handle of interest
-    hardware_interface::JointHandle joint_handle = pos_cmd_interface_.getHandle("foo_joint");
-    joint_limits_interface::JointLimits limits;
-    joint_limits_interface::SoftJointLimits soft_limits;
-    // Populate with any of the methods presented in the previous example...
-
-    // Register handle in joint limits interface
-    joint_limits_interface::PositionJointSoftLimitsHandle handle(joint_handle, // We read the state and read/write the command
-                                         limits,       // Limits spec
-                                         soft_limits);  // Soft limits spec
-
-    jnt_limits_interface_.registerHandle(handle);
 }
 
 void UNAVHardware::updateJointsFromHardware() {
@@ -102,8 +100,13 @@ void UNAVHardware::updateJointsFromHardware() {
 
 }
 
-void UNAVHardware::writeCommandsToHardware() {
+void UNAVHardware::writeCommandsToHardware(ros::Duration period) {
     //ROS_INFO("Write to Hardware");
+
+    // Enforce joint limits for all registered handles
+    // Note: one can also enforce limits on a per-handle basis: handle.enforceLimits(period)
+    vel_limits_interface_.enforceLimits(period);
+
     list_send_.clear();     ///< Clear list of commands
     motor_command_.bitset.command = MOTOR_VEL_REF; ///< Set command to velocity control
     for(int i = 0; i < NUM_MOTORS; ++i) {

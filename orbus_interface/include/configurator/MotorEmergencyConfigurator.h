@@ -49,7 +49,7 @@ private:
     /// Command map
     motor_command_map_t command_;
 
-    motor_emergency_t last_emer_, default_emer_;
+    motor_emergency_t last_emergency_, default_emer_;
 
     bool setup_;
 

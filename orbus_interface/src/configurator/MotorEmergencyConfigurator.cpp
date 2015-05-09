@@ -42,36 +42,35 @@ MotorEmergencyConfigurator::MotorEmergencyConfigurator(const ros::NodeHandle& nh
     command_.bitset.motor = number;
     command_.bitset.command = MOTOR_EMERGENCY;
 
-//    /// Check existence namespace otherwise get information from board
-//    if (!nh_.hasParam(name_)) {
-//        /// Build a list of messages
-//        std::vector<packet_information_t> list_send;
-//        list_send.push_back(serial->createPacket(command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
-//        //list_send.push_back(serial_->createDataPacket(SYSTEM_TASK_FRQ, HASHMAP_MOTOR, (message_abstract_u*) & last_frequency_));
+    /// Check existence namespace otherwise get information from board
+    if (!nh_.hasParam(name_)) {
+        /// Build a list of messages
+        std::vector<packet_information_t> list_send;
+        list_send.push_back(serial->createPacket(command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
 
-//        /// Build a packet
-//        packet_t packet = serial->encoder(list_send);
-//        /// Receive information
-//        vector<packet_information_t> receive = serial->parsing(serial->sendSyncPacket(packet));
-//        /// Decode all messages
-//        for (vector<packet_information_t>::iterator list_iter = receive.begin(); list_iter != receive.end(); ++list_iter) {
-//            packet_information_t packet = (*list_iter);
-//            switch (packet.option) {
-//            case PACKET_NACK:
-//                ///< Send a message ERROR
-//                break;
-//            case PACKET_DATA:
-//                if (packet.type == HASHMAP_MOTOR) {
-//                    if(packet.command = command_.command_message) {
-//                        nh_.setParam(name_ + "/Kp", packet.message.motor_pid.kp);
-//                        nh_.setParam(name_ + "/Ki", packet.message.motor_pid.ki);
-//                        nh_.setParam(name_ + "/Kd", packet.message.motor_pid.kd);
-//                    }
-//                }
-//                break;
-//            }
-//        }
-//    }
+        /// Build a packet
+        packet_t packet = serial->encoder(list_send);
+        /// Receive information
+        vector<packet_information_t> receive = serial->parsing(serial->sendSyncPacket(packet));
+        /// Decode all messages
+        for (vector<packet_information_t>::iterator list_iter = receive.begin(); list_iter != receive.end(); ++list_iter) {
+            packet_information_t packet = (*list_iter);
+            switch (packet.option) {
+            case PACKET_NACK:
+                ///< Send a message ERROR
+                break;
+            case PACKET_DATA:
+                if (packet.type == HASHMAP_MOTOR) {
+                    if(packet.command = command_.command_message) {
+                        nh_.setParam(name_ + "/Slope_time", packet.message.motor_pid.kp);
+                        nh_.setParam(name_ + "/Bridge_off", packet.message.motor_pid.ki);
+                        nh_.setParam(name_ + "/Timeout", packet.message.motor_pid.kd);
+                    }
+                }
+                break;
+            }
+        }
+    }
 
     //Load dynamic reconfigure
     dsrv_ = new dynamic_reconfigure::Server<orbus_interface::UnavEmergencyConfig>(ros::NodeHandle("~" + name_));
@@ -82,16 +81,16 @@ MotorEmergencyConfigurator::MotorEmergencyConfigurator(const ros::NodeHandle& nh
 void MotorEmergencyConfigurator::reconfigureCB(orbus_interface::UnavEmergencyConfig &config, uint32_t level) {
 
     motor_emergency_t emergency;
-    emergency.bridge_off = config.Bridge_off;
-    emergency.slope_time = config.Slope_time;
-    emergency.timeout = config.Timeout;
+    emergency.bridge_off = (float) config.Bridge_off;
+    emergency.slope_time = (float) config.Slope_time;
+    emergency.timeout = (uint16_t) config.Timeout;
 
     //The first time we're called, we just want to make sure we have the
     //original configuration
     if(!setup_)
     {
-      last_emer_ = emergency;
-      default_emer_ = last_emer_;
+      last_emergency_ = emergency;
+      default_emer_ = last_emergency_;
       setup_ = true;
       return;
     }
@@ -102,23 +101,12 @@ void MotorEmergencyConfigurator::reconfigureCB(orbus_interface::UnavEmergencyCon
       config.restore_defaults = false;
     }
 
-//    std::vector<packet_information_t> list_send;
-//    if(last_pid_.kp != pid.kp || last_pid_.ki != pid.ki || last_pid_.kd != pid.kd) {
-//        list_send.push_back(serial_->createDataPacket(command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & pid));
-//        last_pid_ = pid;
-//        config.Kp = pid.kp;
-//        config.Ki = pid.ki;
-//        config.Kd = pid.kd;
-//    }
-//    if(last_frequency_.data != config.Frequency) {
+    packet_t packet_send = serial_->encoder(serial_->createDataPacket(command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & emergency));
 
-//        last_frequency_.data = config.Frequency;
-//    }
-//    if(list_send.size() != 0) {
-//        try {
-//            serial_->parserSendPacket(list_send, 3, boost::posix_time::millisec(200));
-//        } catch (exception &e) {
-//            ROS_ERROR("%s", e.what());
-//        }
-//    }
+    try {
+        serial_->sendSyncPacket(packet_send, 3, boost::posix_time::millisec(200));
+    } catch (exception &e) {
+        ROS_ERROR("%s", e.what());
+    }
+    last_emergency_ = emergency;
 }

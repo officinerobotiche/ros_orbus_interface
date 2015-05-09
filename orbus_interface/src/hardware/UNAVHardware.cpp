@@ -67,19 +67,34 @@ void UNAVHardware::registerControlInterfaces() {
     /// Register interfaces
     registerInterface(&joint_state_interface_);
     registerInterface(&velocity_joint_interface_);
+
+    hardware_interface::PositionJointInterface pos_cmd_interface_;
+    joint_limits_interface::PositionJointSoftLimitsInterface jnt_limits_interface_;
+    // Get joint handle of interest
+    hardware_interface::JointHandle joint_handle = pos_cmd_interface_.getHandle("foo_joint");
+    joint_limits_interface::JointLimits limits;
+    joint_limits_interface::SoftJointLimits soft_limits;
+    // Populate with any of the methods presented in the previous example...
+
+    // Register handle in joint limits interface
+    joint_limits_interface::PositionJointSoftLimitsHandle handle(joint_handle, // We read the state and read/write the command
+                                         limits,       // Limits spec
+                                         soft_limits);  // Soft limits spec
+
+    jnt_limits_interface_.registerHandle(handle);
 }
 
 void UNAVHardware::updateJointsFromHardware() {
     //ROS_INFO("Update Joints");
-    //Send a list of request about position and velocities
+    /// Send a list of request about position and velocities
     list_send_.clear();     ///< Clear list of commands
     motor_command_.bitset.command = MOTOR; ///< Set message to receive measure information
     for(int i = 0; i < NUM_MOTORS; ++i) {
         motor_command_.bitset.motor = i;
-        list_send.push_back(serial_->createPacket(motor_command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
+        list_send_.push_back(serial_->createPacket(motor_command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
     }
     try {
-        serial_->parserSendPacket(list_send, 3, boost::posix_time::millisec(200));
+        serial_->parserSendPacket(list_send_, 3, boost::posix_time::millisec(200));
     } catch (exception &e) {
         ROS_ERROR("%s", e.what());
     }
@@ -95,7 +110,17 @@ void UNAVHardware::writeCommandsToHardware() {
         //Build a command message
         motor_command_.bitset.motor = i;
         /// Convert radiant velocity in milliradiant
-        motor_control_t velocity = (motor_control_t) joints_[i].velocity_command*1000;
+        long int velocity_long = (long int) joints_[i].velocity_command*1000;
+        motor_control_t velocity;
+        // >>>>> Saturation on 16 bit values
+        if(velocity_long > 32767) {
+            velocity = 32767;
+        } else if (velocity_long < -32768) {
+            velocity_long = -32768;
+        } else {
+            velocity = (motor_control_t) velocity_long;
+        }
+        // <<<<< Saturation on 16 bit values
         //ROS_INFO_STREAM("Motor" << i << ": " << joints_[i].velocity_command);
         list_send_.push_back(serial_->createDataPacket(motor_command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & velocity));
     }
@@ -127,20 +152,14 @@ void UNAVHardware::addParameter(std::vector<packet_information_t>* list_send) {
 void UNAVHardware::motorPacket(const unsigned char& command, const message_abstract_u* packet) {
     motor_command_.command_message = command;
     int number_motor = (int) motor_command_.bitset.motor;
-    std::string number_motor_string = boost::lexical_cast<std::string>(number_motor);
     switch (motor_command_.bitset.command) {
     case MOTOR_CONSTRAINT:
         //nh_.setParam(joint_string + "/constraint/" + left_string + "/velocity", packet->motor.velocity);
-        break;
         break;
     case MOTOR_EMERGENCY:
 //        nh_.setParam(emergency_string + "/" + left_string + "/bridge_off", packet->emergency.bridge_off);
 //        nh_.setParam(emergency_string + "/" + left_string + "/slope_time", packet->emergency.slope_time);
 //        nh_.setParam(emergency_string + "/" + left_string + "/timeout", ((double) packet->emergency.timeout) / 1000.0);
-        break;
-        break;
-    case MOTOR_VEL_MEAS:
-        joints_[number_motor].velocity = ((double) packet->motor_control) / 1000;
         break;
     case MOTOR:
         joints_[number_motor].effort = packet->motor.torque;

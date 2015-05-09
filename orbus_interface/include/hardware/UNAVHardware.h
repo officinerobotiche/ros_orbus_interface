@@ -12,6 +12,7 @@
 
 #include "hardware_interface/joint_state_interface.h"
 #include "hardware_interface/joint_command_interface.h"
+#include <joint_limits_interface/joint_limits_interface.h>
 
 #include "configurator/MotorPIDConfigurator.h"
 #include "configurator/MotorParamConfigurator.h"

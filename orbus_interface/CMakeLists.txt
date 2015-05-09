@@ -15,6 +15,7 @@ find_package(catkin REQUIRED
                     roscpp
                     sensor_msgs
                     dynamic_reconfigure
+                    urdf
 )
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED

@@ -12,6 +12,8 @@
 // Boost header needed:
 #include <boost/lexical_cast.hpp>
 
+#include "urdf_parser/urdf_parser.h"
+
 #define NUMBER_PUB 10
 #define SGN(x)  ( ((x) < 0) ?  -1 : ( ((x) == 0 ) ? 0 : 1) )
 
@@ -69,6 +71,28 @@ void UNAVHardware::registerControlInterfaces() {
         joint_limits_interface::JointLimits limits;
         joint_limits_interface::SoftJointLimits soft_limits;
 
+        // Manual value setting
+        limits.has_velocity_limits = true;
+        limits.max_velocity = 0.5;
+
+        ROS_INFO_STREAM("A Max vel: " << limits.max_velocity);
+        // Populate (soft) joint limits from URDF
+        // Limits specified in URDF overwrite existing values in 'limits' and 'soft_limits'
+        // Limits not specified in URDF preserve their existing values
+        if(urdf_ != NULL) {
+            boost::shared_ptr<const urdf::Joint> urdf_joint = urdf_->getJoint(joint_names[i]);
+            const bool urdf_limits_ok = getJointLimits(urdf_joint, limits);
+            const bool urdf_soft_limits_ok = getSoftJointLimits(urdf_joint, soft_limits);
+            ROS_INFO_STREAM("B Max vel: " << limits.max_velocity << " -limits: " << urdf_limits_ok);
+        }
+
+        // Populate (soft) joint limits from the ros parameter server
+        // Limits specified in the parameter server overwrite existing values in 'limits' and 'soft_limits'
+        // Limits not specified in the parameter server preserve their existing values
+        const bool rosparam_limits_ok = getJointLimits(joint_names[i], nh_, limits);
+
+        ROS_INFO_STREAM("C Max vel: " << limits.max_velocity << " -limits: " << rosparam_limits_ok);
+
         joint_limits_interface::VelocityJointSoftLimitsHandle handle(joint_handle, // We read the state and read/write the command
                                                                      limits,       // Limits spec
                                                                      soft_limits);  // Soft limits spec
@@ -97,7 +121,6 @@ void UNAVHardware::updateJointsFromHardware() {
         ROS_ERROR("%s", e.what());
     }
     //TODO Add a function to collect all commands
-
 }
 
 void UNAVHardware::writeCommandsToHardware(ros::Duration period) {
@@ -148,7 +171,15 @@ void UNAVHardware::addParameter(std::vector<packet_information_t>* list_send) {
         /// Emergency motor
         joints_[i].configurator_emergency = new MotorEmergencyConfigurator(private_nh_, number_motor_string, i, serial_);
     }
-//        list_send->push_back(serial_->createDataPacket(command, HASHMAP_MOTOR, (abstract_message_u*) & constraint));
+
+    /// Load URDF from robot_description
+    if(nh_.hasParam("/robot_description")) {
+        std::string urdf_string;
+        nh_.getParam("/robot_description", urdf_string);
+        //ROS_INFO_STREAM("URDF: " << urdf_string);
+        urdf_ = urdf::parseURDF(urdf_string);
+    }
+
 //        list_send->push_back(serial_->createDataPacket(PARAMETER_UNICYCLE, HASHMAP_MOTION, (abstract_message_u*) & parameter_unicycle));
 }
 

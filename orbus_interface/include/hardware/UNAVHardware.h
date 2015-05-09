@@ -10,9 +10,14 @@
 
 #include "ORBHardware.h"
 
+#include <urdf/model.h>
+
 #include "hardware_interface/joint_state_interface.h"
 #include "hardware_interface/joint_command_interface.h"
 #include <joint_limits_interface/joint_limits_interface.h>
+
+#include <joint_limits_interface/joint_limits_urdf.h>
+#include <joint_limits_interface/joint_limits_rosparam.h>
 
 #include "configurator/MotorPIDConfigurator.h"
 #include "configurator/MotorParamConfigurator.h"
@@ -33,20 +38,23 @@ public:
     void writeCommandsToHardware(ros::Duration period);
 
 private:
-
-    //Decode a motor command
+    /// URDF information about robot
+    boost::shared_ptr<urdf::ModelInterface> urdf_;
+    /// Decode a motor command
     motor_command_map_t motor_command_;
-    //List to send messages to serial
+    /// List to send messages to serial
     std::vector<packet_information_t> list_send_;
 
-    // ROS Control interfaces
+    /// ROS Control interfaces
     hardware_interface::JointStateInterface joint_state_interface_;
     hardware_interface::VelocityJointInterface velocity_joint_interface_;
-
+    /// ROS joint limits interface
     joint_limits_interface::VelocityJointSoftLimitsInterface vel_limits_interface_;
+
     //Service
     //ros::ServiceServer srv_pid, srv_parameter, srv_constraint, srv_emergency;
 
+    /// Register all control interface and joint limit interface
     void registerControlInterfaces();
 
 //    bool pidServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);

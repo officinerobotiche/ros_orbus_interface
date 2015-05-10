@@ -51,10 +51,11 @@ UNAVHardware::~UNAVHardware() {
 
 void UNAVHardware::registerControlInterfaces() {
     /// Build ad array with name of joints
-    std::string left_string, right_string;
-    nh_.param<std::string>("joint/left", left_string, "Left");
-    nh_.param<std::string>("joint/right", right_string, "Right");
-    ros::V_string joint_names = boost::assign::list_of(left_string)(right_string);
+//    std::string joints[2];
+//    nh_.param<std::string>("joint/left", joints[0], "Left");
+//    nh_.param<std::string>("joint/right", joints[1], "Right");
+//    ros::V_string joint_names = boost::assign::list_of(joints[0])(joints[1]);
+    ros::V_string joint_names = boost::assign::list_of("Left")("Right");
     /// Build harware interfaces
     for (unsigned int i = 0; i < joint_names.size(); i++)
     {
@@ -85,10 +86,10 @@ void UNAVHardware::registerControlInterfaces() {
             const bool urdf_limits_ok = getJointLimits(urdf_joint, limits);
             const bool urdf_soft_limits_ok = getSoftJointLimits(urdf_joint, soft_limits);
             if(urdf_limits_ok) {
-                ROS_INFO_STREAM("LOAD  limits from URDF");
+                ROS_INFO_STREAM("LOAD " << joint_names[i] << " limits from URDF");
             }
             if(urdf_soft_limits_ok) {
-                ROS_INFO_STREAM("LOAD  soft limits from URDF");
+                ROS_INFO_STREAM("LOAD " << joint_names[i] << " soft limits from URDF");
             }
         }
 
@@ -97,7 +98,7 @@ void UNAVHardware::registerControlInterfaces() {
         // Limits not specified in the parameter server preserve their existing values
         const bool rosparam_limits_ok = getJointLimits(joint_names[i], nh_, limits);
         if(rosparam_limits_ok) {
-            ROS_INFO_STREAM("LOAD  limits from ROSPARAM");
+            ROS_INFO_STREAM("LOAD " << joint_names[i] << " limits from ROSPARAM");
         }
 
         joint_limits_interface::VelocityJointSoftLimitsHandle handle(joint_handle, // We read the state and read/write the command

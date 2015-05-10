@@ -62,9 +62,9 @@ include_directories(include
 )
 
 add_library(lib_orbus_cpp
-   lib_orb_cpp/src/AsyncSerial.cpp
-   lib_orb_cpp/src/PacketSerial.cpp
-   lib_orb_cpp/src/ParserPacket.cpp
+   lib_orb_cpp/src/serial_parser_packet/AsyncSerial.cpp
+   lib_orb_cpp/src/serial_parser_packet/PacketSerial.cpp
+   lib_orb_cpp/src/serial_parser_packet/ParserPacket.cpp
 )
 
 set(hardware_unav_SRC

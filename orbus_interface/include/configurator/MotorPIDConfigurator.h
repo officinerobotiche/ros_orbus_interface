@@ -29,7 +29,7 @@
 *
 */
 
-#include "ParserPacket.h"
+#include "serial_parser_packet/ParserPacket.h"
 
 #include <ros/ros.h>
 

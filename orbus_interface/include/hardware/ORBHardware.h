@@ -3,11 +3,8 @@
 
 #include <ros/ros.h>
 #include <std_srvs/Empty.h>
-#include "ParserPacket.h"
+#include "serial_parser_packet/ParserPacket.h"
 #include "hardware_interface/robot_hw.h"
-
-const std::string all_string = "all";
-const std::string tf_string = "tf";
 
 /**
  * Thrown if timeout occurs

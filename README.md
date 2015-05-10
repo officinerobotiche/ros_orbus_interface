@@ -11,7 +11,9 @@ With this node you can control with ROS all boards with orbus protocoll, in part
 # Installation
 ```bash
 cd ~/catkin_ws/src
-git clone https://github.com/officinerobotiche/ros_serial_bridge
+git clone https://github.com/officinerobotiche/ros_orbus_interface.git
+cd ros_orbus_interface
+git submodule update --init --recursive
 cd ~/catkin_ws
 catkin_make
 ```

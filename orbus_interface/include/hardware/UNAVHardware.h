@@ -62,7 +62,6 @@ private:
 //    bool constraintServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
 //    bool emergencyServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
 
-    void motionPacket(const unsigned char& command, const message_abstract_u* packet);
     void motorPacket(const unsigned char& command, const message_abstract_u* packet);
     void addParameter(std::vector<packet_information_t>* list_send);
 

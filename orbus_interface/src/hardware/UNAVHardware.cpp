@@ -33,7 +33,6 @@ UNAVHardware::UNAVHardware(const ros::NodeHandle& nh, const ros::NodeHandle &pri
     }
 
     /// Added all callback to receive information about messages
-    serial->addCallback(&UNAVHardware::motionPacket, this, HASHMAP_MOTION);
     serial->addCallback(&UNAVHardware::motorPacket, this, HASHMAP_MOTOR);
     addParameterPacketRequest(&UNAVHardware::addParameter, this);
 
@@ -200,23 +199,6 @@ void UNAVHardware::motorPacket(const unsigned char& command, const message_abstr
         joints_[number_motor].position = packet->motor.position;
         joints_[number_motor].velocity = ((double) packet->motor.velocity) / 1000;
         //ROS_INFO_STREAM("[" << (int)motor_command_.bitset.motor << "] Position: " <<  joints_[motor_command_.bitset.motor].position << " - Velocity: " << joints_[motor_command_.bitset.motor].velocity);
-        break;
-    }
-}
-
-void UNAVHardware::motionPacket(const unsigned char& command, const message_abstract_u* packet) {
-    switch (command) {
-    case PARAMETER_UNICYCLE:
-//        nh_.setParam("structure/" + wheelbase_string, packet->parameter_unicycle.wheelbase);
-//        nh_.setParam("structure/" + radius_string + "/" + right_string, packet->parameter_unicycle.radius_r);
-//        nh_.setParam("structure/" + radius_string + "/" + left_string, packet->parameter_unicycle.radius_l);
-//        nh_.setParam("odo_mis_step", packet->parameter_unicycle.sp_min);
-        break;
-    case COORDINATE:
-    case VELOCITY:
-    case VELOCITY_MIS:
-    case ENABLE:
-    default:
         break;
     }
 }

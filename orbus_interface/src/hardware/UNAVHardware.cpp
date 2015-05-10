@@ -51,7 +51,10 @@ UNAVHardware::~UNAVHardware() {
 
 void UNAVHardware::registerControlInterfaces() {
     /// Build ad array with name of joints
-    ros::V_string joint_names = boost::assign::list_of("Left")("Right");
+    std::string left_string, right_string;
+    nh_.param<std::string>("joint/left", left_string, "Left");
+    nh_.param<std::string>("joint/right", right_string, "Right");
+    ros::V_string joint_names = boost::assign::list_of(left_string)(right_string);
     /// Build harware interfaces
     for (unsigned int i = 0; i < joint_names.size(); i++)
     {
@@ -72,9 +75,8 @@ void UNAVHardware::registerControlInterfaces() {
 
         // Manual value setting
         limits.has_velocity_limits = true;
-        limits.max_velocity = 0.5;
+        limits.max_velocity = 5.0;
 
-        ROS_INFO_STREAM("A Max vel: " << limits.max_velocity);
         // Populate (soft) joint limits from URDF
         // Limits specified in URDF overwrite existing values in 'limits' and 'soft_limits'
         // Limits not specified in URDF preserve their existing values
@@ -82,15 +84,21 @@ void UNAVHardware::registerControlInterfaces() {
             boost::shared_ptr<const urdf::Joint> urdf_joint = urdf_->getJoint(joint_names[i]);
             const bool urdf_limits_ok = getJointLimits(urdf_joint, limits);
             const bool urdf_soft_limits_ok = getSoftJointLimits(urdf_joint, soft_limits);
-            ROS_INFO_STREAM("B Max vel: " << limits.max_velocity << " -limits: " << urdf_limits_ok);
+            if(urdf_limits_ok) {
+                ROS_INFO_STREAM("LOAD  limits from URDF");
+            }
+            if(urdf_soft_limits_ok) {
+                ROS_INFO_STREAM("LOAD  soft limits from URDF");
+            }
         }
 
         // Populate (soft) joint limits from the ros parameter server
         // Limits specified in the parameter server overwrite existing values in 'limits' and 'soft_limits'
         // Limits not specified in the parameter server preserve their existing values
         const bool rosparam_limits_ok = getJointLimits(joint_names[i], nh_, limits);
-
-        ROS_INFO_STREAM("C Max vel: " << limits.max_velocity << " -limits: " << rosparam_limits_ok);
+        if(rosparam_limits_ok) {
+            ROS_INFO_STREAM("LOAD  limits from ROSPARAM");
+        }
 
         joint_limits_interface::VelocityJointSoftLimitsHandle handle(joint_handle, // We read the state and read/write the command
                                                                      limits,       // Limits spec

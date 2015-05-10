@@ -50,6 +50,9 @@ private:
     /// Register all control interface and joint limit interface
     void registerControlInterfaces();
 
+    /// Setup all limits
+    void setupLimits(hardware_interface::JointHandle joint_handle, ros::V_string joint_names, int i);
+
     void motorPacket(const unsigned char& command, const message_abstract_u* packet);
     void addParameter(std::vector<packet_information_t>* list_send);
 

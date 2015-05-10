@@ -69,49 +69,69 @@ void UNAVHardware::registerControlInterfaces() {
                     joint_state_handle, &joints_[i].velocity_command);
         velocity_joint_interface_.registerHandle(joint_handle);
 
-        /// Add a velocity joint limits infomations
-        /// Populate with any of the methods presented in the previous example...
-        joint_limits_interface::JointLimits limits;
-        joint_limits_interface::SoftJointLimits soft_limits;
-
-        // Manual value setting
-        limits.has_velocity_limits = true;
-        limits.max_velocity = 5.0;
-
-        // Populate (soft) joint limits from URDF
-        // Limits specified in URDF overwrite existing values in 'limits' and 'soft_limits'
-        // Limits not specified in URDF preserve their existing values
-        if(urdf_ != NULL) {
-            boost::shared_ptr<const urdf::Joint> urdf_joint = urdf_->getJoint(joint_names[i]);
-            const bool urdf_limits_ok = getJointLimits(urdf_joint, limits);
-            const bool urdf_soft_limits_ok = getSoftJointLimits(urdf_joint, soft_limits);
-            if(urdf_limits_ok) {
-                ROS_INFO_STREAM("LOAD " << joint_names[i] << " limits from URDF");
-            }
-            if(urdf_soft_limits_ok) {
-                ROS_INFO_STREAM("LOAD " << joint_names[i] << " soft limits from URDF");
-            }
-        }
-
-        // Populate (soft) joint limits from the ros parameter server
-        // Limits specified in the parameter server overwrite existing values in 'limits' and 'soft_limits'
-        // Limits not specified in the parameter server preserve their existing values
-        const bool rosparam_limits_ok = getJointLimits(joint_names[i], nh_, limits);
-        if(rosparam_limits_ok) {
-            ROS_INFO_STREAM("LOAD " << joint_names[i] << " limits from ROSPARAM");
-        }
-
-        joint_limits_interface::VelocityJointSoftLimitsHandle handle(joint_handle, // We read the state and read/write the command
-                                                                     limits,       // Limits spec
-                                                                     soft_limits);  // Soft limits spec
-
-        vel_limits_interface_.registerHandle(handle);
+        setupLimits(joint_handle, joint_names, i);
 
     }
     /// Register interfaces
     registerInterface(&joint_state_interface_);
     registerInterface(&velocity_joint_interface_);
 
+}
+
+void UNAVHardware::setupLimits(hardware_interface::JointHandle joint_handle, ros::V_string joint_names, int i) {
+    /// Add a velocity joint limits infomations
+    /// Populate with any of the methods presented in the previous example...
+    joint_limits_interface::JointLimits limits;
+    joint_limits_interface::SoftJointLimits soft_limits;
+
+    // Manual value setting
+    limits.has_velocity_limits = true;
+    limits.max_velocity = 5.0;
+
+    // Populate (soft) joint limits from URDF
+    // Limits specified in URDF overwrite existing values in 'limits' and 'soft_limits'
+    // Limits not specified in URDF preserve their existing values
+    if(urdf_ != NULL) {
+        boost::shared_ptr<const urdf::Joint> urdf_joint = urdf_->getJoint(joint_names[i]);
+        const bool urdf_limits_ok = getJointLimits(urdf_joint, limits);
+        const bool urdf_soft_limits_ok = getSoftJointLimits(urdf_joint, soft_limits);
+        if(urdf_limits_ok) {
+            ROS_INFO_STREAM("LOAD " << joint_names[i] << " limits from URDF: " << limits.max_velocity);
+        }
+        if(urdf_soft_limits_ok) {
+            ROS_INFO_STREAM("LOAD " << joint_names[i] << " soft limits from URDF: " << limits.max_velocity);
+        }
+    }
+
+    // Populate (soft) joint limits from the ros parameter server
+    // Limits specified in the parameter server overwrite existing values in 'limits' and 'soft_limits'
+    // Limits not specified in the parameter server preserve their existing values
+    const bool rosparam_limits_ok = getJointLimits(joint_names[i], nh_, limits);
+    if(rosparam_limits_ok) {
+        ROS_INFO_STREAM("LOAD " << joint_names[i] << " limits from ROSPARAM: " << limits.max_velocity);
+    }
+
+    // Send joint limits information to board
+    motor_t constraint;
+    constraint.position = -1;
+    constraint.velocity = (motor_control_t) limits.max_velocity*1000;
+    constraint.torque = -1;
+    motor_command_map_t command;
+    command.bitset.motor = i;
+    command.bitset.motor = MOTOR_CONSTRAINT;
+
+    packet_t packet_send = serial_->encoder(serial_->createDataPacket(command.command_message, HASHMAP_MOTOR, (message_abstract_u*) & constraint));
+    try {
+        serial_->sendSyncPacket(packet_send, 3, boost::posix_time::millisec(200));
+    } catch (exception &e) {
+        ROS_ERROR("%s", e.what());
+    }
+
+    joint_limits_interface::VelocityJointSoftLimitsHandle handle(joint_handle, // We read the state and read/write the command
+                                                                 limits,       // Limits spec
+                                                                 soft_limits);  // Soft limits spec
+
+    vel_limits_interface_.registerHandle(handle);
 }
 
 void UNAVHardware::updateJointsFromHardware() {

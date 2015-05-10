@@ -176,6 +176,10 @@ void UNAVHardware::addParameter(std::vector<packet_information_t>* list_send) {
         joints_[i].configurator_param = new MotorParamConfigurator(private_nh_, number_motor_string, i, serial_);
         /// Emergency motor
         joints_[i].configurator_emergency = new MotorEmergencyConfigurator(private_nh_, number_motor_string, i, serial_);
+        /// Reset position motor
+        command.bitset.command = MOTOR_POS_RESET;
+        motor_control_t reset_coord = 0;
+        list_send->push_back(serial_->createDataPacket(command.command_message,HASHMAP_MOTOR, (message_abstract_u*) & reset_coord));
     }
 
     /// Load URDF from robot_description

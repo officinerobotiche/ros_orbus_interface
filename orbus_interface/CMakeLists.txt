@@ -16,6 +16,7 @@ find_package(catkin REQUIRED
                     sensor_msgs
                     dynamic_reconfigure
                     urdf
+                    joint_limits_interface
 )
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED
@@ -48,6 +49,7 @@ catkin_package(
         hardware_interface
         roscpp
         sensor_msgs
+        joint_limits_interface
     DEPENDS
         Boost
 )

@@ -75,15 +75,25 @@ ROSMotionController::~ROSMotionController() {
 }
 
 void ROSMotionController::addParameter(std::vector<information_packet_t>* list_send) {
-    //Constraint
-    ROS_INFO("%s/constraint",joint_string.c_str());
-    if (nh_.hasParam(joint_string + "/constraint")) {
-        ROS_INFO("Sync parameter constraint: ROS -> ROBOT");
-        constraint_t constraint = get_constraint();
-        list_send->push_back(serial_->createDataPacket(CONSTRAINT, HASHMAP_MOTION, (abstract_message_u*) & constraint));
+    //Constraint/Left
+    ROS_INFO("%s/constraint/%s",joint_string.c_str(), left_string.c_str());
+    if (nh_.hasParam(joint_string + "/constraint/" + left_string)) {
+        ROS_INFO("Sync parameter constraint/%s: ROS -> ROBOT", left_string.c_str());
+        motor_t constraint = get_constraint(left_string);
+        list_send->push_back(serial_->createDataPacket(CONSTRAINT_L, HASHMAP_MOTION, (abstract_message_u*) & constraint));
     } else {
-        ROS_INFO("Sync parameter constraint: ROBOT -> ROS");
-        list_send->push_back(serial_->createPacket(CONSTRAINT, REQUEST, HASHMAP_MOTION));
+        ROS_INFO("Sync parameter constraint/%s: ROBOT -> ROS", left_string.c_str());
+        list_send->push_back(serial_->createPacket(CONSTRAINT_L, REQUEST, HASHMAP_MOTION));
+    }
+    //Constraint/Right
+    ROS_INFO("%s/constraint/%s",joint_string.c_str(), right_string.c_str());
+    if (nh_.hasParam(joint_string + "/constraint/" + right_string)) {
+        ROS_INFO("Sync parameter constraint/%s: ROS -> ROBOT", right_string.c_str());
+        motor_t constraint = get_constraint(right_string);
+        list_send->push_back(serial_->createDataPacket(CONSTRAINT_R, HASHMAP_MOTION, (abstract_message_u*) & constraint));
+    } else {
+        ROS_INFO("Sync parameter constraint/%s: ROBOT -> ROS", right_string.c_str());
+        list_send->push_back(serial_->createPacket(CONSTRAINT_R, REQUEST, HASHMAP_MOTION));
     }
     //Load PID/Left
     if (nh_.hasParam("pid/" + left_string)) {
@@ -171,9 +181,11 @@ void ROSMotionController::addParameter(std::vector<information_packet_t>* list_s
 
 void ROSMotionController::motionPacket(const unsigned char& command, const abstract_message_u* packet) {
     switch (command) {
-        case CONSTRAINT:
-            nh_.setParam(joint_string + "/constraint/" + right_string, packet->constraint.max_right);
-            nh_.setParam(joint_string + "/constraint/" + left_string, packet->constraint.max_left);
+        case CONSTRAINT_L:
+            nh_.setParam(joint_string + "/constraint/" + left_string + "/velocity", packet->motor.velocity);
+            break;
+        case CONSTRAINT_R:
+            nh_.setParam(joint_string + "/constraint/" + right_string + "/velocity", packet->motor.velocity);
             break;
         case PARAMETER_UNICYCLE:
             nh_.setParam("structure/" + wheelbase_string, packet->parameter_unicycle.wheelbase);
@@ -181,18 +193,22 @@ void ROSMotionController::motionPacket(const unsigned char& command, const abstr
             nh_.setParam("structure/" + radius_string + "/" + left_string, packet->parameter_unicycle.radius_l);
             nh_.setParam("odo_mis_step", packet->parameter_unicycle.sp_min);
             break;
-        case PARAMETER_MOTOR_L:
-            nh_.setParam(joint_string + "/" + left_string + "/k_vel", packet->parameter_motor.k_vel);
-            nh_.setParam(joint_string + "/" + left_string + "/k_ang", packet->parameter_motor.k_ang);
-            nh_.setParam(joint_string + "/" + left_string + "/encoder_swap", packet->parameter_motor.versus);
-            nh_.setParam(joint_string + "/" + left_string + "/default_enable", packet->parameter_motor.enable_set);
-            break;
-        case PARAMETER_MOTOR_R:
-            nh_.setParam(joint_string + "/" + right_string + "/k_vel", packet->parameter_motor.k_vel);
-            nh_.setParam(joint_string + "/" + right_string + "/k_ang", packet->parameter_motor.k_ang);
-            nh_.setParam(joint_string + "/" + right_string + "/versus", packet->parameter_motor.versus);
-            nh_.setParam(joint_string + "/" + right_string + "/default_enable", packet->parameter_motor.enable_set);
-            break;
+    case PARAMETER_MOTOR_L:
+        nh_.setParam(joint_string + "/" + left_string + "/cpr", packet->parameter_motor.cpr);
+        nh_.setParam(joint_string + "/" + left_string + "/ratio", packet->parameter_motor.ratio);
+        nh_.setParam(joint_string + "/" + left_string + "/encoder_pos", packet->parameter_motor.encoder_pos);
+        nh_.setParam(joint_string + "/" + left_string + "/volt_bridge", packet->parameter_motor.volt_bridge);
+        nh_.setParam(joint_string + "/" + left_string + "/encoder_swap", packet->parameter_motor.versus);
+        nh_.setParam(joint_string + "/" + left_string + "/default_enable", packet->parameter_motor.enable_set);
+        break;
+    case PARAMETER_MOTOR_R:
+        nh_.setParam(joint_string + "/" + right_string + "/cpr", packet->parameter_motor.cpr);
+        nh_.setParam(joint_string + "/" + right_string + "/ratio", packet->parameter_motor.ratio);
+        nh_.setParam(joint_string + "/" + right_string + "/encoder_pos", packet->parameter_motor.encoder_pos);
+        nh_.setParam(joint_string + "/" + right_string + "/volt_bridge", packet->parameter_motor.volt_bridge);
+        nh_.setParam(joint_string + "/" + right_string + "/encoder_swap", packet->parameter_motor.versus);
+        nh_.setParam(joint_string + "/" + right_string + "/default_enable", packet->parameter_motor.enable_set);
+        break;
         case EMERGENCY:
             nh_.setParam(emergency_string + "/bridge_off", packet->emergency.bridge_off);
             nh_.setParam(emergency_string + "/slope_time", packet->emergency.slope_time);
@@ -216,20 +232,14 @@ void ROSMotionController::motionPacket(const unsigned char& command, const abstr
         case VEL_MOTOR_MIS_R:
 
             break;
-        case MOTOR_L:
-            motor_left.reference = ((double) packet->motor.refer_vel) / 1000;
-            motor_left.control = ((double) packet->motor.control_vel) * (1000.0 / INT16_MAX);
-            motor_left.measure = ((double) packet->motor.measure_vel) / 1000;
-            motor_left.current = ((double) packet->motor.current) / 1000;
-            pub_motor_left.publish(motor_left);
-            break;
-        case MOTOR_R:
-            motor_right.reference = ((double) packet->motor.refer_vel) / 1000;
-            motor_right.control = ((double) packet->motor.control_vel) * (1000.0 / INT16_MAX);
-            motor_right.measure = ((double) packet->motor.measure_vel) / 1000;
-            motor_right.current = ((double) packet->motor.current) / 1000;
-            pub_motor_right.publish(motor_right);
-            break;
+    case MOTOR_L:
+        measure[REF_MOTOR_LEFT] = packet->motor;
+        //pub_motor_left.publish(motor_left);
+        break;
+    case MOTOR_R:
+        measure[REF_MOTOR_RIGHT] = packet->motor;
+        //pub_motor_right.publish(motor_right);
+        break;
         case COORDINATE:
             pose.x = packet->coordinate.x;
             pose.y = packet->coordinate.y;
@@ -258,7 +268,7 @@ void ROSMotionController::timerEvent(const ros::TimerEvent& event) {
         sendOdometry(&meas_velocity, &pose);
     }
     // Send JointState message
-    //if (pub_joint.getNumSubscribers() >= 1)
+    if (pub_joint.getNumSubscribers() >= 1)
     {
         sendJointState(&motor_left, &motor_right);
     }
@@ -480,10 +490,14 @@ parameter_motor_t ROSMotionController::get_motor_parameter(std::string name) {
     double temp;
     int temp2;
 
-    nh_.getParam(joint_string + "/" + name + "/k_vel", temp);
-    parameter.k_vel = temp;
-    nh_.getParam(joint_string + "/" + name + "/k_ang", temp);
-    parameter.k_ang = temp;
+    nh_.getParam(joint_string + "/" + name + "/cpr", temp);
+    parameter.cpr = temp;
+    nh_.getParam(joint_string + "/" + name + "/ratio", temp);
+    parameter.ratio = temp;
+    nh_.getParam(joint_string + "/" + name + "/encoder_pos", temp);
+    parameter.encoder_pos = temp;
+    nh_.getParam(joint_string + "/" + name + "/volt_bridge", temp);
+    parameter.volt_bridge = temp;
     nh_.getParam(joint_string + "/" + name + "/versus", temp2);
     parameter.versus = temp2;
     nh_.getParam(joint_string + "/" + name + "/default_enable", temp2);

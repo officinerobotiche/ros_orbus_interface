@@ -21,6 +21,8 @@
 //#include <tf2_ros/transform_broadcaster.h>
 
 #define NUM_MOTORS 2
+#define REF_MOTOR_LEFT 0
+#define REF_MOTOR_RIGHT 1
 
 const std::string joint_string = "joint_states";
 const std::string odometry_string = "odometry";
@@ -58,10 +60,13 @@ private:
     motor_control_t velocity_ref[NUM_MOTORS];
     state_controller_t status[NUM_MOTORS];
 
+    motor_t measure[NUM_MOTORS];
+    motor_t reference[NUM_MOTORS];
+
     geometry_msgs::Twist twist;
     velocity_t meas_velocity;
     ros_serial_bridge::Pose pose;
-    ros_serial_bridge::Motor motor_left, motor_right;
+    //ros_serial_bridge::Motor motor_left, motor_right;
     ros_serial_bridge::Enable enable_motors;
     std::string name_pid;
     
@@ -96,7 +101,7 @@ private:
     pid_control_t get_pid(std::string name);
     parameter_motor_t get_motor_parameter(std::string name);
     parameter_unicycle_t get_unicycle_parameter();
-    constraint_t get_constraint();
+    motor_t get_constraint(std::string name);
     emergency_t get_emergency();
 
 };

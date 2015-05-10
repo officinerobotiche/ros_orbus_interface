@@ -39,6 +39,10 @@
 class MotorParamConfigurator {
 public:
     MotorParamConfigurator(const ros::NodeHandle& nh, std::string name, unsigned int number, ParserPacket* serial);
+
+    void setParam(motor_parameter_t parameter);
+    motor_parameter_t getParam();
+
 private:
 
     /// Associate name space
@@ -58,4 +62,7 @@ private:
 
     dynamic_reconfigure::Server<orbus_interface::UnavParameterConfig> *dsrv_;
     void reconfigureCB(orbus_interface::UnavParameterConfig &config, uint32_t level);
+
+    /// Send to serial
+    void sendToSerial(motor_parameter_t parameter);
 };

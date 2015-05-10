@@ -39,6 +39,10 @@
 class MotorPIDConfigurator {
 public:
     MotorPIDConfigurator(const ros::NodeHandle& nh, std::string name, unsigned int number, ParserPacket* serial);
+
+    void setParam(motor_parameter_t parameter);
+    motor_parameter_t getParam();
+
 private:
     /// Associate name space
     std::string name_;
@@ -50,11 +54,13 @@ private:
     motor_command_map_t command_;
     /// Frequency message
     system_task_t last_frequency_, default_frequency_;
-
     motor_pid_t last_pid_, default_pid_;
 
     bool setup_;
 
     dynamic_reconfigure::Server<orbus_interface::UnavPIDConfig> *dsrv_;
     void reconfigureCB(orbus_interface::UnavPIDConfig &config, uint32_t level);
+
+    /// Send to serial
+    void sendToSerial(std::vector<packet_information_t>& list_send);
 };

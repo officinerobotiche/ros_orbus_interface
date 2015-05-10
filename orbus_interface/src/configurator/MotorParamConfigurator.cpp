@@ -65,26 +65,64 @@ MotorParamConfigurator::MotorParamConfigurator(const ros::NodeHandle &nh, std::s
             case PACKET_DATA:
                 if (packet.type == HASHMAP_MOTOR) {
                     if(packet.command = command_.command_message) {
-                        motor_parameter_encoder_t encoder = packet.message.motor_parameter.encoder;
-                        motor_parameter_bridge_t bridge = packet.message.motor_parameter.bridge;
-                        nh_.setParam(name_ + "/CPR", ((int) encoder.cpr));
-                        nh_.setParam(name_ + "/Ratio", (double) packet.message.motor_parameter.ratio);
-                        /// Convert from mV in V
-                        nh_.setParam(name_ + "/Bridge", ((double)(bridge.volt)/1000));
-                        nh_.setParam(name_ + "/Encoder", encoder.position);
-                        nh_.setParam(name_ + "/Rotation", packet.message.motor_parameter.rotation);
-                        nh_.setParam(name_ + "/Enable", bridge.enable);
+                        /// Set paramater
+                        setParam(packet.message.motor_parameter);
                     }
                 }
                 break;
             }
         }
+    } else {
+        /// Send configuration to board
+        sendToSerial(getParam());
     }
 
     //Load dynamic reconfigure
     dsrv_ = new dynamic_reconfigure::Server<orbus_interface::UnavParameterConfig>(ros::NodeHandle("~" + name_));
     dynamic_reconfigure::Server<orbus_interface::UnavParameterConfig>::CallbackType cb = boost::bind(&MotorParamConfigurator::reconfigureCB, this, _1, _2);
     dsrv_->setCallback(cb);
+}
+
+
+void MotorParamConfigurator::setParam(motor_parameter_t parameter) {
+    motor_parameter_encoder_t encoder = parameter.encoder;
+    motor_parameter_bridge_t bridge = parameter.bridge;
+    nh_.setParam(name_ + "/CPR", ((int) encoder.cpr));
+    nh_.setParam(name_ + "/Ratio", (double) parameter.ratio);
+    /// Convert from mV in V
+    nh_.setParam(name_ + "/Bridge", ((double)(bridge.volt)/1000));
+    nh_.setParam(name_ + "/Encoder", encoder.position);
+    nh_.setParam(name_ + "/Rotation", parameter.rotation);
+    nh_.setParam(name_ + "/Enable", bridge.enable);
+}
+
+motor_parameter_t MotorParamConfigurator::getParam() {
+    motor_parameter_t parameter;
+    int temp_int;
+    double temp_double;
+    nh_.getParam(name_ + "/CPR", temp_int);
+    parameter.encoder.cpr = (uint16_t) temp_int;
+    nh_.getParam(name_ + "/Ratio", temp_double);
+    parameter.ratio = (float) temp_double;
+    /// Convert from mV in V
+    nh_.getParam(name_ + "/Bridge", temp_double);
+    parameter.bridge.volt = (uint16_t) temp_double*1000;
+    nh_.getParam(name_ + "/Encoder", temp_int);
+    parameter.encoder.position = (uint8_t) temp_int;
+    nh_.getParam(name_ + "/Rotation", temp_int);
+    parameter.rotation = (int8_t) temp_int;
+    nh_.getParam(name_ + "/Enable", temp_int);
+    parameter.bridge.enable = (uint8_t) temp_int;
+    return parameter;
+}
+
+void MotorParamConfigurator::sendToSerial(motor_parameter_t parameter) {
+    packet_t packet_send = serial_->encoder(serial_->createDataPacket(command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & parameter));
+    try {
+        serial_->sendSyncPacket(packet_send, 3, boost::posix_time::millisec(200));
+    } catch (exception &e) {
+        ROS_ERROR("%s", e.what());
+    }
 }
 
 void MotorParamConfigurator::reconfigureCB(orbus_interface::UnavParameterConfig &config, uint32_t level) {
@@ -96,13 +134,6 @@ void MotorParamConfigurator::reconfigureCB(orbus_interface::UnavParameterConfig 
     param.ratio = (float) config.Ratio;
     param.rotation = (int8_t) config.Rotation;
     param.bridge.volt = (int16_t) (config.Bridge*1000);
-
-//    ROS_INFO_STREAM("cpr: " << (int) param.encoder.cpr);
-//    ROS_INFO_STREAM("enable_set: " << (int) param.bridge.enable);
-//    ROS_INFO_STREAM("encoder_pos: " << (int) param.encoder.position);
-//    ROS_INFO_STREAM("ratio: " << param.ratio);
-//    ROS_INFO_STREAM("rotation: " << (int) param.rotation);
-//    ROS_INFO_STREAM("volt_bridge: " << param.bridge.volt);
 
     //The first time we're called, we just want to make sure we have the
     //original configuration
@@ -119,13 +150,7 @@ void MotorParamConfigurator::reconfigureCB(orbus_interface::UnavParameterConfig 
       //if someone sets restore defaults on the parameter server, prevent looping
       config.restore_defaults = false;
     }
-
-    packet_t packet_send = serial_->encoder(serial_->createDataPacket(command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & param));
-
-    try {
-        serial_->sendSyncPacket(packet_send, 3, boost::posix_time::millisec(200));
-    } catch (exception &e) {
-        ROS_ERROR("%s", e.what());
-    }
+    /// Send to serial
+    sendToSerial(param);
     last_param_ = param;
 }

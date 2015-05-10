@@ -74,6 +74,8 @@ MotorPIDConfigurator::MotorPIDConfigurator(const ros::NodeHandle& nh, std::strin
                 break;
             }
         }
+    } else {
+
     }
 
     //Load dynamic reconfigure
@@ -82,8 +84,17 @@ MotorPIDConfigurator::MotorPIDConfigurator(const ros::NodeHandle& nh, std::strin
     dsrv_->setCallback(cb);
 }
 
-void MotorPIDConfigurator::reconfigureCB(orbus_interface::UnavPIDConfig &config, uint32_t level) {
+void MotorPIDConfigurator::sendToSerial(std::vector<packet_information_t>& list_send) {
+    if(list_send.size() != 0) {
+        try {
+            serial_->parserSendPacket(list_send, 3, boost::posix_time::millisec(200));
+        } catch (exception &e) {
+            ROS_ERROR("%s", e.what());
+        }
+    }
+}
 
+void MotorPIDConfigurator::reconfigureCB(orbus_interface::UnavPIDConfig &config, uint32_t level) {
 
     motor_pid_t pid;
     pid.kp = config.Kp;
@@ -118,14 +129,9 @@ void MotorPIDConfigurator::reconfigureCB(orbus_interface::UnavPIDConfig &config,
         config.Kd = pid.kd;
     }
     if(last_frequency_.data != config.Frequency) {
-
+        // TODO add packet to change frequency
         last_frequency_.data = config.Frequency;
     }
-    if(list_send.size() != 0) {
-        try {
-            serial_->parserSendPacket(list_send, 3, boost::posix_time::millisec(200));
-        } catch (exception &e) {
-            ROS_ERROR("%s", e.what());
-        }
-    }
+
+    sendToSerial(list_send);
 }

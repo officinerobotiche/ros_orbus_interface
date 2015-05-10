@@ -198,14 +198,9 @@ void UNAVHardware::motorPacket(const unsigned char& command, const message_abstr
     case MOTOR_CONSTRAINT:
         //nh_.setParam(joint_string + "/constraint/" + left_string + "/velocity", packet->motor.velocity);
         break;
-    case MOTOR_EMERGENCY:
-//        nh_.setParam(emergency_string + "/" + left_string + "/bridge_off", packet->emergency.bridge_off);
-//        nh_.setParam(emergency_string + "/" + left_string + "/slope_time", packet->emergency.slope_time);
-//        nh_.setParam(emergency_string + "/" + left_string + "/timeout", ((double) packet->emergency.timeout) / 1000.0);
-        break;
     case MOTOR:
         joints_[number_motor].effort = packet->motor.torque;
-        joints_[number_motor].position = packet->motor.position;
+        joints_[number_motor].position += packet->motor.position_delta;
         joints_[number_motor].velocity = ((double) packet->motor.velocity) / 1000;
         //ROS_INFO_STREAM("[" << (int)motor_command_.bitset.motor << "] Position: " <<  joints_[motor_command_.bitset.motor].position << " - Velocity: " << joints_[motor_command_.bitset.motor].velocity);
         break;

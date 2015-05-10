@@ -25,10 +25,6 @@
 
 #define NUM_MOTORS 2
 
-const std::string paramenter_unicycle_string = "unicycle";
-const std::string wheelbase_string = "wheelbase";
-const std::string radius_string = "radius";
-
 class UNAVHardware : public ORBHardware {
 public:
     UNAVHardware(const ros::NodeHandle& nh, const ros::NodeHandle& private_nh, ParserPacket* serial);
@@ -51,22 +47,11 @@ private:
     /// ROS joint limits interface
     joint_limits_interface::VelocityJointSoftLimitsInterface vel_limits_interface_;
 
-    //Service
-    //ros::ServiceServer srv_pid, srv_parameter, srv_constraint, srv_emergency;
-
     /// Register all control interface and joint limit interface
     void registerControlInterfaces();
 
-//    bool pidServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
-//    bool parameterServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
-//    bool constraintServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
-//    bool emergencyServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
-
     void motorPacket(const unsigned char& command, const message_abstract_u* packet);
     void addParameter(std::vector<packet_information_t>* list_send);
-
-    motor_t get_constraint(std::string name);
-    motor_emergency_t get_emergency(std::string name);
 
     /**
     * Joint structure that is hooked to ros_control's InterfaceManager, to allow control via diff_drive_controller

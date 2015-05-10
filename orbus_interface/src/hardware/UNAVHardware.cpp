@@ -128,7 +128,6 @@ void UNAVHardware::updateJointsFromHardware() {
     } catch (exception &e) {
         ROS_ERROR("%s", e.what());
     }
-    //TODO Add a function to collect all commands
 }
 
 void UNAVHardware::writeCommandsToHardware(ros::Duration period) {
@@ -155,7 +154,6 @@ void UNAVHardware::writeCommandsToHardware(ros::Duration period) {
             velocity = (motor_control_t) velocity_long;
         }
         // <<<<< Saturation on 16 bit values
-        //ROS_INFO_STREAM("Motor" << i << ": " << joints_[i].velocity_command);
         list_send_.push_back(serial_->createDataPacket(motor_command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & velocity));
     }
     /// Send message
@@ -184,77 +182,17 @@ void UNAVHardware::addParameter(std::vector<packet_information_t>* list_send) {
     if(nh_.hasParam("/robot_description")) {
         std::string urdf_string;
         nh_.getParam("/robot_description", urdf_string);
-        //ROS_INFO_STREAM("URDF: " << urdf_string);
         urdf_ = urdf::parseURDF(urdf_string);
     }
-
-//        list_send->push_back(serial_->createDataPacket(PARAMETER_UNICYCLE, HASHMAP_MOTION, (abstract_message_u*) & parameter_unicycle));
 }
 
 void UNAVHardware::motorPacket(const unsigned char& command, const message_abstract_u* packet) {
     motor_command_.command_message = command;
-    int number_motor = (int) motor_command_.bitset.motor;
     switch (motor_command_.bitset.command) {
-    case MOTOR_CONSTRAINT:
-        //nh_.setParam(joint_string + "/constraint/" + left_string + "/velocity", packet->motor.velocity);
-        break;
     case MOTOR:
-        joints_[number_motor].effort = packet->motor.torque;
-        joints_[number_motor].position += packet->motor.position_delta;
-        joints_[number_motor].velocity = ((double) packet->motor.velocity) / 1000;
-        //ROS_INFO_STREAM("[" << (int)motor_command_.bitset.motor << "] Position: " <<  joints_[motor_command_.bitset.motor].position << " - Velocity: " << joints_[motor_command_.bitset.motor].velocity);
+        joints_[motor_command_.bitset.motor].effort = packet->motor.torque;
+        joints_[motor_command_.bitset.motor].position += packet->motor.position_delta;
+        joints_[motor_command_.bitset.motor].velocity = ((double) packet->motor.velocity) / 1000;
         break;
     }
 }
-
-//parameter_unicycle_t UNAVHardware::get_unicycle_parameter() {
-//    parameter_unicycle_t parameter;
-//    double temp;
-
-//    nh_.getParam("structure/" + wheelbase_string, temp);
-//    parameter.wheelbase = temp;
-//    nh_.getParam("structure/" + radius_string + "/" + right_string, temp);
-//    parameter.radius_r = temp;
-//    nh_.getParam("structure/" + radius_string + "/" + left_string, temp);
-//    parameter.radius_l = temp;
-//    nh_.getParam("odo_mis_step", temp);
-//    parameter.sp_min = temp;
-//    return parameter;
-//}
-
-motor_emergency_t UNAVHardware::get_emergency(std::string name) {
-    motor_emergency_t emergency;
-//    double temp;
-//    nh_.getParam(emergency_string + name + "/bridge_off", temp);
-//    emergency.bridge_off = temp;
-//    nh_.getParam(emergency_string + name + "/slope_time", temp);
-//    emergency.slope_time = temp;
-//    nh_.getParam(emergency_string + name + "/timeout", temp);
-//    emergency.timeout = (int16_t) (temp * 1000);
-    return emergency;
-}
-
-motor_t UNAVHardware::get_constraint(std::string name) {
-    motor_t constraint;
-//    int temp;
-
-//    nh_.getParam(joint_string + "/constraint/" + name + "/velocity", temp);
-//    constraint.velocity = (int16_t) temp;
-    return constraint;
-}
-
-//bool UNAVHardware::pidServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&) {
-//    return true;
-//}
-
-//bool UNAVHardware::parameterServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&) {
-//    return true;
-//}
-
-//bool UNAVHardware::constraintServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&) {
-//    return true;
-//}
-
-//bool UNAVHardware::emergencyServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&) {
-//    return true;
-//}

@@ -1,6 +1,0 @@
-string type
-float32 vel_r
-float32 vel_l
----
-float32 lin_vel
-float32 ang_vel

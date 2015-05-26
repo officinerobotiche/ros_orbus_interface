@@ -1,5 +1,9 @@
 # Change Log
 
+## [v0.4](https://github.com/officinerobotiche/ros_serial_bridge/tree/v0.4) (2015-05-06)
+
+[Full Changelog](https://github.com/officinerobotiche/ros_serial_bridge/compare/v0.1...v0.4)
+
 ## [v0.1](https://github.com/officinerobotiche/ros_serial_bridge/tree/v0.1) (2015-03-31)
 
 **Fixed bugs:**

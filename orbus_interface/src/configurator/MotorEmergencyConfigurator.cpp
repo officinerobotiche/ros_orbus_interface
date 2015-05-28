@@ -62,9 +62,9 @@ MotorEmergencyConfigurator::MotorEmergencyConfigurator(const ros::NodeHandle& nh
             case PACKET_DATA:
                 if (packet.type == HASHMAP_MOTOR) {
                     if(packet.command = command_.command_message) {
-                        nh_.setParam(name_ + "/Slope_time", packet.message.motor_pid.kp);
-                        nh_.setParam(name_ + "/Bridge_off", packet.message.motor_pid.ki);
-                        nh_.setParam(name_ + "/Timeout", packet.message.motor_pid.kd);
+                        nh_.setParam(name_ + "/Slope_time", packet.message.motor.pid.kp);
+                        nh_.setParam(name_ + "/Bridge_off", packet.message.motor.pid.ki);
+                        nh_.setParam(name_ + "/Timeout", packet.message.motor.pid.kd);
                     }
                 }
                 break;

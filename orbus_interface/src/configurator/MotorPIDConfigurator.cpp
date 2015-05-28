@@ -66,9 +66,9 @@ MotorPIDConfigurator::MotorPIDConfigurator(const ros::NodeHandle& nh, std::strin
             case PACKET_DATA:
                 if (packet.type == HASHMAP_MOTOR) {
                     if(packet.command = command_.command_message) {
-                        nh_.setParam(name_ + "/Kp", packet.message.motor_pid.kp);
-                        nh_.setParam(name_ + "/Ki", packet.message.motor_pid.ki);
-                        nh_.setParam(name_ + "/Kd", packet.message.motor_pid.kd);
+                        nh_.setParam(name_ + "/Kp", packet.message.motor.pid.kp);
+                        nh_.setParam(name_ + "/Ki", packet.message.motor.pid.ki);
+                        nh_.setParam(name_ + "/Kd", packet.message.motor.pid.kd);
                     }
                 }
                 break;

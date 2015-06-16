@@ -138,7 +138,7 @@ void UNAVHardware::updateJointsFromHardware() {
     //ROS_INFO("Update Joints");
     /// Send a list of request about position and velocities
     list_send_.clear();     ///< Clear list of commands
-    motor_command_.bitset.command = MOTOR; ///< Set message to receive measure information
+    motor_command_.bitset.command = MOTOR_MEASURE; ///< Set message to receive measure information
     for(int i = 0; i < NUM_MOTORS; ++i) {
         motor_command_.bitset.motor = i;
         list_send_.push_back(serial_->createPacket(motor_command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
@@ -213,10 +213,10 @@ void UNAVHardware::addParameter(std::vector<packet_information_t>* list_send) {
 void UNAVHardware::motorPacket(const unsigned char& command, const message_abstract_u* packet) {
     motor_command_.command_message = command;
     switch (motor_command_.bitset.command) {
-    case MOTOR:
-        joints_[motor_command_.bitset.motor].effort = packet->motor.torque;
-        joints_[motor_command_.bitset.motor].position += packet->motor.position_delta;
-        joints_[motor_command_.bitset.motor].velocity = ((double) packet->motor.velocity) / 1000;
+    case MOTOR_MEASURE:
+        joints_[motor_command_.bitset.motor].effort = packet->motor.motor.torque;
+        joints_[motor_command_.bitset.motor].position += packet->motor.motor.position_delta;
+        joints_[motor_command_.bitset.motor].velocity = ((double) packet->motor.motor.velocity) / 1000;
         break;
     }
 }

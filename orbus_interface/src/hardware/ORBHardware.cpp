@@ -203,7 +203,7 @@ void ORBHardware::errorPacket(const unsigned char& command, const message_abstra
 void ORBHardware::defaultPacket(const unsigned char& command, const message_abstract_u* packet) {
     switch (command) {
         case SYSTEM_SERVICE:
-            decodeServices(packet->system_service.command, &packet->system_service.buffer[0]);
+            decodeServices(packet->system.service.command, &packet->system.service.buffer[0]);
             break;
 //        case TIME_PROCESS:
 //            time_process.idle = getTimeProcess(packet->process.idle);
@@ -240,8 +240,8 @@ void ORBHardware::defaultPacket(const unsigned char& command, const message_abst
 //        }
 //        break;
         case SYSTEM_PARAMETER:
-            step_timer = packet->system_parameter.step_timer;
-            tm_mill = packet->system_parameter.int_tm_mill;
+            step_timer = packet->system.parameter.step_timer;
+            tm_mill = packet->system.parameter.int_tm_mill;
             k_time = 1 / (step_timer / tm_mill);
             nh_.setParam("time/step", step_timer);
             nh_.setParam("time/tm_mill", tm_mill);
@@ -251,7 +251,7 @@ void ORBHardware::defaultPacket(const unsigned char& command, const message_abst
             for (int i = 0; i < SYSTEM_SERIAL_ERROR; ++i) {
                 string name = getNameError(-(i + 1));
                 if (name.compare(" ") != 0)
-                    map_error_serial[name] = packet->system_error_serial.number[i];
+                    map_error_serial[name] = packet->system.error_serial.number[i];
             }
             break;
     }

@@ -66,7 +66,7 @@ MotorParamConfigurator::MotorParamConfigurator(const ros::NodeHandle &nh, std::s
                 if (packet.type == HASHMAP_MOTOR) {
                     if(packet.command = command_.command_message) {
                         /// Set paramater
-                        setParam(packet.message.motor_parameter);
+                        setParam(packet.message.motor.parameter);
                     }
                 }
                 break;

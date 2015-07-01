@@ -1,6 +1,8 @@
 ![Officine Robotiche][Logo] - ros_orbus_interface [![Build Status](https://travis-ci.org/officinerobotiche/ros_orbus_interface.svg?branch=develop)](https://travis-ci.org/officinerobotiche/ros_orbus_interface)
 ======
 
+[![Join the chat at https://gitter.im/officinerobotiche/ros_orbus_interface](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/officinerobotiche/ros_orbus_interface?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 With this node you can control with ROS all boards with orbus protocoll, in particular:
 - [**µNAV**](http://unav.officinerobotiche.it) The motion control board for two DC brushed motors.
 - [**Navigation Board**](http://raffaello.officinerobotiche.it/boards/old-boards/navigation-board/) A board to read all data from infrared sensor

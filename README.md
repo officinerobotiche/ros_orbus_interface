@@ -17,6 +17,7 @@ cd ~/catkin_ws/src
 git clone https://github.com/officinerobotiche/ros_orbus_interface.git
 cd ros_orbus_interface
 git submodule update --init --recursive
+sudo apt-get install ros-indigo-joint-limits-interface ros-indigo-controller-manager
 cd ~/catkin_ws
 catkin_make
 ```

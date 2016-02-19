@@ -17,7 +17,7 @@ cd ~/catkin_ws/src
 git clone https://github.com/officinerobotiche/ros_orbus_interface.git
 cd ros_orbus_interface
 git submodule update --init --recursive
-sudo apt-get install ros-<distro>-joint-limits-interface ros-<distro>-controller-manager
+sudo apt-get install ros-<distro>-joint-limits-interface ros-<distro>-controller-manager ros-<distro>-diagnostic-updater ros-<distro>-roslint ros-<distro>-urdf
 cd ~/catkin_ws
 catkin_make
 ```

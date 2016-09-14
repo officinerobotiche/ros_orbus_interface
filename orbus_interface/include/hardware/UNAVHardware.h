@@ -73,6 +73,9 @@ private:
       double effort;
       double velocity_command;
 
+      int current;
+      int temperature;
+
       Joint() : position(0), velocity(0), effort(0), velocity_command(0) { }
     } joints_[NUM_MOTORS];
 

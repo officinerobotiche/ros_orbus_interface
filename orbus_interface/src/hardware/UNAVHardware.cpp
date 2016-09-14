@@ -138,9 +138,12 @@ void UNAVHardware::updateJointsFromHardware() {
     //ROS_INFO("Update Joints");
     /// Send a list of request about position and velocities
     list_send_.clear();     ///< Clear list of commands
-    motor_command_.bitset.command = MOTOR_MEASURE; ///< Set message to receive measure information
+
     for(int i = 0; i < NUM_MOTORS; ++i) {
         motor_command_.bitset.motor = i;
+        motor_command_.bitset.command = MOTOR_MEASURE; ///< Set message to receive measure information
+        list_send_.push_back(serial_->createPacket(motor_command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
+        motor_command_.bitset.command = MOTOR_DIAGNOSTIC; ///< Set message to receive diagnostic information
         list_send_.push_back(serial_->createPacket(motor_command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
     }
     try {
@@ -217,6 +220,12 @@ void UNAVHardware::motorPacket(const unsigned char& command, const message_abstr
         joints_[motor_command_.bitset.motor].effort = packet->motor.motor.torque;
         joints_[motor_command_.bitset.motor].position += packet->motor.motor.position_delta;
         joints_[motor_command_.bitset.motor].velocity = ((double) packet->motor.motor.velocity) / 1000;
+        break;
+    case MOTOR_DIAGNOSTIC:
+        joints_[motor_command_.bitset.motor].current = packet->motor.diagnostic.current;
+        joints_[motor_command_.bitset.motor].temperature = packet->motor.diagnostic.temperature;
+        // TEMP for test ADC
+        ROS_INFO("motor[%d]: data0[%d] - data1[%d]",motor_command_.bitset.motor, joints_[motor_command_.bitset.motor].current, joints_[motor_command_.bitset.motor].temperature);
         break;
     }
 }

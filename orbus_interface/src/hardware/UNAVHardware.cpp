@@ -39,8 +39,12 @@ UNAVHardware::UNAVHardware(const ros::NodeHandle& nh, const ros::NodeHandle &pri
     /// Load all parameters
     loadParameter();
 
+    /// Load diagnostic
+    initializeDiagnostics();
+
     /// Register all control interface avaiable
     registerControlInterfaces();
+
 }
 
 UNAVHardware::~UNAVHardware() {
@@ -49,18 +53,21 @@ UNAVHardware::~UNAVHardware() {
     clearParameterPacketRequest();
 }
 
+void UNAVHardware::initializeDiagnostics() {
+    for (unsigned int i = 0; i < NUM_MOTORS; i++)
+    {
+        std::string number_motor_string = "motor_" + boost::lexical_cast<std::string>(i);
+        /// Build the diagnostic motor controller
+        joints_[i].diagnosticMotor = new DiagnosticMotor(private_nh_, number_motor_string, joints_[i].name);
+    }
+}
+
 void UNAVHardware::registerControlInterfaces() {
-    /// Build ad array with name of joints
-//    std::string joints[2];
-//    nh_.param<std::string>("joint/left", joints[0], "Left");
-//    nh_.param<std::string>("joint/right", joints[1], "Right");
-//    ros::V_string joint_names = boost::assign::list_of(joints[0])(joints[1]);
-    ros::V_string joint_names = boost::assign::list_of("Left")("Right");
     /// Build harware interfaces
-    for (unsigned int i = 0; i < joint_names.size(); i++)
+    for (unsigned int i = 0; i < NUM_MOTORS; i++)
     {
         /// Joint hardware interface
-        hardware_interface::JointStateHandle joint_state_handle(joint_names[i],
+        hardware_interface::JointStateHandle joint_state_handle(joints_[i].name,
                                                                 &joints_[i].position, &joints_[i].velocity, &joints_[i].effort);
         joint_state_interface_.registerHandle(joint_state_handle);
 
@@ -69,7 +76,7 @@ void UNAVHardware::registerControlInterfaces() {
                     joint_state_handle, &joints_[i].velocity_command);
         velocity_joint_interface_.registerHandle(joint_handle);
 
-        setupLimits(joint_handle, joint_names, i);
+        setupLimits(joint_handle, joints_[i].name, i);
 
     }
     /// Register interfaces
@@ -78,7 +85,7 @@ void UNAVHardware::registerControlInterfaces() {
 
 }
 
-void UNAVHardware::setupLimits(hardware_interface::JointHandle joint_handle, ros::V_string joint_names, int i) {
+void UNAVHardware::setupLimits(hardware_interface::JointHandle joint_handle, std::string name, int i) {
     /// Add a velocity joint limits infomations
     /// Populate with any of the methods presented in the previous example...
     joint_limits_interface::JointLimits limits;
@@ -92,23 +99,23 @@ void UNAVHardware::setupLimits(hardware_interface::JointHandle joint_handle, ros
     // Limits specified in URDF overwrite existing values in 'limits' and 'soft_limits'
     // Limits not specified in URDF preserve their existing values
     if(urdf_ != NULL) {
-        boost::shared_ptr<const urdf::Joint> urdf_joint = urdf_->getJoint(joint_names[i]);
+        boost::shared_ptr<const urdf::Joint> urdf_joint = urdf_->getJoint(name);
         const bool urdf_limits_ok = getJointLimits(urdf_joint, limits);
         const bool urdf_soft_limits_ok = getSoftJointLimits(urdf_joint, soft_limits);
         if(urdf_limits_ok) {
-            ROS_INFO_STREAM("LOAD " << joint_names[i] << " limits from URDF: " << limits.max_velocity);
+            ROS_INFO_STREAM("LOAD " << name << " limits from URDF: " << limits.max_velocity << " rad/s");
         }
         if(urdf_soft_limits_ok) {
-            ROS_INFO_STREAM("LOAD " << joint_names[i] << " soft limits from URDF: " << limits.max_velocity);
+            ROS_INFO_STREAM("LOAD " << name << " soft limits from URDF: " << limits.max_velocity << " rad/s");
         }
     }
 
     // Populate (soft) joint limits from the ros parameter server
     // Limits specified in the parameter server overwrite existing values in 'limits' and 'soft_limits'
     // Limits not specified in the parameter server preserve their existing values
-    const bool rosparam_limits_ok = getJointLimits(joint_names[i], nh_, limits);
+    const bool rosparam_limits_ok = getJointLimits(name, nh_, limits);
     if(rosparam_limits_ok) {
-        ROS_INFO_STREAM("LOAD " << joint_names[i] << " limits from ROSPARAM: " << limits.max_velocity);
+        ROS_INFO_STREAM("LOAD " << name << " limits from ROSPARAM: " << limits.max_velocity << " rad/s");
     }
 
     // Send joint limits information to board
@@ -193,6 +200,11 @@ void UNAVHardware::addParameter(std::vector<packet_information_t>* list_send) {
     for(unsigned int i=0; i < NUM_MOTORS; ++i) {
         command.bitset.motor = i;
         number_motor_string = "motor_" + boost::lexical_cast<std::string>(i);
+        /// Name motor
+        private_nh_.getParam(number_motor_string + "/name", joints_[i].name);
+        /// Check name and path
+        //ROS_INFO_STREAM("Path: " << number_motor_string << "/name - Name: " << joints_[i].name);
+
         /// PIDs for Velocity, effort, position
         joints_[i].configurator_pid_velocity = new MotorPIDConfigurator(private_nh_, number_motor_string, "velocity", i, serial_);
         joints_[i].configurator_pid_effort = new MotorPIDConfigurator(private_nh_, number_motor_string, "effort", i, serial_);
@@ -218,15 +230,14 @@ void UNAVHardware::motorPacket(const unsigned char& command, const message_abstr
     motor_command_.command_message = command;
     switch (motor_command_.bitset.command) {
     case MOTOR_MEASURE:
+        /// Update measure messages
         joints_[motor_command_.bitset.motor].effort = packet->motor.motor.torque;
         joints_[motor_command_.bitset.motor].position += packet->motor.motor.position_delta;
         joints_[motor_command_.bitset.motor].velocity = ((double) packet->motor.motor.velocity) / 1000;
         break;
     case MOTOR_DIAGNOSTIC:
-        joints_[motor_command_.bitset.motor].current = packet->motor.diagnostic.current;
-        joints_[motor_command_.bitset.motor].volt = packet->motor.diagnostic.volt;
-        // TEMP for test ADC
-        ROS_INFO("motor[%d]: data0[%d] - data1[%d]",motor_command_.bitset.motor, joints_[motor_command_.bitset.motor].current, joints_[motor_command_.bitset.motor].volt);
+        /// Launch Diagnostic message
+        joints_[motor_command_.bitset.motor].diagnosticMotor->run(packet->motor.diagnostic);
         break;
     }
 }

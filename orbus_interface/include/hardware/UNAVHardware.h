@@ -1,8 +1,18 @@
 /*
- * File:   UNAVHardware.h
- * Author: raffaello
+ * Copyright (C) 2016 Officine Robotiche
+ * Author: Raffaello Bonghi
+ * email:  raffaello@rnext.it
+ * Permission is granted to copy, distribute, and/or modify this program
+ * under the terms of the GNU Lesser General Public License, version 2 or any
+ * later version published by the Free Software Foundation.
  *
- * Created on 15 November 2013, 18:34
+ * A copy of the license can be found at
+ * https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ * Public License for more details
  */
 
 #ifndef UNAVHARDWARE_H
@@ -14,6 +24,8 @@
 
 #include "hardware_interface/joint_state_interface.h"
 #include "hardware_interface/joint_command_interface.h"
+#include "hardware/DiagnosticMotor.h"
+
 #include <joint_limits_interface/joint_limits_interface.h>
 
 #include <joint_limits_interface/joint_limits_urdf.h>
@@ -47,11 +59,14 @@ private:
     /// ROS joint limits interface
     joint_limits_interface::VelocityJointSoftLimitsInterface vel_limits_interface_;
 
+    /// Initialize the diagnostic messages
+    void initializeDiagnostics();
+
     /// Register all control interface and joint limit interface
     void registerControlInterfaces();
 
     /// Setup all limits
-    void setupLimits(hardware_interface::JointHandle joint_handle, ros::V_string joint_names, int i);
+    void setupLimits(hardware_interface::JointHandle joint_handle, std::string name, int i);
 
     void motorPacket(const unsigned char& command, const message_abstract_u* packet);
     void addParameter(std::vector<packet_information_t>* list_send);
@@ -61,6 +76,7 @@ private:
     */
     struct Joint
     {
+      DiagnosticMotor *diagnosticMotor;
       MotorPIDConfigurator *configurator_pid_velocity, *configurator_pid_effort, *configurator_pid_position;
       MotorParamConfigurator *configurator_param;
       MotorEmergencyConfigurator *configurator_emergency;
@@ -73,9 +89,7 @@ private:
       double effort;
       double velocity_command;
 
-      int current;
-      int volt;
-      int temperature;
+      std::string name;
 
       Joint() : position(0), velocity(0), effort(0), velocity_command(0) { }
     } joints_[NUM_MOTORS];

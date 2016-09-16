@@ -75,13 +75,14 @@ set(hardware_unav_SRC
     src/configurator/MotorEmergencyConfigurator.cpp
     src/hardware/ORBHardware.cpp
     src/hardware/UNAVHardware.cpp
+    src/hardware/DiagnosticMotor.cpp
     src/unav_hwinterface.cpp
 )
 
 ## Declare a cpp executable
 add_executable(hardware_unav ${hardware_unav_SRC})
 target_link_libraries(hardware_unav lib_orbus_cpp ${catkin_LIBRARIES} ${Boost_LIBRARIES})
-add_dependencies(hardware_unav hardware_unav_gencpp)
+# add_dependencies(hardware_unav hardware_unav_gencpp)
 
 roslint_cpp(${hardware_unav_SRC})
 

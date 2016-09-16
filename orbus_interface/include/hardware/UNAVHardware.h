@@ -39,8 +39,10 @@
 
 class UNAVHardware : public ORBHardware {
 public:
-    UNAVHardware(const ros::NodeHandle& nh, const ros::NodeHandle& private_nh, ParserPacket* serial);
+    UNAVHardware(const ros::NodeHandle& nh, const ros::NodeHandle& private_nh, ParserPacket* serial, double frequency);
     virtual ~UNAVHardware();
+
+    void updateDiagnostics();
 
     void updateJointsFromHardware();
     void writeCommandsToHardware(ros::Duration period);
@@ -50,8 +52,6 @@ private:
     boost::shared_ptr<urdf::ModelInterface> urdf_;
     /// Decode a motor command
     motor_command_map_t motor_command_;
-    /// List to send messages to serial
-    std::vector<packet_information_t> list_send_;
 
     /// ROS Control interfaces
     hardware_interface::JointStateInterface joint_state_interface_;

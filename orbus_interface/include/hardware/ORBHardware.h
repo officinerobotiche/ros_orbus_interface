@@ -18,7 +18,7 @@ public:
 
 class ORBHardware : public hardware_interface::RobotHW {
 public:
-    ORBHardware(const ros::NodeHandle& nh, const ros::NodeHandle& private_nh, ParserPacket* serial);
+    ORBHardware(const ros::NodeHandle& nh, const ros::NodeHandle& private_nh, ParserPacket* serial, double frequency);
 
     void updateDiagnostics();
 
@@ -58,6 +58,10 @@ protected:
     ros::NodeHandle private_nh_; //Private NameSpace for bridge controller
     ParserPacket* serial_; //Serial object to comunicate with PIC device
     std::string name_board_, version_, name_author_, compiled_, type_board_;
+
+    ros::Timer timer_;
+    /// List to send messages to serial
+    std::vector<packet_information_t> list_send_;
 private:
 
     typedef boost::function<void (std::vector<packet_information_t>*) > callback_add_packet_t;
@@ -89,6 +93,9 @@ private:
     packet_information_t encodeServices(char command, unsigned char* buffer = NULL, size_t len = 0);
     void resetBoard(unsigned int repeat = 3);
     void decodeServices(const char command, const unsigned char* buffer);
+
+    //Timer
+    void timerCallback(const ros::TimerEvent& event);
 
     //process_t get_process(std::string name);
 

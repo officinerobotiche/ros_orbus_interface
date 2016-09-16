@@ -35,7 +35,7 @@ using namespace std;
 
 #define NUMBER_PUB 10
 
-ORBHardware::ORBHardware(const ros::NodeHandle& nh, const ros::NodeHandle &private_nh, ParserPacket* serial)
+ORBHardware::ORBHardware(const ros::NodeHandle& nh, const ros::NodeHandle &private_nh, ParserPacket* serial, double frequency)
 : nh_(nh), private_nh_(private_nh), serial_(serial), init_number_process(false), name_board_("Nothing"), type_board_("Nothing") {
     serial_->addCallback(&ORBHardware::defaultPacket, this);
     serial_->addErrorCallback(&ORBHardware::errorPacket, this);
@@ -57,11 +57,27 @@ ORBHardware::ORBHardware(const ros::NodeHandle& nh, const ros::NodeHandle &priva
     list_packet.push_back(encodeServices(SERVICE_CODE_DATE));
     list_packet.push_back(encodeServices(SERVICE_CODE_BOARD_TYPE));
     serial->parserSendPacket(list_packet);
+
+    //Timer
+    timer_ = nh_.createTimer(ros::Duration(1 / frequency), &ORBHardware::timerCallback, this, false, false);
+    timer_.start();
 }
 
 ORBHardware::~ORBHardware() {
     serial_->clearCallback();
     serial_->clearErrorCallback();
+    timer_.stop();
+}
+
+void ORBHardware::timerCallback(const ros::TimerEvent& event) {
+    /// Send all messages
+    //ROS_INFO_STREAM("Number of Packages: " << list_send_.size());
+    try {
+        serial_->parserSendPacket(list_send_, 3, boost::posix_time::millisec(200));
+        list_send_.clear();     ///< Clear list of commands
+    } catch (exception &e) {
+        ROS_ERROR("%s", e.what());
+    }
 }
 
 void ORBHardware::loadParameter() {
@@ -126,9 +142,8 @@ void ORBHardware::loadParameter() {
 /**
 * External hook to trigger diagnostic update
 */
-void ORBHardware::updateDiagnostics()
-{
-
+void ORBHardware::updateDiagnostics() {
+    //ROS_INFO("I'm here! ORBH");
 }
 
 /**

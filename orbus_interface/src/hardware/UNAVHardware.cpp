@@ -24,8 +24,8 @@ namespace
   const uint8_t LEFT = 0, RIGHT = 1;
 }
 
-UNAVHardware::UNAVHardware(const ros::NodeHandle& nh, const ros::NodeHandle &private_nh, ParserPacket* serial)
-: ORBHardware(nh, private_nh, serial) {
+UNAVHardware::UNAVHardware(const ros::NodeHandle& nh, const ros::NodeHandle &private_nh, ParserPacket* serial, double frequency)
+: ORBHardware(nh, private_nh, serial, frequency) {
 
     /// Verify correct type board
     if (type_board_.compare("Motor Control") != 0) {
@@ -141,22 +141,24 @@ void UNAVHardware::setupLimits(hardware_interface::JointHandle joint_handle, std
     vel_limits_interface_.registerHandle(handle);
 }
 
-void UNAVHardware::updateJointsFromHardware() {
-    //ROS_INFO("Update Joints");
-    /// Send a list of request about position and velocities
-    list_send_.clear();     ///< Clear list of commands
+void UNAVHardware::updateDiagnostics() {
+    ROS_INFO("Update Diagnostic");
+    for(int i = 0; i < NUM_MOTORS; ++i) {
+        motor_command_.bitset.motor = i;
+        motor_command_.bitset.command = MOTOR_DIAGNOSTIC; ///< Set message to receive diagnostic information
+        list_send_.push_back(serial_->createPacket(motor_command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
+    }
 
+    // Recall default diagnostic
+    ORBHardware::updateDiagnostics();
+}
+
+void UNAVHardware::updateJointsFromHardware() {
+    ROS_INFO("Update Joints");
     for(int i = 0; i < NUM_MOTORS; ++i) {
         motor_command_.bitset.motor = i;
         motor_command_.bitset.command = MOTOR_MEASURE; ///< Set message to receive measure information
         list_send_.push_back(serial_->createPacket(motor_command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
-        motor_command_.bitset.command = MOTOR_DIAGNOSTIC; ///< Set message to receive diagnostic information
-        list_send_.push_back(serial_->createPacket(motor_command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
-    }
-    try {
-        serial_->parserSendPacket(list_send_, 3, boost::posix_time::millisec(200));
-    } catch (exception &e) {
-        ROS_ERROR("%s", e.what());
     }
 }
 

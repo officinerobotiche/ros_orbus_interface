@@ -54,6 +54,10 @@ int main(int argc, char **argv) {
     private_nh.param<double>("control_frequency", control_frequency, 10.0);
     private_nh.param<double>("diagnostic_frequency", diagnostic_frequency, 10.0);
 
+    // Frequency to send information via serial
+    // This is the double frequency of the best control_frequency or diagnostic_frequency;
+    double serial_freq = 2*std::max(control_frequency, diagnostic_frequency);
+    ROS_INFO("Max: %f", serial_freq);
     //Serial port configuration
     std::string serial_port_string;
     double baud_rate;
@@ -74,7 +78,7 @@ int main(int argc, char **argv) {
             ROS_INFO("Serial Arduino started");
         }
 
-        UNAVHardware interface(nh, private_nh, serial);
+        UNAVHardware interface(nh, private_nh, serial, serial_freq);
         controller_manager::ControllerManager cm(&interface, nh);
 
         // Setup separate queue and single-threaded spinner to process timer callbacks

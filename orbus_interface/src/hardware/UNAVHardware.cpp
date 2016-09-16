@@ -193,8 +193,9 @@ void UNAVHardware::addParameter(std::vector<packet_information_t>* list_send) {
     for(unsigned int i=0; i < NUM_MOTORS; ++i) {
         command.bitset.motor = i;
         number_motor_string = "motor_" + boost::lexical_cast<std::string>(i);
-        /// PID
-        joints_[i].configurator_pid = new MotorPIDConfigurator(private_nh_, number_motor_string, i, serial_);
+        /// PIDs for Velocity, effort, position
+        joints_[i].configurator_pid_velocity = new MotorPIDConfigurator(private_nh_, number_motor_string, "velocity", i, serial_);
+        joints_[i].configurator_pid_effort = new MotorPIDConfigurator(private_nh_, number_motor_string, "effort", i, serial_);
         /// Parameter motor
         joints_[i].configurator_param = new MotorParamConfigurator(private_nh_, number_motor_string, i, serial_);
         /// Emergency motor
@@ -223,9 +224,9 @@ void UNAVHardware::motorPacket(const unsigned char& command, const message_abstr
         break;
     case MOTOR_DIAGNOSTIC:
         joints_[motor_command_.bitset.motor].current = packet->motor.diagnostic.current;
-        joints_[motor_command_.bitset.motor].temperature = packet->motor.diagnostic.temperature;
+        joints_[motor_command_.bitset.motor].volt = packet->motor.diagnostic.volt;
         // TEMP for test ADC
-        ROS_INFO("motor[%d]: data0[%d] - data1[%d]",motor_command_.bitset.motor, joints_[motor_command_.bitset.motor].current, joints_[motor_command_.bitset.motor].temperature);
+        ROS_INFO("motor[%d]: data0[%d] - data1[%d]",motor_command_.bitset.motor, joints_[motor_command_.bitset.motor].current, joints_[motor_command_.bitset.motor].volt);
         break;
     }
 }

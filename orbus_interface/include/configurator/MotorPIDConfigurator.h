@@ -38,7 +38,7 @@
 
 class MotorPIDConfigurator {
 public:
-    MotorPIDConfigurator(const ros::NodeHandle& nh, std::string name, unsigned int number, ParserPacket* serial);
+    MotorPIDConfigurator(const ros::NodeHandle& nh, std::string path, std::string name, unsigned int number, ParserPacket* serial);
 
     void setParam(motor_parameter_t parameter);
     motor_parameter_t getParam();

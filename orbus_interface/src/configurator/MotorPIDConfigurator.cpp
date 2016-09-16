@@ -33,11 +33,11 @@
 
 using namespace std;
 
-MotorPIDConfigurator::MotorPIDConfigurator(const ros::NodeHandle& nh, std::string name, unsigned int number, ParserPacket *serial)
+MotorPIDConfigurator::MotorPIDConfigurator(const ros::NodeHandle& nh, std::string path, std::string name, unsigned int number, ParserPacket *serial)
     : nh_(nh), serial_(serial)
 {
     //Namespace
-    name_ = name + "/pid";
+    name_ = path + "/pid/" + name;
     // Set command message
     command_.bitset.motor = number;
     command_.bitset.command = MOTOR_VEL_PID;

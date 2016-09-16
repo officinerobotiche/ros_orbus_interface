@@ -87,32 +87,53 @@ MotorParamConfigurator::MotorParamConfigurator(const ros::NodeHandle &nh, std::s
 void MotorParamConfigurator::setParam(motor_parameter_t parameter) {
     motor_parameter_encoder_t encoder = parameter.encoder;
     motor_parameter_bridge_t bridge = parameter.bridge;
-    nh_.setParam(name_ + "/CPR", ((int) encoder.cpr));
     nh_.setParam(name_ + "/Ratio", (double) parameter.ratio);
-    /// Convert from mV in V
-    nh_.setParam(name_ + "/Bridge", ((double)(bridge.volt)/1000));
-    nh_.setParam(name_ + "/Encoder", encoder.position);
     nh_.setParam(name_ + "/Rotation", parameter.rotation);
-    nh_.setParam(name_ + "/Enable", bridge.enable);
+
+    nh_.setParam(name_ + "/Bridge/Enable", (int) bridge.enable);
+    nh_.setParam(name_ + "/Bridge/PWM_dead_zone", (int) bridge.pwm_dead_zone);
+    nh_.setParam(name_ + "/Bridge/PWM_frequency", (int) bridge.pwm_frequency);
+    nh_.setParam(name_ + "/Bridge/Volt_gain", (double) bridge.volt_gain);
+    nh_.setParam(name_ + "/Bridge/Current_offset", (double) bridge.current_offset);
+    nh_.setParam(name_ + "/Bridge/Current_gain", (double) bridge.current_gain);
+
+    nh_.setParam(name_ + "/Encoder/CPR", (int) encoder.cpr);
+    nh_.setParam(name_ + "/Encoder/Position", (int) encoder.type.position);
+    nh_.setParam(name_ + "/Encoder/Z_index", (int) encoder.type.z_index);
+    nh_.setParam(name_ + "/Encoder/Channels", (int) (encoder.type.channels + 1));
 }
 
 motor_parameter_t MotorParamConfigurator::getParam() {
     motor_parameter_t parameter;
     int temp_int;
     double temp_double;
-    nh_.getParam(name_ + "/CPR", temp_int);
-    parameter.encoder.cpr = (uint16_t) temp_int;
     nh_.getParam(name_ + "/Ratio", temp_double);
     parameter.ratio = (float) temp_double;
-    /// Convert from mV in V
-    nh_.getParam(name_ + "/Bridge", temp_double);
-    parameter.bridge.volt = (uint16_t) temp_double*1000;
-    nh_.getParam(name_ + "/Encoder", temp_int);
-    parameter.encoder.position = (uint8_t) temp_int;
     nh_.getParam(name_ + "/Rotation", temp_int);
     parameter.rotation = (int8_t) temp_int;
-    nh_.getParam(name_ + "/Enable", temp_int);
+
+    nh_.getParam(name_ + "/Bridge/Enable", temp_int);
     parameter.bridge.enable = (uint8_t) temp_int;
+    nh_.getParam(name_ + "/Bridge/PWM_dead_zone", temp_int);
+    parameter.bridge.pwm_dead_zone = (uint16_t) temp_int;
+    nh_.getParam(name_ + "/Bridge/PWM_requency", temp_int);
+    parameter.bridge.pwm_frequency = (uint16_t) temp_int;
+    nh_.getParam(name_ + "/Bridge/Volt_gain", temp_double);
+    parameter.bridge.volt_gain = (float) temp_double;
+    nh_.getParam(name_ + "/Bridge/Current_offset", temp_double);
+    parameter.bridge.current_offset = (float) temp_double;
+    nh_.getParam(name_ + "/Bridge/Current_gain", temp_double);
+    parameter.bridge.current_gain = (float) temp_double;
+
+    nh_.getParam(name_ + "/Encoder/CPR", temp_int);
+    parameter.encoder.cpr = (uint16_t) temp_int;
+    nh_.getParam(name_ + "/Encoder/Position", temp_int);
+    parameter.encoder.type.position = (uint8_t) temp_int;
+    nh_.getParam(name_ + "/Encoder/Z_index", temp_int);
+    parameter.encoder.type.z_index = (uint8_t) temp_int;
+    nh_.getParam(name_ + "/Encoder/Channels", temp_int);
+    parameter.encoder.type.channels = (uint8_t) (temp_int - 1);
+
     return parameter;
 }
 
@@ -128,12 +149,22 @@ void MotorParamConfigurator::sendToSerial(motor_parameter_t parameter) {
 void MotorParamConfigurator::reconfigureCB(orbus_interface::UnavParameterConfig &config, uint32_t level) {
 
     motor_parameter_t param;
-    param.encoder.cpr = (uint16_t) config.CPR;
-    param.bridge.enable = (uint8_t) config.Enable;
-    param.encoder.position = (uint8_t) config.Encoder;
     param.ratio = (float) config.Ratio;
     param.rotation = (int8_t) config.Rotation;
-    param.bridge.volt = (int16_t) (config.Bridge*1000);
+
+    param.bridge.enable = (uint8_t) config.Enable;
+    param.bridge.pwm_dead_zone = (uint16_t) config.PWM_Dead_zone;
+    param.bridge.pwm_frequency = (uint16_t) config.PWM_Frequency;
+    param.bridge.volt_gain = (float) config.Voltage_Gain;
+    param.bridge.current_offset = (float) config.Current_Offset;
+    param.bridge.current_gain = (float) config.Current_Gain;
+
+    param.encoder.cpr = (uint16_t) config.CPR;
+    param.encoder.type.position = (uint8_t) config.Encoder_Position;
+    param.encoder.type.z_index = (uint8_t) config.Encoder_Z_index;
+    param.encoder.type.channels = (uint8_t) (config.Encoder_Channels - 1);
+
+
 
     //The first time we're called, we just want to make sure we have the
     //original configuration

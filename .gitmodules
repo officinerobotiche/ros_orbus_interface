@@ -1,3 +1,0 @@
-[submodule "orbus_interface/lib_orb_cpp"]
-	path = orbus_interface/lib_orb_cpp
-	url = https://github.com/officinerobotiche/orblibcpp

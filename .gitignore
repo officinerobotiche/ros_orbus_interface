@@ -3,3 +3,7 @@
 *.autosave
 build-*-Desktop-Default/
 *-build/
+
+# Library
+
+orbus_interface/lib_orb_cpp/

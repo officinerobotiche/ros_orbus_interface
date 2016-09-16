@@ -61,7 +61,7 @@ private:
     */
     struct Joint
     {
-      MotorPIDConfigurator *configurator_pid;
+      MotorPIDConfigurator *configurator_pid_velocity, *configurator_pid_effort, *configurator_pid_position;
       MotorParamConfigurator *configurator_param;
       MotorEmergencyConfigurator *configurator_emergency;
       // Actual state
@@ -74,6 +74,7 @@ private:
       double velocity_command;
 
       int current;
+      int volt;
       int temperature;
 
       Joint() : position(0), velocity(0), effort(0), velocity_command(0) { }

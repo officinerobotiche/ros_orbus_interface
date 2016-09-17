@@ -56,6 +56,8 @@ MotorParamConfigurator::MotorParamConfigurator(const ros::NodeHandle &nh, Serial
         /// Update Dynamic reconfigurator
         orbus_interface::UnavParameterConfig config;
         convertParam(config, parameter);
+        config.restore_defaults = false;
+        config.Store_in_EEPROM = false;
         boost::recursive_mutex::scoped_lock dyn_reconf_lock(config_mutex);
         dsrv_.updateConfig(config);
         dyn_reconf_lock.unlock();

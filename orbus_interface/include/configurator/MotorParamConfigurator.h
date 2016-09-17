@@ -46,7 +46,7 @@ public:
     void convertParam(orbus_interface::UnavParameterConfig &config, motor_parameter_t parameter);
 
 private:
-    boost::recursive_mutex config_mutex; //I am not sure whether I need it
+    boost::recursive_mutex config_mutex;
     /// Associate name space
     std::string name_;
     /// Private namespace

@@ -43,8 +43,10 @@ public:
     void setParam(motor_parameter_t parameter);
     motor_parameter_t getParam();
 
-private:
+    void convertParam(orbus_interface::UnavParameterConfig &config, motor_parameter_t parameter);
 
+private:
+    boost::recursive_mutex config_mutex; //I am not sure whether I need it
     /// Associate name space
     std::string name_;
     /// Private namespace
@@ -60,6 +62,6 @@ private:
 
     bool setup_;
 
-    dynamic_reconfigure::Server<orbus_interface::UnavParameterConfig> *dsrv_;
+    dynamic_reconfigure::Server<orbus_interface::UnavParameterConfig> dsrv_;
     void reconfigureCB(orbus_interface::UnavParameterConfig &config, uint32_t level);
 };

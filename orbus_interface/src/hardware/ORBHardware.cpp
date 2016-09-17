@@ -39,7 +39,7 @@ ORBHardware::ORBHardware(const ros::NodeHandle& nh, const ros::NodeHandle &priva
 : nh_(nh), private_nh_(private_nh), serial_(serial), name_board_("Nothing"), type_board_("Nothing") {
 
     serial_->addCallback(&ORBHardware::defaultPacket, this);
-    //serial_->addErrorCallback(&ORBHardware::errorPacket, this);
+    serial_->addErrorCallback(&ORBHardware::errorPacket, this);
 
     //Timer
     timer_ = nh_.createTimer(ros::Duration(1 / frequency), &ORBHardware::timerCallback, this, false, false);
@@ -95,9 +95,9 @@ void ORBHardware::connectCallback(const ros::SingleSubscriberPublisher& pub) {
     ROS_INFO("Connect: %s - %s", pub.getSubscriberName().c_str(), pub.getTopic().c_str());
 }
 
-//void ORBHardware::errorPacket(const unsigned char& command, const message_abstract_u* packet) {
-//    ROS_ERROR("Error in Packet: %d", command);
-//}
+void ORBHardware::errorPacket(const unsigned char& command, const message_abstract_u* packet) {
+    ROS_ERROR("Error in Packet: %d", command);
+}
 
 void ORBHardware::defaultPacket(const unsigned char& command, const message_abstract_u* packet) {
     ROS_INFO("Default Packet: %d", command);

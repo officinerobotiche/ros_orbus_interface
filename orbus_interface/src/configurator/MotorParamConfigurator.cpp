@@ -34,7 +34,7 @@
 using namespace std;
 
 MotorParamConfigurator::MotorParamConfigurator(const ros::NodeHandle &nh, SerialController *serial, std::string name, unsigned int number)
-    : nh_(nh), serial_(serial)
+    : nh_(nh), serial_(serial), dsrv_(config_mutex, ros::NodeHandle("~" + name))
 {
     //Namespace
     name_ = name;// + "/param";
@@ -52,27 +52,53 @@ MotorParamConfigurator::MotorParamConfigurator(const ros::NodeHandle &nh, Serial
         /// Send configuration to board
         motor_parameter_t parameter = getParam();
         serial_->addPacketSend(serial_->createDataPacket(command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & parameter));
+
+        /// Update Dynamic reconfigurator
+        orbus_interface::UnavParameterConfig config;
+        convertParam(config, parameter);
+        boost::recursive_mutex::scoped_lock dyn_reconf_lock(config_mutex);
+        dsrv_.updateConfig(config);
+        dyn_reconf_lock.unlock();
     }
 
-    //Load dynamic reconfigure
-    dsrv_ = new dynamic_reconfigure::Server<orbus_interface::UnavParameterConfig>(ros::NodeHandle("~" + name_));
     dynamic_reconfigure::Server<orbus_interface::UnavParameterConfig>::CallbackType cb = boost::bind(&MotorParamConfigurator::reconfigureCB, this, _1, _2);
-    dsrv_->setCallback(cb);
+    dsrv_.setCallback(cb);
+
 }
 
+void MotorParamConfigurator::convertParam(orbus_interface::UnavParameterConfig &config, motor_parameter_t parameter) {
+    config.Ratio = parameter.ratio;
+    config.Rotation = parameter.rotation;
+    config.Cascade_control = parameter.cascade_control ;
+
+    config.H_bridge_enable = parameter.bridge.enable;
+    config.PWM_Dead_zone = parameter.bridge.pwm_dead_zone;
+    config.PWM_Frequency = parameter.bridge.pwm_frequency;
+    config.Voltage_Offset = parameter.bridge.volt_offset;
+    config.Voltage_Gain = parameter.bridge.volt_gain;
+    config.Current_Offset = parameter.bridge.current_offset;
+    config.Current_Gain = parameter.bridge.current_gain;
+
+    config.CPR = parameter.encoder.cpr;
+    config.Encoder_Position = parameter.encoder.type.position;
+    config.Encoder_Z_index = parameter.encoder.type.z_index;
+    config.Encoder_Channels = parameter.encoder.type.channels + 1;
+}
 
 void MotorParamConfigurator::setParam(motor_parameter_t parameter) {
     motor_parameter_encoder_t encoder = parameter.encoder;
     motor_parameter_bridge_t bridge = parameter.bridge;
     nh_.setParam(name_ + "/Ratio", (double) parameter.ratio);
     nh_.setParam(name_ + "/Rotation", (int) parameter.rotation);
+    nh_.setParam(name_ + "/Cascade_control", (int) parameter.cascade_control);
 
     nh_.setParam(name_ + "/Bridge/Enable", (int) bridge.enable);
-    nh_.setParam(name_ + "/Bridge/PWM_dead_zone", (int) bridge.pwm_dead_zone);
-    nh_.setParam(name_ + "/Bridge/PWM_frequency", (int) bridge.pwm_frequency);
-    nh_.setParam(name_ + "/Bridge/Volt_gain", (double) bridge.volt_gain);
-    nh_.setParam(name_ + "/Bridge/Current_offset", (double) bridge.current_offset);
-    nh_.setParam(name_ + "/Bridge/Current_gain", (double) bridge.current_gain);
+    nh_.setParam(name_ + "/Bridge/PWM_Dead_zone", (int) bridge.pwm_dead_zone);
+    nh_.setParam(name_ + "/Bridge/PWM_Frequency", (int) bridge.pwm_frequency);
+    nh_.setParam(name_ + "/Bridge/Volt_Offset", (double) bridge.volt_offset);
+    nh_.setParam(name_ + "/Bridge/Volt_Gain", (double) bridge.volt_gain);
+    nh_.setParam(name_ + "/Bridge/Current_Offset", (double) bridge.current_offset);
+    nh_.setParam(name_ + "/Bridge/Current_Gain", (double) bridge.current_gain);
 
     nh_.setParam(name_ + "/Encoder/CPR", (int) encoder.cpr);
     nh_.setParam(name_ + "/Encoder/Position", (int) encoder.type.position);
@@ -88,18 +114,22 @@ motor_parameter_t MotorParamConfigurator::getParam() {
     parameter.ratio = (float) temp_double;
     nh_.getParam(name_ + "/Rotation", temp_int);
     parameter.rotation = (int8_t) temp_int;
+    nh_.getParam(name_ + "/Cascade_control", temp_int);
+    parameter.cascade_control = (int8_t) temp_int;
 
     nh_.getParam(name_ + "/Bridge/Enable", temp_int);
     parameter.bridge.enable = (uint8_t) temp_int;
-    nh_.getParam(name_ + "/Bridge/PWM_dead_zone", temp_int);
+    nh_.getParam(name_ + "/Bridge/PWM_Dead_zone", temp_int);
     parameter.bridge.pwm_dead_zone = (uint16_t) temp_int;
-    nh_.getParam(name_ + "/Bridge/PWM_requency", temp_int);
+    nh_.getParam(name_ + "/Bridge/PWM_Frequency", temp_int);
     parameter.bridge.pwm_frequency = (uint16_t) temp_int;
-    nh_.getParam(name_ + "/Bridge/Volt_gain", temp_double);
+    nh_.getParam(name_ + "/Bridge/Volt_Offset", temp_double);
+    parameter.bridge.volt_offset = (float) temp_double;
+    nh_.getParam(name_ + "/Bridge/Volt_Gain", temp_double);
     parameter.bridge.volt_gain = (float) temp_double;
-    nh_.getParam(name_ + "/Bridge/Current_offset", temp_double);
+    nh_.getParam(name_ + "/Bridge/Current_Offset", temp_double);
     parameter.bridge.current_offset = (float) temp_double;
-    nh_.getParam(name_ + "/Bridge/Current_gain", temp_double);
+    nh_.getParam(name_ + "/Bridge/Current_Gain", temp_double);
     parameter.bridge.current_gain = (float) temp_double;
 
     nh_.getParam(name_ + "/Encoder/CPR", temp_int);
@@ -119,10 +149,12 @@ void MotorParamConfigurator::reconfigureCB(orbus_interface::UnavParameterConfig 
     motor_parameter_t parameter;
     parameter.ratio = (float) config.Ratio;
     parameter.rotation = (int8_t) config.Rotation;
+    parameter.cascade_control = (int8_t) config.Cascade_control;
 
-    parameter.bridge.enable = (uint8_t) config.Enable;
+    parameter.bridge.enable = (uint8_t) config.H_bridge_enable;
     parameter.bridge.pwm_dead_zone = (uint16_t) config.PWM_Dead_zone;
     parameter.bridge.pwm_frequency = (uint16_t) config.PWM_Frequency;
+    parameter.bridge.volt_offset = (float) config.Voltage_Offset;
     parameter.bridge.volt_gain = (float) config.Voltage_Gain;
     parameter.bridge.current_offset = (float) config.Current_Offset;
     parameter.bridge.current_gain = (float) config.Current_Gain;

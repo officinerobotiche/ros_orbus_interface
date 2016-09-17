@@ -33,49 +33,25 @@
 
 using namespace std;
 
-MotorPIDConfigurator::MotorPIDConfigurator(const ros::NodeHandle& nh, std::string path, std::string name, unsigned int number, ParserPacket *serial)
+MotorPIDConfigurator::MotorPIDConfigurator(const ros::NodeHandle& nh, SerialController *serial, std::string path, std::string name, unsigned int number, unsigned int type)
     : nh_(nh), serial_(serial)
 {
     //Namespace
     name_ = path + "/pid/" + name;
     // Set command message
     command_.bitset.motor = number;
-    command_.bitset.command = MOTOR_VEL_PID;
+    command_.bitset.command = type;
     // Set message to frequency information
     last_frequency_.hashmap = HASHMAP_MOTOR;
     last_frequency_.number = 0; ///< TODO To correct
 
     /// Check existence namespace otherwise get information from board
     if (!nh_.hasParam(name_)) {
-        /// Build a list of messages
-        std::vector<packet_information_t> list_send;
-        list_send.push_back(serial->createPacket(command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
-        //list_send.push_back(serial_->createDataPacket(SYSTEM_TASK_FRQ, HASHMAP_MOTOR, (message_abstract_u*) & last_frequency_));
-
-        /// Build a packet
-        packet_t packet = serial->encoder(list_send);
-        /// Receive information
-        vector<packet_information_t> receive = serial->parsing(serial->sendSyncPacket(packet));
-        /// Decode all messages
-        for (vector<packet_information_t>::iterator list_iter = receive.begin(); list_iter != receive.end(); ++list_iter) {
-            packet_information_t packet = (*list_iter);
-            switch (packet.option) {
-            case PACKET_NACK:
-                ///< Send a message ERROR
-                break;
-            case PACKET_DATA:
-                if (packet.type == HASHMAP_MOTOR) {
-                    if(packet.command = command_.command_message) {
-                        nh_.setParam(name_ + "/Kp", packet.message.motor.pid.kp);
-                        nh_.setParam(name_ + "/Ki", packet.message.motor.pid.ki);
-                        nh_.setParam(name_ + "/Kd", packet.message.motor.pid.kd);
-                    }
-                }
-                break;
-            }
-        }
+        serial_->addPacketSend(serial_->createPacket(command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
     } else {
-
+        /// Send configuration to board
+        motor_pid_t parameter = getParam();
+        serial_->addPacketSend(serial_->createDataPacket(command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & parameter));
     }
 
     //Load dynamic reconfigure
@@ -84,22 +60,33 @@ MotorPIDConfigurator::MotorPIDConfigurator(const ros::NodeHandle& nh, std::strin
     dsrv_->setCallback(cb);
 }
 
-void MotorPIDConfigurator::sendToSerial(std::vector<packet_information_t>& list_send) {
-    if(list_send.size() != 0) {
-        try {
-            serial_->parserSendPacket(list_send, 3, boost::posix_time::millisec(200));
-        } catch (exception &e) {
-            ROS_ERROR("%s", e.what());
-        }
-    }
+void MotorPIDConfigurator::setParam(motor_pid_t parameter) {
+    nh_.setParam(name_ + "/Kp", parameter.kp);
+    nh_.setParam(name_ + "/Ki", parameter.ki);
+    nh_.setParam(name_ + "/Kd", parameter.kd);
+}
+
+motor_pid_t MotorPIDConfigurator::getParam() {
+    motor_pid_t pid;
+
+    double temp_double;
+
+    nh_.getParam(name_ + "/Kp", temp_double);
+    pid.kp = (float) temp_double;
+    nh_.getParam(name_ + "/Ki", temp_double);
+    pid.ki = (float) temp_double;
+    nh_.getParam(name_ + "/Kd", temp_double);
+    pid.kd = (float) temp_double;
+
+    return pid;
 }
 
 void MotorPIDConfigurator::reconfigureCB(orbus_interface::UnavPIDConfig &config, uint32_t level) {
 
     motor_pid_t pid;
-    pid.kp = config.Kp;
-    pid.ki = config.Ki;
-    pid.kd = config.Kd;
+    pid.kp = (float) config.Kp;
+    pid.ki = (float) config.Ki;
+    pid.kd = (float) config.Kd;
 
     //The first time we're called, we just want to make sure we have the
     //original configuration
@@ -133,5 +120,6 @@ void MotorPIDConfigurator::reconfigureCB(orbus_interface::UnavPIDConfig &config,
         last_frequency_.data = config.Frequency;
     }
 
-    sendToSerial(list_send);
+    /// Send to serial
+    serial_->addPacketSend(serial_->createDataPacket(command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & pid));
 }

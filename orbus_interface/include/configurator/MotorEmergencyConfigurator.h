@@ -29,23 +29,28 @@
 *
 */
 
-#include "serial_parser_packet/ParserPacket.h"
 
 #include <ros/ros.h>
+
+#include "hardware/SerialController.h"
 
 #include <dynamic_reconfigure/server.h>
 #include <orbus_interface/UnavEmergencyConfig.h>
 
 class MotorEmergencyConfigurator {
 public:
-    MotorEmergencyConfigurator(const ros::NodeHandle& nh, std::string name, unsigned int number, ParserPacket* serial);
+    MotorEmergencyConfigurator(const ros::NodeHandle& nh, SerialController *serial, std::string name, unsigned int number);
+
+    void setParam(motor_emergency_t emergency);
+    motor_emergency_t getParam();
+
 private:
     /// Associate name space
     std::string name_;
     /// Private namespace
     ros::NodeHandle nh_;
     /// Serial port
-    ParserPacket* serial_;
+    SerialController* serial_;
     /// Command map
     motor_command_map_t command_;
 

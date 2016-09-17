@@ -3,7 +3,7 @@
 
 #include <ros/ros.h>
 #include <std_srvs/Empty.h>
-#include "serial_parser_packet/ParserPacket.h"
+#include "hardware/SerialController.h"
 #include "hardware_interface/robot_hw.h"
 
 /**
@@ -18,11 +18,9 @@ public:
 
 class ORBHardware : public hardware_interface::RobotHW {
 public:
-    ORBHardware(const ros::NodeHandle& nh, const ros::NodeHandle& private_nh, ParserPacket* serial, double frequency);
+    ORBHardware(const ros::NodeHandle& nh, const ros::NodeHandle& private_nh, SerialController* serial, double frequency);
 
     void updateDiagnostics();
-
-    void reportLoopDuration(const ros::Duration &duration);
 
     virtual ~ORBHardware();
 
@@ -31,13 +29,6 @@ public:
     std::string getNameBoard();
     std::string getTypeBoard();
 
-    void addVectorPacketRequest(const boost::function<void (std::vector<packet_information_t>*) >& callback);
-
-    template <class T> void addVectorPacketRequest(void(T::*fp)(std::vector<packet_information_t>*), T* obj) {
-        addVectorPacketRequest(boost::bind(fp, obj, _1));
-    }
-    void clearVectorPacketRequest();
-
     void addParameterPacketRequest(const boost::function<void (std::vector<packet_information_t>*) >& callback);
 
     template <class T> void addParameterPacketRequest(void(T::*fp)(std::vector<packet_information_t>*), T* obj) {
@@ -45,62 +36,26 @@ public:
     }
     void clearParameterPacketRequest();
 
-    void addTimerEvent(const boost::function<void (const ros::TimerEvent&) >& callback);
-
-    template <class T> void addTimerEvent(void(T::*fp)(const ros::TimerEvent&), T* obj) {
-        addTimerEvent(boost::bind(fp, obj, _1));
-    }
-    void clearTimerEvent();
-
+    // Send messages
+    void addPacketSend(std::vector<packet_information_t> list_packet);
+    void addPacketSend(packet_information_t packet);
 protected:
     //Initialization object
     ros::NodeHandle nh_; //NameSpace for bridge controller
     ros::NodeHandle private_nh_; //Private NameSpace for bridge controller
-    ParserPacket* serial_; //Serial object to comunicate with PIC device
+    SerialController* serial_; //Serial object to comunicate with PIC device
     std::string name_board_, version_, name_author_, compiled_, type_board_;
 
     ros::Timer timer_;
-    /// List to send messages to serial
-    std::vector<packet_information_t> list_send_;
 private:
-
     typedef boost::function<void (std::vector<packet_information_t>*) > callback_add_packet_t;
-    typedef boost::function<void (const ros::TimerEvent&) > callback_timer_event_t;
-    typedef boost::function<bool (const ros::TimerEvent&, std::vector<packet_information_t>*) > callback_add_event_t;
-    callback_add_packet_t callback_add_packet, callback_add_parameter;
-    callback_add_event_t callback_alive_event;
-    callback_timer_event_t callback_timer_event;
+    callback_add_packet_t callback_add_parameter;
 
-    ros::ServiceServer srv_board, srv_process;
-    ros::Publisher pub_time_process;
-
-    //ros_serial_bridge::Process time_process;
-    double step_timer, tm_mill, k_time;
-    int number_process;
-    bool init_number_process;
-    std::map<std::string, int> map_error_serial;
-
-    std::vector<packet_information_t> updatePacket();
-
-    float getTimeProcess(float process_time);
     void errorPacket(const unsigned char& command, const message_abstract_u* packet);
     void defaultPacket(const unsigned char& command, const message_abstract_u* packet);
 
-    std::string getNameError(int number);
-    std::string getBoardSerialError();
-    packet_information_t encodeNameProcess(int number);
-    void requestNameProcess();
-    packet_information_t encodeServices(char command, unsigned char* buffer = NULL, size_t len = 0);
-    void resetBoard(unsigned int repeat = 3);
-    void decodeServices(const char command, const unsigned char* buffer);
-
     //Timer
     void timerCallback(const ros::TimerEvent& event);
-
-    //process_t get_process(std::string name);
-
-    //bool processServiceCallback(ros_serial_bridge::Update::Request &req, ros_serial_bridge::Update::Response&);
-    //bool service_Callback(ros_serial_bridge::Service::Request &req, ros_serial_bridge::Service::Response &msg);
 };
 
 #endif // ORB_HARDWARE_H

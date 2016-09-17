@@ -33,7 +33,7 @@
 
 using namespace std;
 
-MotorParamConfigurator::MotorParamConfigurator(const ros::NodeHandle &nh, std::string name, unsigned int number, ParserPacket *serial)
+MotorParamConfigurator::MotorParamConfigurator(const ros::NodeHandle &nh, SerialController *serial, std::string name, unsigned int number)
     : nh_(nh), serial_(serial)
 {
     //Namespace
@@ -47,34 +47,11 @@ MotorParamConfigurator::MotorParamConfigurator(const ros::NodeHandle &nh, std::s
 
     /// Check existence namespace otherwise get information from board
     if (!nh_.hasParam(name_)) {
-        /// Build a list of messages
-        std::vector<packet_information_t> list_send;
-        list_send.push_back(serial->createPacket(command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
-
-        /// Build a packet
-        packet_t packet = serial->encoder(list_send);
-        /// Receive information
-        vector<packet_information_t> receive = serial->parsing(serial->sendSyncPacket(packet));
-        /// Decode all messages
-        for (vector<packet_information_t>::iterator list_iter = receive.begin(); list_iter != receive.end(); ++list_iter) {
-            packet_information_t packet = (*list_iter);
-            switch (packet.option) {
-            case PACKET_NACK:
-                ///< Send a message ERROR
-                break;
-            case PACKET_DATA:
-                if (packet.type == HASHMAP_MOTOR) {
-                    if(packet.command = command_.command_message) {
-                        /// Set paramater
-                        setParam(packet.message.motor.parameter);
-                    }
-                }
-                break;
-            }
-        }
+        serial_->addPacketSend(serial_->createPacket(command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
     } else {
         /// Send configuration to board
-        sendToSerial(getParam());
+        motor_parameter_t parameter = getParam();
+        serial_->addPacketSend(serial_->createDataPacket(command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & parameter));
     }
 
     //Load dynamic reconfigure
@@ -88,7 +65,7 @@ void MotorParamConfigurator::setParam(motor_parameter_t parameter) {
     motor_parameter_encoder_t encoder = parameter.encoder;
     motor_parameter_bridge_t bridge = parameter.bridge;
     nh_.setParam(name_ + "/Ratio", (double) parameter.ratio);
-    nh_.setParam(name_ + "/Rotation", parameter.rotation);
+    nh_.setParam(name_ + "/Rotation", (int) parameter.rotation);
 
     nh_.setParam(name_ + "/Bridge/Enable", (int) bridge.enable);
     nh_.setParam(name_ + "/Bridge/PWM_dead_zone", (int) bridge.pwm_dead_zone);
@@ -137,32 +114,23 @@ motor_parameter_t MotorParamConfigurator::getParam() {
     return parameter;
 }
 
-void MotorParamConfigurator::sendToSerial(motor_parameter_t parameter) {
-    packet_t packet_send = serial_->encoder(serial_->createDataPacket(command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & parameter));
-    try {
-        serial_->sendSyncPacket(packet_send, 3, boost::posix_time::millisec(200));
-    } catch (exception &e) {
-        ROS_ERROR("%s", e.what());
-    }
-}
-
 void MotorParamConfigurator::reconfigureCB(orbus_interface::UnavParameterConfig &config, uint32_t level) {
 
-    motor_parameter_t param;
-    param.ratio = (float) config.Ratio;
-    param.rotation = (int8_t) config.Rotation;
+    motor_parameter_t parameter;
+    parameter.ratio = (float) config.Ratio;
+    parameter.rotation = (int8_t) config.Rotation;
 
-    param.bridge.enable = (uint8_t) config.Enable;
-    param.bridge.pwm_dead_zone = (uint16_t) config.PWM_Dead_zone;
-    param.bridge.pwm_frequency = (uint16_t) config.PWM_Frequency;
-    param.bridge.volt_gain = (float) config.Voltage_Gain;
-    param.bridge.current_offset = (float) config.Current_Offset;
-    param.bridge.current_gain = (float) config.Current_Gain;
+    parameter.bridge.enable = (uint8_t) config.Enable;
+    parameter.bridge.pwm_dead_zone = (uint16_t) config.PWM_Dead_zone;
+    parameter.bridge.pwm_frequency = (uint16_t) config.PWM_Frequency;
+    parameter.bridge.volt_gain = (float) config.Voltage_Gain;
+    parameter.bridge.current_offset = (float) config.Current_Offset;
+    parameter.bridge.current_gain = (float) config.Current_Gain;
 
-    param.encoder.cpr = (uint16_t) config.CPR;
-    param.encoder.type.position = (uint8_t) config.Encoder_Position;
-    param.encoder.type.z_index = (uint8_t) config.Encoder_Z_index;
-    param.encoder.type.channels = (uint8_t) (config.Encoder_Channels - 1);
+    parameter.encoder.cpr = (uint16_t) config.CPR;
+    parameter.encoder.type.position = (uint8_t) config.Encoder_Position;
+    parameter.encoder.type.z_index = (uint8_t) config.Encoder_Z_index;
+    parameter.encoder.type.channels = (uint8_t) (config.Encoder_Channels - 1);
 
 
 
@@ -170,18 +138,20 @@ void MotorParamConfigurator::reconfigureCB(orbus_interface::UnavParameterConfig 
     //original configuration
     if(!setup_)
     {
-      last_param_ = param;
+      last_param_ = parameter;
       default_param_ = last_param_;
       setup_ = true;
       return;
     }
 
     if(config.restore_defaults) {
-      param = default_param_;
+      parameter = default_param_;
       //if someone sets restore defaults on the parameter server, prevent looping
       config.restore_defaults = false;
     }
+
     /// Send to serial
-    sendToSerial(param);
-    last_param_ = param;
+    serial_->addPacketSend(serial_->createDataPacket(command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & parameter));
+
+    last_param_ = parameter;
 }

@@ -30,7 +30,6 @@ void controlLoop(UNAVHardware &orb,
   last_time = this_time;
 
   // Process control loop
-  orb.reportLoopDuration(elapsed);
   orb.updateJointsFromHardware();
   cm.update(ros::Time::now(), elapsed);
   orb.writeCommandsToHardware(elapsed);
@@ -56,8 +55,7 @@ int main(int argc, char **argv) {
 
     // Frequency to send information via serial
     // This is the double frequency of the best control_frequency or diagnostic_frequency;
-    double serial_freq = 2*std::max(control_frequency, diagnostic_frequency);
-    ROS_INFO("Max: %f", serial_freq);
+    double serial_freq = std::max(control_frequency, diagnostic_frequency);
     //Serial port configuration
     std::string serial_port_string;
     double baud_rate;
@@ -65,11 +63,11 @@ int main(int argc, char **argv) {
     private_nh.param<std::string>("serial_port", serial_port_string, "/dev/ttyUSB0");
     private_nh.param<double>("serial_rate", baud_rate, 115200);
     private_nh.param<bool>("serial_arduino", arduino, false);
-    ParserPacket* serial;
+    SerialController* serial;
 
     ROS_INFO_STREAM("Open Serial " << serial_port_string << ":" << baud_rate);
     try {
-        serial = new ParserPacket(serial_port_string.c_str(), baud_rate);
+        serial = new SerialController(serial_port_string.c_str(), baud_rate);
         //If protocol on arduino
         if(arduino) {
             int arduino = 2;
@@ -78,6 +76,7 @@ int main(int argc, char **argv) {
             ROS_INFO("Serial Arduino started");
         }
 
+        ROS_INFO("Frequency serial sender: %f", serial_freq);
         UNAVHardware interface(nh, private_nh, serial, serial_freq);
         controller_manager::ControllerManager cm(&interface, nh);
 

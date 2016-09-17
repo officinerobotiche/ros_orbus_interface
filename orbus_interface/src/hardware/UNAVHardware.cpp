@@ -24,17 +24,19 @@ namespace
   const uint8_t LEFT = 0, RIGHT = 1;
 }
 
-UNAVHardware::UNAVHardware(const ros::NodeHandle& nh, const ros::NodeHandle &private_nh, ParserPacket* serial, double frequency)
+UNAVHardware::UNAVHardware(const ros::NodeHandle& nh, const ros::NodeHandle &private_nh, SerialController *serial, double frequency)
 : ORBHardware(nh, private_nh, serial, frequency) {
 
-    /// Verify correct type board
-    if (type_board_.compare("Motor Control") != 0) {
-        throw (controller_exception("Other board: " + type_board_));
-    }
+//    /// Verify correct type board
+//    if (type_board_.compare("Motor Control") != 0) {
+//        throw (controller_exception("Other board: " + type_board_));
+//    }
+    name_board_ = "unav";
+    type_board_ = "Motor Control";
 
     /// Added all callback to receive information about messages
     serial->addCallback(&UNAVHardware::motorPacket, this, HASHMAP_MOTOR);
-    addParameterPacketRequest(&UNAVHardware::addParameter, this);
+    addParameterPacketRequest(&UNAVHardware::loadMotorParameter, this);
 
     /// Load all parameters
     loadParameter();
@@ -58,7 +60,7 @@ void UNAVHardware::initializeDiagnostics() {
     {
         std::string number_motor_string = "motor_" + boost::lexical_cast<std::string>(i);
         /// Build the diagnostic motor controller
-        joints_[i].diagnosticMotor = new DiagnosticMotor(private_nh_, number_motor_string, joints_[i].name);
+        joints_[i].diagnosticMotor = new DiagnosticMotor(private_nh_, number_motor_string, number_motor_string);
     }
 }
 
@@ -66,8 +68,9 @@ void UNAVHardware::registerControlInterfaces() {
     /// Build harware interfaces
     for (unsigned int i = 0; i < NUM_MOTORS; i++)
     {
+        string number_motor_string = "motor_" + boost::lexical_cast<std::string>(i);
         /// Joint hardware interface
-        hardware_interface::JointStateHandle joint_state_handle(joints_[i].name,
+        hardware_interface::JointStateHandle joint_state_handle(number_motor_string,
                                                                 &joints_[i].position, &joints_[i].velocity, &joints_[i].effort);
         joint_state_interface_.registerHandle(joint_state_handle);
 
@@ -76,16 +79,15 @@ void UNAVHardware::registerControlInterfaces() {
                     joint_state_handle, &joints_[i].velocity_command);
         velocity_joint_interface_.registerHandle(joint_handle);
 
-        setupLimits(joint_handle, joints_[i].name, i);
+        setupLimits(joint_handle, number_motor_string, i);
 
     }
     /// Register interfaces
     registerInterface(&joint_state_interface_);
     registerInterface(&velocity_joint_interface_);
-
 }
 
-void UNAVHardware::setupLimits(hardware_interface::JointHandle joint_handle, std::string name, int i) {
+void UNAVHardware::setupLimits(hardware_interface::JointHandle joint_handle, std::string name, const int i) {
     /// Add a velocity joint limits infomations
     /// Populate with any of the methods presented in the previous example...
     joint_limits_interface::JointLimits limits;
@@ -125,14 +127,9 @@ void UNAVHardware::setupLimits(hardware_interface::JointHandle joint_handle, std
     constraint.torque = -1;
     motor_command_map_t command;
     command.bitset.motor = i;
-    command.bitset.motor = MOTOR_CONSTRAINT;
+    command.bitset.command = MOTOR_CONSTRAINT;
 
-    packet_t packet_send = serial_->encoder(serial_->createDataPacket(command.command_message, HASHMAP_MOTOR, (message_abstract_u*) & constraint));
-    try {
-        serial_->sendSyncPacket(packet_send, 3, boost::posix_time::millisec(200));
-    } catch (exception &e) {
-        ROS_ERROR("%s", e.what());
-    }
+    serial_->addPacketSend(serial_->createDataPacket(command.command_message, HASHMAP_MOTOR, (message_abstract_u*) & constraint));
 
     joint_limits_interface::VelocityJointSoftLimitsHandle handle(joint_handle, // We read the state and read/write the command
                                                                  limits,       // Limits spec
@@ -142,11 +139,11 @@ void UNAVHardware::setupLimits(hardware_interface::JointHandle joint_handle, std
 }
 
 void UNAVHardware::updateDiagnostics() {
-    ROS_INFO("Update Diagnostic");
+    //ROS_INFO("Update Diagnostic");
     for(int i = 0; i < NUM_MOTORS; ++i) {
         motor_command_.bitset.motor = i;
         motor_command_.bitset.command = MOTOR_DIAGNOSTIC; ///< Set message to receive diagnostic information
-        list_send_.push_back(serial_->createPacket(motor_command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
+        serial_->addPacketSend(serial_->createPacket(motor_command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
     }
 
     // Recall default diagnostic
@@ -154,11 +151,11 @@ void UNAVHardware::updateDiagnostics() {
 }
 
 void UNAVHardware::updateJointsFromHardware() {
-    ROS_INFO("Update Joints");
+    //ROS_INFO("Update Joints");
     for(int i = 0; i < NUM_MOTORS; ++i) {
         motor_command_.bitset.motor = i;
         motor_command_.bitset.command = MOTOR_MEASURE; ///< Set message to receive measure information
-        list_send_.push_back(serial_->createPacket(motor_command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
+        serial_->addPacketSend(serial_->createPacket(motor_command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
     }
 }
 
@@ -169,7 +166,6 @@ void UNAVHardware::writeCommandsToHardware(ros::Duration period) {
     // Note: one can also enforce limits on a per-handle basis: handle.enforceLimits(period)
     vel_limits_interface_.enforceLimits(period);
 
-    list_send_.clear();     ///< Clear list of commands
     motor_command_.bitset.command = MOTOR_VEL_REF; ///< Set command to velocity control
     for(int i = 0; i < NUM_MOTORS; ++i) {
         //Build a command message
@@ -186,34 +182,27 @@ void UNAVHardware::writeCommandsToHardware(ros::Duration period) {
             velocity = (motor_control_t) velocity_long;
         }
         // <<<<< Saturation on 16 bit values
-        list_send_.push_back(serial_->createDataPacket(motor_command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & velocity));
-    }
-    /// Send message
-    try {
-        serial_->parserSendPacket(list_send_, 3, boost::posix_time::millisec(200));
-    } catch (exception &e) {
-        ROS_ERROR("%s", e.what());
+        serial_->addPacketSend(serial_->createDataPacket(motor_command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & velocity));
     }
 }
 
-void UNAVHardware::addParameter(std::vector<packet_information_t>* list_send) {
+void UNAVHardware::loadMotorParameter(std::vector<packet_information_t>* list_send) {
     motor_command_map_t command;
     std::string number_motor_string;
     for(unsigned int i=0; i < NUM_MOTORS; ++i) {
         command.bitset.motor = i;
         number_motor_string = "motor_" + boost::lexical_cast<std::string>(i);
-        /// Name motor
-        private_nh_.getParam(number_motor_string + "/name", joints_[i].name);
         /// Check name and path
         //ROS_INFO_STREAM("Path: " << number_motor_string << "/name - Name: " << joints_[i].name);
 
         /// PIDs for Velocity, effort, position
-        joints_[i].configurator_pid_velocity = new MotorPIDConfigurator(private_nh_, number_motor_string, "velocity", i, serial_);
-        joints_[i].configurator_pid_effort = new MotorPIDConfigurator(private_nh_, number_motor_string, "effort", i, serial_);
+        joints_[i].configurator_pid_velocity = new MotorPIDConfigurator(private_nh_, serial_, number_motor_string, "velocity", i,  MOTOR_VEL_PID);
+        /// TODO after configuration inside unav
+        //joints_[i].configurator_pid_effort = new MotorPIDConfigurator(private_nh_, serial_, number_motor_string, "effort", i, MOTOR_TORQUE_PID);
         /// Parameter motor
-        joints_[i].configurator_param = new MotorParamConfigurator(private_nh_, number_motor_string, i, serial_);
+        joints_[i].configurator_param = new MotorParamConfigurator(private_nh_, serial_, number_motor_string, i);
         /// Emergency motor
-        joints_[i].configurator_emergency = new MotorEmergencyConfigurator(private_nh_, number_motor_string, i, serial_);
+        joints_[i].configurator_emergency = new MotorEmergencyConfigurator(private_nh_, serial_, number_motor_string, i);
         /// Reset position motor
         command.bitset.command = MOTOR_POS_RESET;
         motor_control_t reset_coord = 0;
@@ -233,13 +222,27 @@ void UNAVHardware::motorPacket(const unsigned char& command, const message_abstr
     switch (motor_command_.bitset.command) {
     case MOTOR_MEASURE:
         /// Update measure messages
+        // ROS_INFO_STREAM("MOTOR[" << (int) motor_command_.bitset.motor << "] Measures");
         joints_[motor_command_.bitset.motor].effort = packet->motor.motor.torque;
         joints_[motor_command_.bitset.motor].position += packet->motor.motor.position_delta;
         joints_[motor_command_.bitset.motor].velocity = ((double) packet->motor.motor.velocity) / 1000;
         break;
     case MOTOR_DIAGNOSTIC:
         /// Launch Diagnostic message
+        // ROS_INFO_STREAM("MOTOR[" << (int) motor_command_.bitset.motor << "] Diagnostic");
         joints_[motor_command_.bitset.motor].diagnosticMotor->run(packet->motor.diagnostic);
+        break;
+    case MOTOR_PARAMETER:
+        ROS_INFO_STREAM("MOTOR[" << (int) motor_command_.bitset.motor << "] Parameter");
+        joints_[motor_command_.bitset.motor].configurator_param->setParam(packet->motor.parameter);
+        break;
+    case MOTOR_VEL_PID:
+        ROS_INFO_STREAM("MOTOR[" << (int) motor_command_.bitset.motor << "] PID Velocity");
+        joints_[motor_command_.bitset.motor].configurator_pid_velocity->setParam(packet->motor.pid);
+        break;
+    case MOTOR_EMERGENCY:
+        ROS_INFO_STREAM("MOTOR[" << (int) motor_command_.bitset.motor << "] Emergency");
+        joints_[motor_command_.bitset.motor].configurator_emergency->setParam(packet->motor.emergency);
         break;
     }
 }

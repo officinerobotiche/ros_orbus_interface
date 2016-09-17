@@ -33,7 +33,7 @@
 
 using namespace std;
 
-MotorEmergencyConfigurator::MotorEmergencyConfigurator(const ros::NodeHandle& nh, std::string name, unsigned int number, ParserPacket *serial)
+MotorEmergencyConfigurator::MotorEmergencyConfigurator(const ros::NodeHandle& nh, SerialController *serial, std::string name, unsigned int number)
     : nh_(nh), serial_(serial)
 {
     //Namespace
@@ -44,38 +44,42 @@ MotorEmergencyConfigurator::MotorEmergencyConfigurator(const ros::NodeHandle& nh
 
     /// Check existence namespace otherwise get information from board
     if (!nh_.hasParam(name_)) {
-        /// Build a list of messages
-        std::vector<packet_information_t> list_send;
-        list_send.push_back(serial->createPacket(command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
-
-        /// Build a packet
-        packet_t packet = serial->encoder(list_send);
-        /// Receive information
-        vector<packet_information_t> receive = serial->parsing(serial->sendSyncPacket(packet));
-        /// Decode all messages
-        for (vector<packet_information_t>::iterator list_iter = receive.begin(); list_iter != receive.end(); ++list_iter) {
-            packet_information_t packet = (*list_iter);
-            switch (packet.option) {
-            case PACKET_NACK:
-                ///< Send a message ERROR
-                break;
-            case PACKET_DATA:
-                if (packet.type == HASHMAP_MOTOR) {
-                    if(packet.command = command_.command_message) {
-                        nh_.setParam(name_ + "/Slope_time", packet.message.motor.pid.kp);
-                        nh_.setParam(name_ + "/Bridge_off", packet.message.motor.pid.ki);
-                        nh_.setParam(name_ + "/Timeout", packet.message.motor.pid.kd);
-                    }
-                }
-                break;
-            }
-        }
+        //ROS_INFO("GET from board");
+        serial_->addPacketSend(serial_->createPacket(command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
+    } else {
+        /// Send configuration to board
+        //ROS_INFO("WRITE to board");
+        motor_emergency_t parameter = getParam();
+        serial_->addPacketSend(serial_->createDataPacket(command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & parameter));
     }
 
     //Load dynamic reconfigure
     dsrv_ = new dynamic_reconfigure::Server<orbus_interface::UnavEmergencyConfig>(ros::NodeHandle("~" + name_));
     dynamic_reconfigure::Server<orbus_interface::UnavEmergencyConfig>::CallbackType cb = boost::bind(&MotorEmergencyConfigurator::reconfigureCB, this, _1, _2);
     dsrv_->setCallback(cb);
+}
+
+void MotorEmergencyConfigurator::setParam(motor_emergency_t emergency) {
+    nh_.setParam(name_ + "/Slope_time", emergency.slope_time);
+    nh_.setParam(name_ + "/Bridge_off", emergency.bridge_off);
+    nh_.setParam(name_ + "/Timeout", emergency.timeout);
+}
+
+motor_emergency_t MotorEmergencyConfigurator::getParam() {
+    motor_emergency_t emergency;
+    int temp_int;
+    double temp_double;
+
+    nh_.getParam(name_ + "/Slope_time", temp_double);
+    emergency.slope_time = (float) temp_double;
+
+    nh_.getParam(name_ + "/Bridge_off", temp_double);
+    emergency.bridge_off = (float) temp_double;
+
+    nh_.getParam(name_ + "/Timeout", temp_int);
+    emergency.timeout = (uint16_t) temp_int;
+
+    return emergency;
 }
 
 void MotorEmergencyConfigurator::reconfigureCB(orbus_interface::UnavEmergencyConfig &config, uint32_t level) {
@@ -101,12 +105,10 @@ void MotorEmergencyConfigurator::reconfigureCB(orbus_interface::UnavEmergencyCon
       config.restore_defaults = false;
     }
 
-    packet_t packet_send = serial_->encoder(serial_->createDataPacket(command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & emergency));
+    /// Send to serial
+    serial_->addPacketSend(serial_->createDataPacket(command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & emergency));
 
-    try {
-        serial_->sendSyncPacket(packet_send, 3, boost::posix_time::millisec(200));
-    } catch (exception &e) {
-        ROS_ERROR("%s", e.what());
-    }
     last_emergency_ = emergency;
+
+
 }

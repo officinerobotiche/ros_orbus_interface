@@ -17,7 +17,6 @@
 
 #ifndef UNAVHARDWARE_H
 #define	UNAVHARDWARE_H
-
 #include "ORBHardware.h"
 
 #include <urdf/model.h>
@@ -39,7 +38,7 @@
 
 class UNAVHardware : public ORBHardware {
 public:
-    UNAVHardware(const ros::NodeHandle& nh, const ros::NodeHandle& private_nh, ParserPacket* serial, double frequency);
+    UNAVHardware(const ros::NodeHandle& nh, const ros::NodeHandle& private_nh, SerialController* serial, double frequency);
     virtual ~UNAVHardware();
 
     void updateDiagnostics();
@@ -69,7 +68,7 @@ private:
     void setupLimits(hardware_interface::JointHandle joint_handle, std::string name, int i);
 
     void motorPacket(const unsigned char& command, const message_abstract_u* packet);
-    void addParameter(std::vector<packet_information_t>* list_send);
+    void loadMotorParameter(std::vector<packet_information_t>* list_send);
 
     /**
     * Joint structure that is hooked to ros_control's InterfaceManager, to allow control via diff_drive_controller
@@ -88,8 +87,6 @@ private:
       double velocity;
       double effort;
       double velocity_command;
-
-      std::string name;
 
       Joint() : position(0), velocity(0), effort(0), velocity_command(0) { }
     } joints_[NUM_MOTORS];

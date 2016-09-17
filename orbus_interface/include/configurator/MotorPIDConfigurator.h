@@ -29,19 +29,18 @@
 *
 */
 
-#include "serial_parser_packet/ParserPacket.h"
-
 #include <ros/ros.h>
 
+#include "hardware/SerialController.h"
 #include <dynamic_reconfigure/server.h>
 #include <orbus_interface/UnavPIDConfig.h>
 
 class MotorPIDConfigurator {
 public:
-    MotorPIDConfigurator(const ros::NodeHandle& nh, std::string path, std::string name, unsigned int number, ParserPacket* serial);
+    MotorPIDConfigurator(const ros::NodeHandle& nh, SerialController *serial, std::string path, std::string name, unsigned int number, unsigned int type);
 
-    void setParam(motor_parameter_t parameter);
-    motor_parameter_t getParam();
+    void setParam(motor_pid_t parameter);
+    motor_pid_t getParam();
 
 private:
     /// Associate name space
@@ -49,7 +48,7 @@ private:
     /// Private namespace
     ros::NodeHandle nh_;
     /// Serial port
-    ParserPacket* serial_;
+    SerialController* serial_;
     /// Command map
     motor_command_map_t command_;
     /// Frequency message
@@ -60,7 +59,4 @@ private:
 
     dynamic_reconfigure::Server<orbus_interface::UnavPIDConfig> *dsrv_;
     void reconfigureCB(orbus_interface::UnavPIDConfig &config, uint32_t level);
-
-    /// Send to serial
-    void sendToSerial(std::vector<packet_information_t>& list_send);
 };

@@ -64,6 +64,7 @@ void ORBHardware::timerCallback(const ros::TimerEvent& event) {
 }
 
 void ORBHardware::initializeDiagnostics() {
+    ROS_INFO_STREAM("Name " << name_board_);
     diagnostic_updater_.setHardwareID(name_board_);
 }
 

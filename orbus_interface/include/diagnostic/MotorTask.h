@@ -21,7 +21,7 @@ typedef struct _MotorLevels
 class MotorTask : public diagnostic_updater::DiagnosticTask
 {
 public:
-    explicit MotorTask(SerialController *serial, orbus_msgs::MotorStatus &msg, MotorLevels &levels, unsigned int number);
+    explicit MotorTask(SerialController *serial, orbus_msgs::MotorStatus &msg, MotorLevels &levels, std::string name, unsigned int number);
 
     void run(diagnostic_updater::DiagnosticStatusWrapper &stat);
 

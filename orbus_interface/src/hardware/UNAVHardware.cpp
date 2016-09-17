@@ -65,10 +65,15 @@ void UNAVHardware::initializeDiagnostics() {
 
         MotorLevels levels;
 
+        private_nh_.getParam(number_motor_string + "/diagnostic/current/warning", levels.warningCurrent);
+        private_nh_.getParam(number_motor_string + "/diagnostic/current/critical", levels.criticalCurrent);
+        private_nh_.getParam(number_motor_string + "/diagnostic/temperature/warning", levels.warningTemperature);
+        private_nh_.getParam(number_motor_string + "/diagnostic/temperature/critical", levels.criticalTemperature);
+
         joints_[i].diagnostic_publisher_ = private_nh_.advertise<orbus_msgs::MotorStatus>(number_motor_string + "/diagnostic", 10,
                     boost::bind(&ORBHardware::connectCallback, this, _1));
         /// Build the diagnostic motor controller
-        joints_[i].motor_task_ = new MotorTask(serial_, joints_[i].motor_status_msg_, levels, i);
+        joints_[i].motor_task_ = new MotorTask(serial_, joints_[i].motor_status_msg_, levels, number_motor_string, i);
         diagnostic_updater_.add(*joints_[i].motor_task_);
     }
 }

@@ -1,8 +1,5 @@
 Header header
 
-# Number motor
-string name_motor
-
 # Voltage motor
 float64 voltage
 

@@ -73,10 +73,10 @@ set(hardware_unav_SRC
     src/configurator/MotorPIDConfigurator.cpp
     src/configurator/MotorParamConfigurator.cpp
     src/configurator/MotorEmergencyConfigurator.cpp
+    src/diagnostic/MotorTask.cpp
     src/hardware/SerialController.cpp
     src/hardware/ORBHardware.cpp
     src/hardware/UNAVHardware.cpp
-    src/hardware/DiagnosticMotor.cpp
     src/unav_hwinterface.cpp
 )
 

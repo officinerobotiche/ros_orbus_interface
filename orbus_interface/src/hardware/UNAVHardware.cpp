@@ -56,11 +56,20 @@ UNAVHardware::~UNAVHardware() {
 }
 
 void UNAVHardware::initializeDiagnostics() {
+    // Launch internal diagnostic
+    ORBHardware::initializeDiagnostics();
+    // Add motor diagnostic
     for (unsigned int i = 0; i < NUM_MOTORS; i++)
     {
         std::string number_motor_string = "motor_" + boost::lexical_cast<std::string>(i);
+
+        MotorLevels levels;
+
+        joints_[i].diagnostic_publisher_ = private_nh_.advertise<orbus_msgs::MotorStatus>(number_motor_string + "/diagnostic", 10,
+                    boost::bind(&ORBHardware::connectCallback, this, _1));
         /// Build the diagnostic motor controller
-        joints_[i].diagnosticMotor = new DiagnosticMotor(private_nh_, number_motor_string, number_motor_string);
+        joints_[i].motor_task_ = new MotorTask(serial_, joints_[i].motor_status_msg_, levels, i);
+        diagnostic_updater_.add(*joints_[i].motor_task_);
     }
 }
 
@@ -138,18 +147,6 @@ void UNAVHardware::setupLimits(hardware_interface::JointHandle joint_handle, std
     vel_limits_interface_.registerHandle(handle);
 }
 
-void UNAVHardware::updateDiagnostics() {
-    //ROS_INFO("Update Diagnostic");
-    for(int i = 0; i < NUM_MOTORS; ++i) {
-        motor_command_.bitset.motor = i;
-        motor_command_.bitset.command = MOTOR_DIAGNOSTIC; ///< Set message to receive diagnostic information
-        serial_->addPacketSend(serial_->createPacket(motor_command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
-    }
-
-    // Recall default diagnostic
-    ORBHardware::updateDiagnostics();
-}
-
 void UNAVHardware::updateJointsFromHardware() {
     //ROS_INFO("Update Joints");
     for(int i = 0; i < NUM_MOTORS; ++i) {
@@ -219,30 +216,32 @@ void UNAVHardware::loadMotorParameter(std::vector<packet_information_t>* list_se
 
 void UNAVHardware::motorPacket(const unsigned char& command, const message_abstract_u* packet) {
     motor_command_.command_message = command;
+    int motor_number = (int) motor_command_.bitset.motor;
     switch (motor_command_.bitset.command) {
     case MOTOR_MEASURE:
         /// Update measure messages
-        // ROS_INFO_STREAM("MOTOR[" << (int) motor_command_.bitset.motor << "] Measures");
-        joints_[motor_command_.bitset.motor].effort = packet->motor.motor.torque;
-        joints_[motor_command_.bitset.motor].position += packet->motor.motor.position_delta;
-        joints_[motor_command_.bitset.motor].velocity = ((double) packet->motor.motor.velocity) / 1000;
+        // ROS_INFO_STREAM("MOTOR[" << motor_number << "] Measures");
+        joints_[motor_number].effort = packet->motor.motor.torque;
+        joints_[motor_number].position += packet->motor.motor.position_delta;
+        joints_[motor_number].velocity = ((double) packet->motor.motor.velocity) / 1000;
         break;
     case MOTOR_DIAGNOSTIC:
         /// Launch Diagnostic message
-        // ROS_INFO_STREAM("MOTOR[" << (int) motor_command_.bitset.motor << "] Diagnostic");
-        joints_[motor_command_.bitset.motor].diagnosticMotor->run(packet->motor.diagnostic);
+        // ROS_INFO_STREAM("MOTOR[" << motor_number << "] Diagnostic");
+        joints_[motor_number].motor_task_->updateData(packet->motor.diagnostic);
+        joints_[motor_number].diagnostic_publisher_.publish(joints_[motor_number].motor_status_msg_);
         break;
     case MOTOR_PARAMETER:
-        ROS_INFO_STREAM("MOTOR[" << (int) motor_command_.bitset.motor << "] Parameter");
-        joints_[motor_command_.bitset.motor].configurator_param->setParam(packet->motor.parameter);
+        ROS_INFO_STREAM("MOTOR[" << motor_number << "] Parameter");
+        joints_[motor_number].configurator_param->setParam(packet->motor.parameter);
         break;
     case MOTOR_VEL_PID:
-        ROS_INFO_STREAM("MOTOR[" << (int) motor_command_.bitset.motor << "] PID Velocity");
-        joints_[motor_command_.bitset.motor].configurator_pid_velocity->setParam(packet->motor.pid);
+        ROS_INFO_STREAM("MOTOR[" << motor_number << "] PID Velocity");
+        joints_[motor_number].configurator_pid_velocity->setParam(packet->motor.pid);
         break;
     case MOTOR_EMERGENCY:
-        ROS_INFO_STREAM("MOTOR[" << (int) motor_command_.bitset.motor << "] Emergency");
-        joints_[motor_command_.bitset.motor].configurator_emergency->setParam(packet->motor.emergency);
+        ROS_INFO_STREAM("MOTOR[" << motor_number << "] Emergency");
+        joints_[motor_number].configurator_emergency->setParam(packet->motor.emergency);
         break;
     }
 }

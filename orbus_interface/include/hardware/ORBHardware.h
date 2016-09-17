@@ -3,6 +3,10 @@
 
 #include <ros/ros.h>
 #include <std_srvs/Empty.h>
+
+#include <diagnostic_updater/diagnostic_updater.h>
+#include <diagnostic_updater/publisher.h>
+
 #include "hardware/SerialController.h"
 #include "hardware_interface/robot_hw.h"
 
@@ -24,11 +28,13 @@ public:
 
     virtual ~ORBHardware();
 
-    void loadParameter();
+
     void connectCallback(const ros::SingleSubscriberPublisher& pub);
     std::string getNameBoard();
     std::string getTypeBoard();
 
+    // Parameters functioins
+    void loadParameter();
     void addParameterPacketRequest(const boost::function<void (std::vector<packet_information_t>*) >& callback);
 
     template <class T> void addParameterPacketRequest(void(T::*fp)(std::vector<packet_information_t>*), T* obj) {
@@ -36,9 +42,6 @@ public:
     }
     void clearParameterPacketRequest();
 
-    // Send messages
-    void addPacketSend(std::vector<packet_information_t> list_packet);
-    void addPacketSend(packet_information_t packet);
 protected:
     //Initialization object
     ros::NodeHandle nh_; //NameSpace for bridge controller
@@ -47,6 +50,11 @@ protected:
     std::string name_board_, version_, name_author_, compiled_, type_board_;
 
     ros::Timer timer_;
+
+    /// Initialize the diagnostic messages
+    void initializeDiagnostics();
+    // Diagnostic
+    diagnostic_updater::Updater diagnostic_updater_;
 private:
     typedef boost::function<void (std::vector<packet_information_t>*) > callback_add_packet_t;
     callback_add_packet_t callback_add_parameter;

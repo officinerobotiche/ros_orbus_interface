@@ -23,7 +23,7 @@
 
 #include "hardware_interface/joint_state_interface.h"
 #include "hardware_interface/joint_command_interface.h"
-#include "hardware/DiagnosticMotor.h"
+#include "diagnostic/MotorTask.h"
 
 #include <joint_limits_interface/joint_limits_interface.h>
 
@@ -41,10 +41,13 @@ public:
     UNAVHardware(const ros::NodeHandle& nh, const ros::NodeHandle& private_nh, SerialController* serial, double frequency);
     virtual ~UNAVHardware();
 
-    void updateDiagnostics();
-
     void updateJointsFromHardware();
     void writeCommandsToHardware(ros::Duration period);
+
+protected:
+
+    /// Initialize the diagnostic messages
+    void initializeDiagnostics();
 
 private:
     /// URDF information about robot
@@ -57,9 +60,6 @@ private:
     hardware_interface::VelocityJointInterface velocity_joint_interface_;
     /// ROS joint limits interface
     joint_limits_interface::VelocityJointSoftLimitsInterface vel_limits_interface_;
-
-    /// Initialize the diagnostic messages
-    void initializeDiagnostics();
 
     /// Register all control interface and joint limit interface
     void registerControlInterfaces();
@@ -75,7 +75,11 @@ private:
     */
     struct Joint
     {
-      DiagnosticMotor *diagnosticMotor;
+      // Diagnostics
+      ros::Publisher diagnostic_publisher_;
+      orbus_msgs::MotorStatus motor_status_msg_;
+      MotorTask *motor_task_;
+      // Configurator
       MotorPIDConfigurator *configurator_pid_velocity, *configurator_pid_effort, *configurator_pid_position;
       MotorParamConfigurator *configurator_param;
       MotorEmergencyConfigurator *configurator_emergency;

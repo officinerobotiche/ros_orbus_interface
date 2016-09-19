@@ -1,5 +1,20 @@
 Header header
 
+# State configuration controller
+int8 state
+
+# Position
+float64 position
+
+# Velocity
+float64 velocity
+
+# Effort
+float64 effort
+
+# PWM rate
+float64 pwm
+
 # Voltage motor
 float64 voltage
 

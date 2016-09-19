@@ -174,6 +174,7 @@ void UNAVHardware::writeCommandsToHardware(ros::Duration period) {
         motor_command_.bitset.motor = i;
         /// Convert radiant velocity in milliradiant
         long int velocity_long = (long int) joints_[i].velocity_command*1000;
+        //ROS_INFO_STREAM("REF Velocity[" << i << "] = " << velocity_long << " milli rad/s");
         motor_control_t velocity;
         // >>>>> Saturation on 16 bit values
         if(velocity_long > 32767) {
@@ -229,6 +230,12 @@ void UNAVHardware::motorPacket(const unsigned char& command, const message_abstr
         joints_[motor_number].effort = packet->motor.motor.torque;
         joints_[motor_number].position += packet->motor.motor.position_delta;
         joints_[motor_number].velocity = ((double) packet->motor.motor.velocity) / 1000;
+        // Save information about motor state in messages
+        joints_[motor_number].motor_status_msg_.state = (int) packet->motor.motor.state;
+        joints_[motor_number].motor_status_msg_.position = packet->motor.motor.position;
+        joints_[motor_number].motor_status_msg_.velocity = packet->motor.motor.velocity / 1000.0f;
+        joints_[motor_number].motor_status_msg_.effort = packet->motor.motor.torque;
+        joints_[motor_number].motor_status_msg_.pwm = ((double)packet->motor.motor.pwm)*100.0f / INT16_MAX;
         break;
     case MOTOR_DIAGNOSTIC:
         /// Launch Diagnostic message

@@ -18,9 +18,15 @@ MotorTask::MotorTask(SerialController *serial, orbus_msgs::MotorStatus &msg, Mot
 void MotorTask::run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
     serial_->addPacketSend(serial_->createPacket(command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
 
-    stat.add("Watt (W)", mStatusMsg.watt);
+    stat.add("State ", (int) mStatusMsg.state);
+    stat.add("PWM rate (%)", mStatusMsg.pwm);
+    stat.add("Position (deg)", ((double)mStatusMsg.position)*180.0f/M_PI);
+    stat.add("Velociy (rad/s)", mStatusMsg.velocity);
+    stat.add("Torque (Nm)", mStatusMsg.effort);
+
     stat.add("Current (A)", mStatusMsg.current);
     stat.add("Voltage (V)", mStatusMsg.voltage);
+    stat.add("Watt (W)", mStatusMsg.watt);
     stat.add("Temperature (°C)", mStatusMsg.temperature);
 
     stat.summary(diagnostic_msgs::DiagnosticStatus::OK, "Motor CONNECTED");

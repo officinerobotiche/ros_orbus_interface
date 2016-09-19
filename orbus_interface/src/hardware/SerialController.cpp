@@ -20,10 +20,12 @@ SerialController::SerialController(const std::string& devname,
 
 void SerialController::sendList() {
     if(!list_send_.empty()) {
+        values_mutex.lock();
         std::vector<packet_information_t> temp_send;
         temp_send.swap(list_send_);
         list_send_.clear();     ///< Clear list of commands
         this->parserSendPacket(temp_send, 3, boost::posix_time::millisec(200));
+        values_mutex.unlock();
     }
 }
 

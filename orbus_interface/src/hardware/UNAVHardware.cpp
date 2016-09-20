@@ -173,17 +173,17 @@ void UNAVHardware::writeCommandsToHardware(ros::Duration period) {
         //Build a command message
         motor_command_.bitset.motor = i;
         /// Convert radiant velocity in milliradiant
-        long int velocity_long = (long int) joints_[i].velocity_command*1000;
-        //ROS_INFO_STREAM("REF Velocity[" << i << "] = " << velocity_long << " milli rad/s");
+        long int velocity_long = static_cast<long int>(joints_[i].velocity_command*1000.0);
         motor_control_t velocity;
         // >>>>> Saturation on 16 bit values
-        if(velocity_long > 32767) {
-            velocity = 32767;
-        } else if (velocity_long < -32768) {
-            velocity_long = -32768;
+        if(velocity_long > MOTOR_CONTROL_MAX) {
+            velocity = MOTOR_CONTROL_MAX;
+        } else if (velocity_long < MOTOR_CONTROL_MIN) {
+            velocity_long = MOTOR_CONTROL_MIN;
         } else {
             velocity = (motor_control_t) velocity_long;
         }
+        //ROS_INFO_STREAM("REF[" << i << "] CMDVel= " << joints_[i].velocity_command << " rad/s - Velocity= " << velocity << " milli rad/s");
         // <<<<< Saturation on 16 bit values
         serial_->addPacketSend(serial_->createDataPacket(motor_command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & velocity));
     }
@@ -236,6 +236,8 @@ void UNAVHardware::motorPacket(const unsigned char& command, const message_abstr
         joints_[motor_number].motor_status_msg_.velocity = packet->motor.motor.velocity / 1000.0f;
         joints_[motor_number].motor_status_msg_.effort = packet->motor.motor.torque;
         joints_[motor_number].motor_status_msg_.pwm = ((double)packet->motor.motor.pwm)*100.0f / INT16_MAX;
+        joints_[motor_number].motor_status_msg_.header.stamp = ros::Time::now();
+        joints_[motor_number].diagnostic_publisher_.publish(joints_[motor_number].motor_status_msg_);
         break;
     case MOTOR_DIAGNOSTIC:
         /// Launch Diagnostic message

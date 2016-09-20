@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
 
     // Frequency to send information via serial
     // This is the double frequency of the best control_frequency or diagnostic_frequency;
-    double serial_freq = std::max(control_frequency, diagnostic_frequency);
+    double serial_freq = 2*std::max(control_frequency, diagnostic_frequency);
     //Serial port configuration
     std::string serial_port_string;
     double baud_rate;

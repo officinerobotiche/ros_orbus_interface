@@ -29,6 +29,8 @@ void MotorTask::run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
     stat.add("Watt (W)", mStatusMsg.watt);
     stat.add("Temperature (°C)", mStatusMsg.temperature);
 
+    stat.add("Time execution (nS)", mStatusMsg.time_execution);
+
     stat.summary(diagnostic_msgs::DiagnosticStatus::OK, "Motor CONNECTED");
 
     if (mStatusMsg.temperature > mlevels_.criticalTemperature)
@@ -62,12 +64,12 @@ void MotorTask::run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
 void MotorTask::updateData(motor_diagnostic_t diagnostic) {
 
     double volt = (diagnostic.volt/1000.0f); /// in V
-    double ampere = (diagnostic.current/1000.0f); /// in A
+    double watt = (diagnostic.watt/1000.0f); /// in W
 
     // Update message
     mStatusMsg.header.stamp = ros::Time::now();
-    mStatusMsg.watt = volt*ampere;
-    mStatusMsg.current = ampere;
+    mStatusMsg.watt = watt;
+    mStatusMsg.time_execution = diagnostic.time_control;
     mStatusMsg.voltage = volt;
     mStatusMsg.temperature = diagnostic.temperature;
 }

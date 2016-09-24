@@ -71,7 +71,6 @@ MotorParamConfigurator::MotorParamConfigurator(const ros::NodeHandle &nh, Serial
 void MotorParamConfigurator::convertParam(orbus_interface::UnavParameterConfig &config, motor_parameter_t parameter) {
     config.Ratio = parameter.ratio;
     config.Rotation = parameter.rotation;
-    config.Cascade_control = parameter.cascade_control ;
 
     config.H_bridge_enable = parameter.bridge.enable;
     config.PWM_Dead_zone = parameter.bridge.pwm_dead_zone;
@@ -92,7 +91,6 @@ void MotorParamConfigurator::setParam(motor_parameter_t parameter) {
     motor_parameter_bridge_t bridge = parameter.bridge;
     nh_.setParam(name_ + "/Ratio", (double) parameter.ratio);
     nh_.setParam(name_ + "/Rotation", (int) parameter.rotation);
-    nh_.setParam(name_ + "/Cascade_control", (int) parameter.cascade_control);
 
     nh_.setParam(name_ + "/Bridge/Enable", (int) bridge.enable);
     nh_.setParam(name_ + "/Bridge/PWM_Dead_zone", (int) bridge.pwm_dead_zone);
@@ -116,8 +114,6 @@ motor_parameter_t MotorParamConfigurator::getParam() {
     parameter.ratio = (float) temp_double;
     nh_.getParam(name_ + "/Rotation", temp_int);
     parameter.rotation = (int8_t) temp_int;
-    nh_.getParam(name_ + "/Cascade_control", temp_int);
-    parameter.cascade_control = (int8_t) temp_int;
 
     nh_.getParam(name_ + "/Bridge/Enable", temp_int);
     parameter.bridge.enable = (uint8_t) temp_int;
@@ -151,7 +147,6 @@ void MotorParamConfigurator::reconfigureCB(orbus_interface::UnavParameterConfig 
     motor_parameter_t parameter;
     parameter.ratio = (float) config.Ratio;
     parameter.rotation = (int8_t) config.Rotation;
-    parameter.cascade_control = (int8_t) config.Cascade_control;
 
     parameter.bridge.enable = (uint8_t) config.H_bridge_enable;
     parameter.bridge.pwm_dead_zone = (uint16_t) config.PWM_Dead_zone;

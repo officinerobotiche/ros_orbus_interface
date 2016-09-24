@@ -138,7 +138,7 @@ void UNAVHardware::setupLimits(hardware_interface::JointHandle joint_handle, std
     motor_t constraint;
     constraint.position = -1;
     constraint.velocity = (motor_control_t) limits.max_velocity*1000;
-    constraint.torque = -1;
+    constraint.current = -1;
     motor_command_map_t command;
     command.bitset.motor = i;
     command.bitset.command = MOTOR_CONSTRAINT;
@@ -201,7 +201,7 @@ void UNAVHardware::loadMotorParameter(std::vector<packet_information_t>* list_se
         /// PIDs for Velocity, effort, position
         joints_[i].configurator_pid_velocity = new MotorPIDConfigurator(private_nh_, serial_, number_motor_string, "velocity", i,  MOTOR_VEL_PID);
         /// TODO after configuration inside unav
-        //joints_[i].configurator_pid_effort = new MotorPIDConfigurator(private_nh_, serial_, number_motor_string, "effort", i, MOTOR_TORQUE_PID);
+        //joints_[i].configurator_pid_effort = new MotorPIDConfigurator(private_nh_, serial_, number_motor_string, "current", i, MOTOR_TORQUE_PID);
         /// Parameter motor
         joints_[i].configurator_param = new MotorParamConfigurator(private_nh_, serial_, number_motor_string, i);
         /// Emergency motor
@@ -227,14 +227,14 @@ void UNAVHardware::motorPacket(const unsigned char& command, const message_abstr
     case MOTOR_MEASURE:
         /// Update measure messages
         // ROS_INFO_STREAM("MOTOR[" << motor_number << "] Measures");
-        joints_[motor_number].effort = packet->motor.motor.torque;
+        joints_[motor_number].effort = packet->motor.motor.current; ///< TODO Change with a good estimation
         joints_[motor_number].position += packet->motor.motor.position_delta;
         joints_[motor_number].velocity = ((double) packet->motor.motor.velocity) / 1000;
         // Save information about motor state in messages
         joints_[motor_number].motor_status_msg_.state = (int) packet->motor.motor.state;
         joints_[motor_number].motor_status_msg_.position = packet->motor.motor.position;
         joints_[motor_number].motor_status_msg_.velocity = packet->motor.motor.velocity / 1000.0f;
-        joints_[motor_number].motor_status_msg_.effort = packet->motor.motor.torque;
+        joints_[motor_number].motor_status_msg_.current = packet->motor.motor.current;
         joints_[motor_number].motor_status_msg_.pwm = ((double)packet->motor.motor.pwm)*100.0f / INT16_MAX;
         joints_[motor_number].motor_status_msg_.header.stamp = ros::Time::now();
         joints_[motor_number].diagnostic_publisher_.publish(joints_[motor_number].motor_status_msg_);

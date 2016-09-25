@@ -51,6 +51,11 @@ bool serial_controller::start()
     return true;
 }
 
+bool serial_controller::stop()
+{
+    mStopped = true;
+}
+
 void* serial_controller::run()
 {
 
@@ -68,11 +73,9 @@ bool serial_controller::sendSerialFrame(vector<packet_information_t> list_send)
         // Send the packet in serial and wait the received data
         packet_t receive = sendSerialPacket(packet);
         // Read all frame and if is true send a packet with all new information
-        if(parser(&receive, &list_data[0], &len) && len != 0) {
-            // New packet to send back
-            packet_t send = encoder(&list_data[0], len);
-            // return the state of the serial
-            return writePacket(send);
+        if(parser(&receive, &list_data[0], &len)) {
+            ROS_DEBUG_STREAM("Parsing packet ok!");
+            return true;
         }
     }
     return false;
@@ -113,6 +116,13 @@ bool serial_controller::writePacket(packet_t packet)
 bool serial_controller::readPacket()
 {
     do {
+
+        if( mStopping )
+        {
+            stop();
+            break;
+        }
+
         if( !mSerial.waitReadable() )
         {
             ROS_ERROR_STREAM( "IMU timeout connecting");

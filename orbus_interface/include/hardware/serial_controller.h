@@ -27,6 +27,24 @@ public:
      * @return if open the connection return true
      */
     bool start();
+    /**
+     * @brief stop
+     * @return
+     */
+    bool stop();
+
+    /**
+     * @brief sendSerialFrame
+     * @param list_send
+     * @return
+     */
+    bool sendSerialFrame(vector<packet_information_t> list_send);
+    /**
+     * @brief sendSerialPacket
+     * @param packet
+     * @return
+     */
+    packet_t sendSerialPacket(packet_t packet);
 
 protected:
     // >>>>> Ctrl+C handler
@@ -45,19 +63,6 @@ protected:
      * the \ref Acquisition is called
      */
     void* run();
-
-    /**
-     * @brief sendSerialFrame
-     * @param list_send
-     * @return
-     */
-    bool sendSerialFrame(vector<packet_information_t> list_send);
-    /**
-     * @brief sendSerialPacket
-     * @param packet
-     * @return
-     */
-    packet_t sendSerialPacket(packet_t packet);
 
 private:
     /**
@@ -102,6 +107,8 @@ private:
     uint32_t mTimeout;
 
     static bool mStopping; ///< Used to stop driver using Ctrl+C
+    bool mStopped; ///< Used to stop the serial processing
+    bool mPaused; ///< Used to pause asynchronous data processing
 
     // The packet received from serial
     packet_t mReceive;

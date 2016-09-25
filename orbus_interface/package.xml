@@ -11,26 +11,27 @@
 
     <!-- Url tags are optional, but mutiple are allowed, one per tag -->
     <!-- Optional attribute type can be: website, bugtracker, or repository -->
-    <url type="website">http://unav.officinerobotiche.it</url>
+    <url type="website">http://rnext.it/project/unav</url>
 
     <!-- Author tags are optional, mutiple are allowed, one per tag -->
     <!-- Authors do not have to be maintianers, but could be -->
-    <author email="raffaello.bonghi@officinerobotiche.it">Raffaello Bonghi</author>
+    <author email="raffaello@rnext.it">Raffaello Bonghi</author>
 
     <buildtool_depend>catkin</buildtool_depend>
 
+    <build_depend>serial</build_depend>
     <build_depend>controller_manager</build_depend>
     <build_depend>diagnostic_updater</build_depend>
     <build_depend>diagnostic_msgs</build_depend>
     <build_depend>hardware_interface</build_depend>
     <build_depend>roscpp</build_depend>
     <build_depend>roslaunch</build_depend>
-    <build_depend>roslint</build_depend>
     <build_depend>sensor_msgs</build_depend>
     <build_depend>dynamic_reconfigure</build_depend>
     <build_depend>urdf</build_depend>
     <build_depend>joint_limits_interface</build_depend>
 
+    <run_depend>serial</run_depend>
     <run_depend>controller_manager</run_depend>
     <run_depend>diagnostic_updater</run_depend>
     <run_depend>diagnostic_msgs</run_depend>

@@ -74,9 +74,13 @@ catkin_package(
 ## Build ##
 ###########
 include_directories(include
-#                    lib_orb_cpp/include
-#                    ${Boost_INCLUDE_DIRS}
+                    ../or_bus_c.X/includes
                     ${catkin_INCLUDE_DIRS}
+)
+
+add_library(or_bus
+    ../or_bus_c.X/src/communication/or_message.c
+    ../or_bus_c.X/src/communication/or_frame.c
 )
 
 #add_library(lib_orbus_cpp
@@ -100,8 +104,7 @@ set(hardware_unav_SRC
 
 ## Declare a cpp executable
 add_executable(hardware_unav ${hardware_unav_SRC})
-target_link_libraries(hardware_unav ${catkin_LIBRARIES})
-#target_link_libraries(hardware_unav lib_orbus_cpp ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(hardware_unav or_bus ${catkin_LIBRARIES})
 
 #add_definitions(-std=c++11)
 

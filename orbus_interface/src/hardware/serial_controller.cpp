@@ -56,7 +56,37 @@ void* serial_controller::run()
 
 }
 
-bool serial_controller::sendSerialPacket(packet_t packet)
+bool serial_controller::sendSerialFrame(vector<packet_information_t> list_send)
+{
+    if(list_send.size())
+    {
+        vector<packet_information_t> list_received;
+        // Encode the list of frames
+        packet_t packet = encoder(list_send.data(), list_send.size());
+        // Send the packet in serial and wait the received data
+        packet_t receive = sendSerialPacket(packet);
+
+//        if(parser(receive, list_received.data(), list_send.size()) && list_send.size() != 0) {
+
+//        }
+    }
+
+}
+
+packet_t serial_controller::sendSerialPacket(packet_t packet)
+{
+    if(mSerial.isOpen())
+    {
+        writePacket(packet);
+        if(readPacket())
+        {
+            return mReceive;
+        }
+    }
+    //return 0;
+}
+
+bool serial_controller::writePacket(packet_t packet)
 {
     // Size of the packet
     int dataSize = (LNG_PACKET_HEADER + packet.length + 1);
@@ -73,6 +103,30 @@ bool serial_controller::sendSerialPacket(packet_t packet)
         return false;
     }
     return true;
+}
+
+bool serial_controller::readPacket()
+{
+    do {
+        if( !mSerial.waitReadable() )
+        {
+            ROS_ERROR_STREAM( "IMU timeout connecting");
+            return false;
+        }
+
+        string reply = mSerial.read( mSerial.available() );
+
+        ROS_DEBUG_STREAM( "Received " << reply.size() << " bytes" );
+
+        for (unsigned i=0; i<reply.length(); ++i)
+        {
+            unsigned char data = reply.at(i);
+            if (decode_pkgs(data))
+            {
+                return true;
+            }
+        }
+    } while(true);
 }
 
 }

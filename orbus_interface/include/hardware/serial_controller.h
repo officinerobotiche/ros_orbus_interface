@@ -5,8 +5,8 @@
 #include <serial/serial.h>
 #include <signal.h>
 
-#include <communication/or_message.h>
-#include <communication/or_frame.h>
+#include <or_bus/or_message.h>
+#include <or_bus/or_frame.h>
 
 using namespace std;
 

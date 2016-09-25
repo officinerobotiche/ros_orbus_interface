@@ -79,8 +79,8 @@ include_directories(include
 )
 
 add_library(or_bus
-    ../or_bus_c.X/src/communication/or_message.c
-    ../or_bus_c.X/src/communication/or_frame.c
+    ../or_bus_c.X/src/or_bus/or_message.c
+    ../or_bus_c.X/src/or_bus/or_frame.c
 )
 
 #add_library(lib_orbus_cpp

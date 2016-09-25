@@ -17,12 +17,32 @@
 
 #include <ros/ros.h>
 
+#include "hardware/serial_controller.h"
+
+using namespace std;
+
 int main(int argc, char **argv) {
 
     ros::init(argc, argv, "unav_interface");
     ros::NodeHandle nh, private_nh("~");
 
-    ROS_INFO("A");
+    //Hardware information
+    double control_frequency, diagnostic_frequency;
+    private_nh.param<double>("control_frequency", control_frequency, 10.0);
+    private_nh.param<double>("diagnostic_frequency", diagnostic_frequency, 10.0);
+
+    string serial_port_string;
+    int32_t baud_rate;
+
+    private_nh.param<string>("serial_port", serial_port_string, "/dev/ttyUSB0");
+    private_nh.param<int32_t>("serial_rate", baud_rate, 115200);
+
+    orbus::serial_controller orbusSerial(serial_port_string, baud_rate);
+    // Run the serial controller
+    orbusSerial.start();
+
+    // Process remainder of ROS callbacks separately, mainly ControlManager related
+    ros::spin();
 
     return 0;
 }

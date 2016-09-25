@@ -14,6 +14,9 @@ serial_controller::serial_controller(string port, unsigned long baudrate) : mSer
     sigaction(SIGINT, &sigAct, 0);
     // <<<<< Ctrl+C handling
 
+    orb_message_init(&mReceive);           ///< Initialize buffer serial error
+    orb_frame_init();                      ///< Initialize hash map packet
+
     mTimeout = 500;
 }
 
@@ -45,6 +48,30 @@ bool serial_controller::start()
 
     ROS_INFO_STREAM( "Serial port ready" );
 
+    return true;
+}
+
+void* serial_controller::run()
+{
+
+}
+
+bool serial_controller::sendSerialPacket(packet_t packet)
+{
+    // Size of the packet
+    int dataSize = (LNG_PACKET_HEADER + packet.length + 1);
+
+    ROS_DEBUG_STREAM( "To be written " << dataSize << " bytes" );
+    //Build a message to send to serial
+    build_pkg(BufferTx, packet);
+    // Send the packet on serial
+    int written = mSerial.write(BufferTx, dataSize);
+
+    if ( written != dataSize )
+    {
+        ROS_WARN_STREAM( "Serial write error. Written " << written << " bytes instead of" << dataSize << " bytes.");
+        return false;
+    }
     return true;
 }
 

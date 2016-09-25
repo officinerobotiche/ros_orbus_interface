@@ -3,8 +3,10 @@
 
 #include <ros/ros.h>
 #include <serial/serial.h>
-
 #include <signal.h>
+
+#include <communication/or_message.h>
+#include <communication/or_frame.h>
 
 using namespace std;
 
@@ -37,6 +39,15 @@ protected:
     }
     // <<<<< Ctrl+C handler
 
+    /*!
+     * \brief run
+     * Thread function. Process the serial data continously when
+     * the \ref Acquisition is called
+     */
+    void* run();
+
+private:
+    bool send(packet_t packet);
 
 private:
     // Serial port object
@@ -49,6 +60,11 @@ private:
     uint32_t mTimeout;
 
     static bool mStopping; ///< Used to stop driver using Ctrl+C
+
+    // The packet received from serial
+    packet_t mReceive;
+
+    unsigned char BufferTx[MAX_BUFF_TX];
 };
 
 }

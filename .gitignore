@@ -5,5 +5,7 @@ build-*-Desktop-Default/
 *-build/
 
 # Library
+or_bus_c.X/
 
+#OLD
 orbus_interface/lib_orb_cpp/

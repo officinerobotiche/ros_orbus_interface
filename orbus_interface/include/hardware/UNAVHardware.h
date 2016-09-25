@@ -80,7 +80,7 @@ private:
       orbus_msgs::MotorStatus motor_status_msg_;
       MotorTask *motor_task_;
       // Configurator
-      MotorPIDConfigurator *configurator_pid_velocity, *configurator_pid_effort, *configurator_pid_position;
+      MotorPIDConfigurator *configurator_pid_velocity, *configurator_pid_current, *configurator_pid_position;
       MotorParamConfigurator *configurator_param;
       MotorEmergencyConfigurator *configurator_emergency;
       // Actual state

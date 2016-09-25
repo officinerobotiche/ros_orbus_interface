@@ -39,6 +39,8 @@ class MotorPIDConfigurator {
 public:
     MotorPIDConfigurator(const ros::NodeHandle& nh, SerialController *serial, std::string path, std::string name, unsigned int number, unsigned int type);
 
+    void initConfigurator();
+
     void setParam(motor_pid_t parameter);
     motor_pid_t getParam();
 
@@ -51,8 +53,7 @@ private:
     SerialController* serial_;
     /// Command map
     motor_command_map_t command_;
-    /// Frequency message
-    system_task_t last_frequency_, default_frequency_;
+    /// PID message
     motor_pid_t last_pid_, default_pid_;
 
     bool setup_;

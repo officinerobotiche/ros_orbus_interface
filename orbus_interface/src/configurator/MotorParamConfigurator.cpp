@@ -47,8 +47,10 @@ MotorParamConfigurator::MotorParamConfigurator(const ros::NodeHandle &nh, Serial
 
     /// Check existence namespace otherwise get information from board
     if (!nh_.hasParam(name_)) {
+        //ROS_INFO_STREAM("SEND Request for: " << name_);
         serial_->addPacketSend(serial_->createPacket(command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
     } else {
+        //ROS_INFO_STREAM("GET param from " <<  name_ << " and send");
         /// Send configuration to board
         motor_parameter_t parameter = getParam();
         serial_->addPacketSend(serial_->createDataPacket(command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & parameter));

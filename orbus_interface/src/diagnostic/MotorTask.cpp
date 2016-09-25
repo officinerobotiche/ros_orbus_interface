@@ -63,8 +63,8 @@ void MotorTask::run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
 
 void MotorTask::updateData(motor_diagnostic_t diagnostic) {
 
-    double volt = (diagnostic.volt/1000.0f); /// in V
-    double watt = (diagnostic.watt/1000.0f); /// in W
+    double volt = (diagnostic.volt/1000.0); /// in V
+    double watt = (diagnostic.watt/1000.0); /// in W
 
     // Update message
     mStatusMsg.header.stamp = ros::Time::now();

@@ -34,25 +34,15 @@
 using namespace std;
 
 MotorPIDConfigurator::MotorPIDConfigurator(const ros::NodeHandle& nh, SerialController *serial, std::string path, std::string name, unsigned int number, unsigned int type)
-    : nh_(nh), serial_(serial)
+    : nh_(nh), serial_(serial), name_(path + "/pid/" + name)
 {
     //Namespace
-    name_ = path + "/pid/" + name;
+    //name_ = path + "/pid/" + name;
     // Set command message
     command_.bitset.motor = number;
     command_.bitset.command = type;
-    // Set message to frequency information
-    last_frequency_.hashmap = HASHMAP_MOTOR;
-    last_frequency_.number = 0; ///< TODO To correct
+    //ROS_INFO_STREAM("Configurator: "<< name << " command: " << (int) command_.command_message);
 
-    /// Check existence namespace otherwise get information from board
-    if (!nh_.hasParam(name_)) {
-        serial_->addPacketSend(serial_->createPacket(command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
-    } else {
-        /// Send configuration to board
-        motor_pid_t parameter = getParam();
-        serial_->addPacketSend(serial_->createDataPacket(command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & parameter));
-    }
 
     //Load dynamic reconfigure
     dsrv_ = new dynamic_reconfigure::Server<orbus_interface::UnavPIDConfig>(ros::NodeHandle("~" + name_));
@@ -60,23 +50,43 @@ MotorPIDConfigurator::MotorPIDConfigurator(const ros::NodeHandle& nh, SerialCont
     dsrv_->setCallback(cb);
 }
 
+void MotorPIDConfigurator::initConfigurator() {
+    /// Check existence namespace otherwise get information from board
+    if (!nh_.hasParam(name_)) {
+        //ROS_INFO_STREAM("SEND Request for: " << name_);
+        serial_->addPacketSend(serial_->createPacket(command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
+    } else {
+        //ROS_INFO_STREAM("GET param from " <<  name_ << " and send");
+        /// Send configuration to board
+        motor_pid_t parameter = getParam();
+        serial_->addPacketSend(serial_->createDataPacket(command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & parameter));
+    }
+}
+
 void MotorPIDConfigurator::setParam(motor_pid_t parameter) {
     nh_.setParam(name_ + "/Kp", parameter.kp);
     nh_.setParam(name_ + "/Ki", parameter.ki);
     nh_.setParam(name_ + "/Kd", parameter.kd);
+    nh_.setParam(name_ + "/Frequency", (int) parameter.frequency);
+    nh_.setParam(name_ + "/Enable", (parameter.enable > 0 ? true : false));
 }
 
 motor_pid_t MotorPIDConfigurator::getParam() {
     motor_pid_t pid;
 
     double temp_double;
-
+    int temp_int;
+    bool temp;
     nh_.getParam(name_ + "/Kp", temp_double);
     pid.kp = (float) temp_double;
     nh_.getParam(name_ + "/Ki", temp_double);
     pid.ki = (float) temp_double;
     nh_.getParam(name_ + "/Kd", temp_double);
     pid.kd = (float) temp_double;
+    nh_.getParam(name_ + "/Frequency", temp_int);
+    pid.frequency = (uint32_t) temp_int;
+    nh_.getParam(name_ + "/Enable", temp);
+    pid.enable = (uint8_t) temp;
 
     return pid;
 }
@@ -87,6 +97,8 @@ void MotorPIDConfigurator::reconfigureCB(orbus_interface::UnavPIDConfig &config,
     pid.kp = (float) config.Kp;
     pid.ki = (float) config.Ki;
     pid.kd = (float) config.Kd;
+    pid.frequency = (uint32_t) config.Frequency;
+    pid.enable = (uint8_t) config.Enable;
 
     //The first time we're called, we just want to make sure we have the
     //original configuration
@@ -94,15 +106,12 @@ void MotorPIDConfigurator::reconfigureCB(orbus_interface::UnavPIDConfig &config,
     {
       last_pid_ = pid;
       default_pid_ = last_pid_;
-      last_frequency_.data = config.Frequency;
-      default_frequency_ = last_frequency_;
       setup_ = true;
       return;
     }
 
     if(config.restore_defaults) {
       pid = default_pid_;
-      config.Frequency = default_frequency_.data;
       //if someone sets restore defaults on the parameter server, prevent looping
       config.restore_defaults = false;
     }
@@ -114,10 +123,8 @@ void MotorPIDConfigurator::reconfigureCB(orbus_interface::UnavPIDConfig &config,
         config.Kp = pid.kp;
         config.Ki = pid.ki;
         config.Kd = pid.kd;
-    }
-    if(last_frequency_.data != config.Frequency) {
-        // TODO add packet to change frequency
-        last_frequency_.data = config.Frequency;
+        config.Frequency = pid.frequency;
+        config.Enable = pid.enable;
     }
 
     /// Send to serial

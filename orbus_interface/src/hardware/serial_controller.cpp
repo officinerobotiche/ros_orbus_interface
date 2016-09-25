@@ -60,17 +60,22 @@ bool serial_controller::sendSerialFrame(vector<packet_information_t> list_send)
 {
     if(list_send.size())
     {
-        vector<packet_information_t> list_received;
+        // Build a same array with same size of packet to send
+        packet_information_t list_data[list_send.size()];
+        size_t len = 0;
         // Encode the list of frames
         packet_t packet = encoder(list_send.data(), list_send.size());
         // Send the packet in serial and wait the received data
         packet_t receive = sendSerialPacket(packet);
-
-//        if(parser(receive, list_received.data(), list_send.size()) && list_send.size() != 0) {
-
-//        }
+        // Read all frame and if is true send a packet with all new information
+        if(parser(&receive, &list_data[0], &len) && len != 0) {
+            // New packet to send back
+            packet_t send = encoder(&list_data[0], len);
+            // return the state of the serial
+            return writePacket(send);
+        }
     }
-
+    return false;
 }
 
 packet_t serial_controller::sendSerialPacket(packet_t packet)

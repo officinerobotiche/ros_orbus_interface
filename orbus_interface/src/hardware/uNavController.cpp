@@ -1,3 +1,6 @@
+
+#include <string>
+
 #include "hardware/uNavController.h"
 
 namespace ORController
@@ -7,6 +10,10 @@ uNavController::uNavController(orbus::serial_controller *serial) : GenericContro
 {
     /// Added all callback to receive information about messages
     bool initCallback = mSerial->addCallback(&uNavController::motorFrame, this, HASHMAP_MOTOR);
+
+    // Add Two motor
+    list_motor.push_back(new Motor(1));
+    list_motor.push_back(new Motor(2));
 
 }
 

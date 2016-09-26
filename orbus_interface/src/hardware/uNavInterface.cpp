@@ -1,6 +1,8 @@
 
 #include <string>
 
+#include <urdf/model.h>
+#include <urdf_parser/urdf_parser.h>
 
 #include <hardware_interface/joint_state_interface.h>
 #include <hardware_interface/joint_command_interface.h>
@@ -15,6 +17,18 @@ uNavInterface::uNavInterface(const ros::NodeHandle &nh, orbus::serial_controller
 {
     /// Added all callback to receive information about messages
     bool initCallback = mSerial->addCallback(&uNavInterface::allMotorsFrame, this, HASHMAP_MOTOR);
+
+    /// Load URDF from robot_description
+    if(nh.hasParam("/robot_description"))
+    {
+        ROS_INFO_STREAM("/robot_description found!");
+        std::string urdf_string;
+        nh.getParam("/robot_description", urdf_string);
+        urdf = urdf::parseURDF(urdf_string);
+    } else
+    {
+        ROS_WARN_STREAM("/robot_description NOT found!");
+    }
 
     //Initialize motors
     Motor motor0(nh, serial, 0);
@@ -49,12 +63,26 @@ void uNavInterface::registerControlInterfaces()
 
 void uNavInterface::updateJointsFromHardware()
 {
-    ROS_INFO_STREAM("Update joint information from uNav");
+    ROS_DEBUG_STREAM("Update joint information from uNav");
+    for(unsigned i=0; i < list_motor.size(); ++i)
+    {
+        // Get motor
+        Motor motor_obj = list_motor.at(i);
+        motor_obj.addRequestMeasure();
+    }
+    mSerial->sendList();
 }
 
 void uNavInterface::writeCommandsToHardware(ros::Duration period)
 {
-    ROS_INFO_STREAM("Write command to uNav");
+    ROS_DEBUG_STREAM("Write command to uNav");
+    for(unsigned i=0; i < list_motor.size(); ++i)
+    {
+        // Get motor
+        Motor motor_obj = list_motor.at(i);
+        motor_obj.writeCommandsToHardware(period);
+    }
+    mSerial->sendList();
 }
 
 void uNavInterface::allMotorsFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message)
@@ -69,7 +97,7 @@ void uNavInterface::allMotorsFrame(unsigned char option, unsigned char type, uns
         // Get motor
         Motor motor_obj = list_motor.at(number_motor);
         // Update information
-        motor_obj.motorFrame(option, type, motor.bitset.command, message);
+        motor_obj.motorFrame(option, type, motor.bitset.command, message.motor);
     }
     else
     {

@@ -19,7 +19,9 @@
 
 #include "hardware/serial_controller.h"
 
-#include "hardware/GenericController.h"
+#include "hardware/uNavController.h"
+
+#include <thread>
 
 using namespace std;
 
@@ -43,9 +45,7 @@ int main(int argc, char **argv) {
     // Run the serial controller
     orbusSerial.start();
 
-    GenericController controller(&orbusSerial);
-
-    vector<packet_information_t> list_send;
+    uNavController controller(&orbusSerial);
 
     motor_command_map_t command;
     command.bitset.motor = 0;
@@ -54,6 +54,7 @@ int main(int argc, char **argv) {
     packet_information_t packet = createPacket(command.command_message, PACKET_REQUEST, HASHMAP_MOTOR, NULL, 0);
 
     orbusSerial.addFrame(packet)->addFrame(packet)->sendList();
+
 
     // Process remainder of ROS callbacks separately, mainly ControlManager related
     //ros::spin();

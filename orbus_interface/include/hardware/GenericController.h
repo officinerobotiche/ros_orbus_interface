@@ -9,11 +9,13 @@ class GenericController
 public:
     GenericController(orbus::serial_controller *serial);
 
-private:
-    packet_information_t systemFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
+protected:
+    void connectCallback(const ros::SingleSubscriberPublisher& pub);
+
+    orbus::serial_controller *mSerial;
 
 private:
-    orbus::serial_controller *mSerial;
+    void systemFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
 };
 
 #endif // GENERICCONTROLLER_H

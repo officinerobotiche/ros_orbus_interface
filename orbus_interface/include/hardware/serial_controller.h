@@ -8,13 +8,15 @@
 #include <or_bus/or_message.h>
 #include <or_bus/or_frame.h>
 
+#include <mutex>
+
 using namespace std;
 
 namespace orbus
 {
 
 /// Read complete callback - Array of callback
-typedef function<packet_information_t (unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) > callback_data_packet_t;
+typedef function<void (unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) > callback_data_packet_t;
 
 class serial_controller
 {
@@ -46,7 +48,7 @@ public:
     /**
      *
      */
-    template <class T> bool addCallback(packet_information_t(T::*fp)(unsigned char, unsigned char, unsigned char, message_abstract_u), T* obj, unsigned char type) {
+    template <class T> bool addCallback(void(T::*fp)(unsigned char, unsigned char, unsigned char, message_abstract_u), T* obj, unsigned char type) {
         return addCallback(bind(fp, obj, _1, _2, _3, _4), type);
     }
 
@@ -141,6 +143,9 @@ private:
 
     // List of all frame to send
     vector<packet_information_t> list_send;
+
+    // Mutex to sto concurent sending
+    mutex mMutex;
 };
 
 }

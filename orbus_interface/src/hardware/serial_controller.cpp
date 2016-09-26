@@ -76,13 +76,19 @@ void* serial_controller::run()
 
 serial_controller* serial_controller::addFrame(packet_information_t packet)
 {
+    mMutex.lock();
     list_send.push_back(packet);
+    mMutex.unlock();
     return this;
 }
 
 bool serial_controller::sendList()
 {
-    return sendSerialFrame(list_send);
+    bool state = sendSerialFrame(list_send);
+    if(state) {
+        list_send.clear();
+    }
+    return state;
 }
 
 bool serial_controller::sendSerialFrame(vector<packet_information_t> list_send)

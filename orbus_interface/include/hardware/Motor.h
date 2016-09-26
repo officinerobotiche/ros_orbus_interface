@@ -13,7 +13,7 @@
 
 using namespace std;
 
-namespace ORController
+namespace ORInterface
 {
 
 class Motor : public diagnostic_updater::DiagnosticTask

@@ -6,15 +6,15 @@
 #include <hardware_interface/joint_command_interface.h>
 
 
-#include "hardware/uNavController.h"
+#include "hardware/uNavInterface.h"
 
-namespace ORController
+namespace ORInterface
 {
 
-uNavController::uNavController(const ros::NodeHandle &nh, orbus::serial_controller *serial) : GenericController(nh, serial)
+uNavInterface::uNavInterface(const ros::NodeHandle &nh, orbus::serial_controller *serial) : GenericInterface(nh, serial)
 {
     /// Added all callback to receive information about messages
-    bool initCallback = mSerial->addCallback(&uNavController::allMotorsFrame, this, HASHMAP_MOTOR);
+    bool initCallback = mSerial->addCallback(&uNavInterface::allMotorsFrame, this, HASHMAP_MOTOR);
 
     //Initialize motors
     Motor motor0(nh, serial, 0);
@@ -28,7 +28,7 @@ uNavController::uNavController(const ros::NodeHandle &nh, orbus::serial_controll
 
 }
 
-void uNavController::registerControlInterfaces()
+void uNavInterface::registerControlInterfaces()
 {
     ROS_INFO_STREAM("Register Control interfaces");
     for(unsigned i=0; i < list_motor.size(); ++i)
@@ -47,17 +47,17 @@ void uNavController::registerControlInterfaces()
     registerInterface(&velocity_joint_interface);
 }
 
-void uNavController::updateJointsFromHardware()
+void uNavInterface::updateJointsFromHardware()
 {
-
+    ROS_INFO_STREAM("Update joint information from uNav");
 }
 
-void uNavController::writeCommandsToHardware(ros::Duration period)
+void uNavInterface::writeCommandsToHardware(ros::Duration period)
 {
-
+    ROS_INFO_STREAM("Write command to uNav");
 }
 
-void uNavController::allMotorsFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message)
+void uNavInterface::allMotorsFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message)
 {
 
     motor_command_map_t motor;

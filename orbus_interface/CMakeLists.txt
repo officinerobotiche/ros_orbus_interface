@@ -86,8 +86,8 @@ add_library(or_bus
 set(hardware_unav_SRC
      src/hw_interface.cpp
      src/hardware/serial_controller.cpp
-     src/hardware/GenericController.cpp
-     src/hardware/uNavController.cpp
+     src/hardware/GenericInterface.cpp
+     src/hardware/uNavInterface.cpp
      src/hardware/Motor.cpp
 #    src/configurator/MotorPIDConfigurator.cpp
 #    src/configurator/MotorParamConfigurator.cpp

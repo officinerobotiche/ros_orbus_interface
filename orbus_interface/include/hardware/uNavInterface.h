@@ -29,7 +29,7 @@ private:
 
 private:
     /// URDF information about robot
-    shared_ptr<urdf::ModelInterface> urdf;
+    boost::shared_ptr<urdf::ModelInterface> urdf;
 
     // List of motors
     vector<Motor> list_motor;

@@ -7,12 +7,12 @@ bool serial_controller::mStopping = false;
 
 serial_controller::serial_controller(string port, unsigned long baudrate) : mSerialPort(port), mBaudrate(baudrate)
 {
-    // >>>>> Ctrl+C handling
-    struct sigaction sigAct;
-    memset( &sigAct, 0, sizeof(sigAct) );
-    sigAct.sa_handler = serial_controller::sighandler;
-    sigaction(SIGINT, &sigAct, 0);
-    // <<<<< Ctrl+C handling
+//    // >>>>> Ctrl+C handling
+//    struct sigaction sigAct;
+//    memset( &sigAct, 0, sizeof(sigAct) );
+//    sigAct.sa_handler = serial_controller::sighandler;
+//    sigaction(SIGINT, &sigAct, 0);
+//    // <<<<< Ctrl+C handling
 
     orb_message_init(&mReceive);           ///< Initialize buffer serial error
     orb_frame_init();                      ///< Initialize hash map packet

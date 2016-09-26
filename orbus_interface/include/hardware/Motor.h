@@ -9,6 +9,8 @@
 #include <hardware_interface/joint_command_interface.h>
 #include <joint_limits_interface/joint_limits_interface.h>
 
+#include <orbus_msgs/MotorStatus.h>
+
 #include "hardware/serial_controller.h"
 
 using namespace std;
@@ -25,13 +27,17 @@ public:
 
     void registerControlInterfaces(hardware_interface::JointStateInterface joint_state_interface,
                                    hardware_interface::VelocityJointInterface velocity_joint_interface,
-                                   shared_ptr<urdf::ModelInterface> urdf);
+                                   boost::shared_ptr<urdf::ModelInterface> urdf);
 
-    void motorFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
+    void motorFrame(unsigned char option, unsigned char type, unsigned char command, motor_frame_u frame);
+
+    void addRequestMeasure();
+
+    void writeCommandsToHardware(ros::Duration period);
 
 private:
 
-    void setupLimits(hardware_interface::JointHandle joint_handle, shared_ptr<urdf::ModelInterface> urdf);
+    void setupLimits(hardware_interface::JointHandle joint_handle, boost::shared_ptr<urdf::ModelInterface> urdf);
 
 private:
     //Initialization object
@@ -53,6 +59,8 @@ private:
 
     // Publisher diagnostic information
     ros::Publisher diagnostic_publisher;
+    // Message
+    orbus_msgs::MotorStatus status_msg;
 
     // Number message
     motor_command_map_t command;

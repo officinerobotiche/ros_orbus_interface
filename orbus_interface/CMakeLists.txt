@@ -3,7 +3,7 @@ project(orbus_interface)
 
 #########################################################
 ## Options
-option( DEBUG_ACTIVE "Enable Debug build" ON )
+option( DEBUG_ACTIVE "Enable Debug build" OFF )
 
 if(DEBUG_ACTIVE)
     MESSAGE( "Debug compilation active" )
@@ -56,9 +56,8 @@ generate_dynamic_reconfigure_options(
 catkin_package(
     INCLUDE_DIRS
         include
-#        lib_orb_cpp/include
     LIBRARIES
-#        lib_orbus_cpp
+        or_bus
     CATKIN_DEPENDS
         diagnostic_updater
         dynamic_reconfigure
@@ -84,19 +83,15 @@ add_library(or_bus
 )
 
 set(hardware_unav_SRC
-     src/hw_interface.cpp
-     src/hardware/serial_controller.cpp
-     src/hardware/GenericInterface.cpp
-     src/hardware/uNavInterface.cpp
-     src/hardware/Motor.cpp
+    src/hw_interface.cpp
+    src/hardware/serial_controller.cpp
+    src/hardware/GenericInterface.cpp
+    src/hardware/uNavInterface.cpp
+    src/hardware/Motor.cpp
 #    src/configurator/MotorPIDConfigurator.cpp
 #    src/configurator/MotorParamConfigurator.cpp
 #    src/configurator/MotorEmergencyConfigurator.cpp
 #    src/diagnostic/MotorTask.cpp
-#    src/hardware/SerialController.cpp
-#    src/hardware/ORBHardware.cpp
-#    src/hardware/UNAVHardware.cpp
-#    src/unav_hwinterface.cpp
 )
 
 ## Declare a cpp executable

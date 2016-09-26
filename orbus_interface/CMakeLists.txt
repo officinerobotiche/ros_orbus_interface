@@ -92,6 +92,7 @@ add_library(or_bus
 set(hardware_unav_SRC
      src/hw_interface.cpp
      src/hardware/serial_controller.cpp
+     src/hardware/GenericController.cpp
 #    src/configurator/MotorPIDConfigurator.cpp
 #    src/configurator/MotorParamConfigurator.cpp
 #    src/configurator/MotorEmergencyConfigurator.cpp
@@ -106,7 +107,7 @@ set(hardware_unav_SRC
 add_executable(hardware_unav ${hardware_unav_SRC})
 target_link_libraries(hardware_unav or_bus ${catkin_LIBRARIES})
 
-#add_definitions(-std=c++11)
+add_definitions(-std=c++11)
 
 #roslint_cpp(${hardware_unav_SRC})
 

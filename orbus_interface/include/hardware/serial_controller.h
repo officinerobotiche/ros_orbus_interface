@@ -13,6 +13,11 @@ using namespace std;
 namespace orbus
 {
 
+/// Read complete callback - Array of callback
+typedef function<packet_information_t (unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) > callback_data_packet_t;
+
+static packet_information_t Save(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
+
 class serial_controller
 {
 public:
@@ -45,6 +50,20 @@ public:
      * @return
      */
     packet_t sendSerialPacket(packet_t packet);
+
+    /**
+     * @brief addCallback
+     * @param callback
+     * @param type
+     */
+    void addCallback(const callback_data_packet_t &callback, unsigned char type);
+
+    /**
+     *
+     */
+    template <class T> void addCallback(packet_information_t(T::*fp)(unsigned char, unsigned char, unsigned char, message_abstract_u), T* obj, unsigned char type) {
+        addCallback(bind(fp, obj, _1, _2, _3, _4), type);
+    }
 
 protected:
     // >>>>> Ctrl+C handler
@@ -96,6 +115,16 @@ private:
      */
     bool readPacket();
 
+    friend packet_information_t Save(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message)
+    {
+        //this->mStopping = 1;
+
+        ROS_INFO_STREAM("Friend function");
+        return CREATE_PACKET_EMPTY;
+    }
+
+    //friend packet_information_t orbus::serial_controller::Save(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
+
 private:
     // Serial port object
     serial::Serial mSerial;
@@ -116,7 +145,7 @@ private:
     unsigned char BufferTx[MAX_BUFF_TX];
 
     /// List to send messages to serial
-    vector<packet_information_t> list_send;
+    vector<callback_data_packet_t> list_callback;
 };
 
 }

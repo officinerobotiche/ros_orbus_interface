@@ -16,7 +16,8 @@ namespace orbus
 /// Read complete callback - Array of callback
 typedef function<packet_information_t (unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) > callback_data_packet_t;
 
-//static packet_information_t Save(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
+class serial_controller;
+static serial_controller* serial_data;
 
 class serial_controller
 {
@@ -64,6 +65,8 @@ public:
     template <class T> void addCallback(packet_information_t(T::*fp)(unsigned char, unsigned char, unsigned char, message_abstract_u), T* obj, unsigned char type) {
         addCallback(bind(fp, obj, _1, _2, _3, _4), type);
     }
+
+    int test;
 
 protected:
     // >>>>> Ctrl+C handler
@@ -115,16 +118,8 @@ private:
      */
     bool readPacket();
 
-    //friend packet_information_t Save(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message)
-    static packet_information_t Save(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message)
-    {
-        //this->mStopping = 1;
+    static packet_information_t Save(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
 
-        ROS_INFO_STREAM("Friend function");
-        return CREATE_PACKET_EMPTY;
-    }
-
-    //friend packet_information_t orbus::serial_controller::Save(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
 
 private:
     // Serial port object

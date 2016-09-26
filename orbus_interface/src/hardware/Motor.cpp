@@ -63,10 +63,10 @@ void Motor::setupLimits(hardware_interface::JointHandle joint_handle, shared_ptr
     // Populate (soft) joint limits from the ros parameter server
     // Limits specified in the parameter server overwrite existing values in 'limits' and 'soft_limits'
     // Limits not specified in the parameter server preserve their existing values
-//    const bool rosparam_limits_ok = getJointLimits(mName, mNh, limits);
-//    if(rosparam_limits_ok) {
-//        ROS_INFO_STREAM("LOAD " << mName << " limits from ROSPARAM: " << limits.max_velocity << " rad/s");
-//    }
+    const bool rosparam_limits_ok = getJointLimits(mName, mNh, limits);
+    if(rosparam_limits_ok) {
+        ROS_INFO_STREAM("LOAD " << mName << " limits from ROSPARAM: " << limits.max_velocity << " rad/s");
+    }
 
     // Send joint limits information to board
     motor_t constraint;
@@ -98,7 +98,7 @@ void Motor::run(diagnostic_updater::DiagnosticStatusWrapper &stat)
 
 void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message)
 {
-    ROS_DEBUG_STREAM("Motor decode " << mName );
+    ROS_INFO_STREAM("Motor decode " << mName );
     switch(command)
     {
         case MOTOR_MEASURE:

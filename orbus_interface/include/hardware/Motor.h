@@ -29,9 +29,6 @@ public:
 
     void motorFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
 
-    //NameSpace for bridge controller
-    ros::NodeHandle mNh;
-
 private:
 
     void setupLimits(hardware_interface::JointHandle joint_handle, shared_ptr<urdf::ModelInterface> urdf);
@@ -39,7 +36,7 @@ private:
 private:
     //Initialization object
     //NameSpace for bridge controller
-    //ros::NodeHandle mNh;
+    ros::NodeHandle mNh;
     // Serial controller communication
     orbus::serial_controller *mSerial;
     // Name of the motor

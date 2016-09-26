@@ -32,7 +32,7 @@ private:
     shared_ptr<urdf::ModelInterface> urdf;
 
     // List of motors
-    vector<Motor*> list_motor;
+    vector<Motor> list_motor;
 
     /// ROS Control interfaces
     hardware_interface::JointStateInterface joint_state_interface;

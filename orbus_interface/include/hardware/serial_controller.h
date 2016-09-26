@@ -16,7 +16,7 @@ namespace orbus
 /// Read complete callback - Array of callback
 typedef function<packet_information_t (unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) > callback_data_packet_t;
 
-static packet_information_t Save(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
+//static packet_information_t Save(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
 
 class serial_controller
 {
@@ -115,7 +115,8 @@ private:
      */
     bool readPacket();
 
-    friend packet_information_t Save(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message)
+    //friend packet_information_t Save(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message)
+    static packet_information_t Save(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message)
     {
         //this->mStopping = 1;
 

@@ -17,6 +17,8 @@ serial_controller::serial_controller(string port, unsigned long baudrate) : mSer
     orb_message_init(&mReceive);           ///< Initialize buffer serial error
     orb_frame_init();                      ///< Initialize hash map packet
 
+    orbus::serial_data = this;
+
     mTimeout = 500;
 }
 
@@ -60,7 +62,7 @@ void serial_controller::addCallback(const callback_data_packet_t &callback, unsi
 {
     //set_frame_reader(type, NULL, serial_controller::Save);
     //set_frame_reader(type, NULL, serial_controller::Save);
-    set_frame_reader(type, NULL, orbus::Save);
+    set_frame_reader(type, NULL, serial_controller::Save);
     list_callback.push_back(callback);
 }
 
@@ -152,19 +154,14 @@ bool serial_controller::readPacket()
     } while(true);
 }
 
-//packet_information_t Save(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
+packet_information_t serial_controller::Save(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message)
+{
+    orbus::serial_data->test = 1;
 
+    //serial->addCallback();
 
-////    //serial_controller* p = reinterpret_cast<serial_controller*>(option, type, command, message);
-
-//////    for(unsigned i=0; i< this->list_callback.size(); ++i)
-//////    {
-//////        //this->list_callback.at(i);
-//////    }
-/////
-
-//    ROS_INFO("I'm in save function");
-//    return CREATE_PACKET_EMPTY;
-//}
+    ROS_INFO_STREAM("Static function write: " << orbus::serial_data->test);
+    return CREATE_PACKET_EMPTY;
+}
 
 }

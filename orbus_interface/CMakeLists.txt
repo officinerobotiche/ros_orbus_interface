@@ -3,17 +3,17 @@ project(orbus_interface)
 
 #########################################################
 ## Options
-option( DEBUG_ACTIVE "Enable Debug build" OFF )
+#option( DEBUG_ACTIVE "Enable Debug build" OFF )
 
-if(DEBUG_ACTIVE)
-    MESSAGE( "Debug compilation active" )
-    set(ROS_BUILD_TYPE Debug)
-    set(CMAKE_BUILD_TYPE Debug)
-else()
-    MESSAGE( "Release compilation active" )
-    set(ROS_BUILD_TYPE Release)
-    set(CMAKE_BUILD_TYPE Release)
-endif()
+#if(DEBUG_ACTIVE)
+#    MESSAGE( "Debug compilation active" )
+#    set(ROS_BUILD_TYPE Debug)
+#    set(CMAKE_BUILD_TYPE Debug)
+#else()
+#    MESSAGE( "Release compilation active" )
+#    set(ROS_BUILD_TYPE Release)
+#    set(CMAKE_BUILD_TYPE Release)
+#endif()
 #########################################################
 
 ## Find catkin macros and librariess
@@ -74,6 +74,7 @@ catkin_package(
 ###########
 include_directories(include
                     ../or_bus_c.X/includes
+                    ${Boost_INCLUDE_DIRS}
                     ${catkin_INCLUDE_DIRS}
 )
 
@@ -88,15 +89,15 @@ set(hardware_unav_SRC
     src/hardware/GenericInterface.cpp
     src/hardware/uNavInterface.cpp
     src/hardware/Motor.cpp
-#    src/configurator/MotorPIDConfigurator.cpp
+    src/configurator/MotorPIDConfigurator.cpp
 #    src/configurator/MotorParamConfigurator.cpp
 #    src/configurator/MotorEmergencyConfigurator.cpp
 #    src/diagnostic/MotorTask.cpp
 )
 
 ## Declare a cpp executable
-add_executable(hardware_unav ${hardware_unav_SRC})
-target_link_libraries(hardware_unav or_bus ${catkin_LIBRARIES})
+add_executable(unav_node ${hardware_unav_SRC})
+target_link_libraries(unav_node or_bus  ${Boost_INCLUDE_DIRS} ${catkin_LIBRARIES})
 
 add_definitions(-std=c++11)
 

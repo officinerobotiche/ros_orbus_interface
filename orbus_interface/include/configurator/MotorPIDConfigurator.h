@@ -31,32 +31,31 @@
 
 #include <ros/ros.h>
 
-#include "hardware/SerialController.h"
 #include <dynamic_reconfigure/server.h>
 #include <orbus_interface/UnavPIDConfig.h>
 
+#include "hardware/serial_controller.h"
+
 class MotorPIDConfigurator {
 public:
-    MotorPIDConfigurator(const ros::NodeHandle& nh, SerialController *serial, std::string path, std::string name, unsigned int number, unsigned int type);
-
-    void initConfigurator();
+    MotorPIDConfigurator(const ros::NodeHandle& nh, orbus::serial_controller *serial, string path, std::string name, unsigned int type, unsigned int number);
 
     void setParam(motor_pid_t parameter);
     motor_pid_t getParam();
 
 private:
     /// Associate name space
-    std::string name_;
+    std::string mName;
     /// Private namespace
     ros::NodeHandle nh_;
     /// Serial port
-    SerialController* serial_;
+    orbus::serial_controller* mSerial;
     /// Command map
-    motor_command_map_t command_;
-    /// PID message
-    motor_pid_t last_pid_, default_pid_;
+    motor_command_map_t mCommand;
+//    /// PID message
+//    motor_pid_t last_pid_, default_pid_;
 
-    bool setup_;
+//    bool setup_;
 
     dynamic_reconfigure::Server<orbus_interface::UnavPIDConfig> *dsrv_;
     void reconfigureCB(orbus_interface::UnavPIDConfig &config, uint32_t level);

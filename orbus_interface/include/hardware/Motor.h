@@ -13,6 +13,8 @@
 
 #include "hardware/serial_controller.h"
 
+#include "configurator/MotorPIDConfigurator.h"
+
 using namespace std;
 
 namespace ORInterface
@@ -22,6 +24,8 @@ class Motor : public diagnostic_updater::DiagnosticTask
 {
 public:
     explicit Motor(const ros::NodeHandle &nh, orbus::serial_controller *serial, unsigned int number);
+
+    void initializeMotor();
 
     void run(diagnostic_updater::DiagnosticStatusWrapper &stat);
 
@@ -47,6 +51,7 @@ private:
     orbus::serial_controller *mSerial;
     // Name of the motor
     string mName;
+    unsigned int mNumber;
     // State of the motor
     double position;
     double position_offset;
@@ -60,10 +65,12 @@ private:
     // Publisher diagnostic information
     ros::Publisher diagnostic_publisher;
     // Message
-    orbus_msgs::MotorStatus status_msg;
+    //orbus_msgs::MotorStatus status_msg;
 
     // Number message
     motor_command_map_t command;
+
+    MotorPIDConfigurator *pid_velocity, *pid_current;
 };
 
 }

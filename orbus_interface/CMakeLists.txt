@@ -97,7 +97,7 @@ set(hardware_unav_SRC
 
 ## Declare a cpp executable
 add_executable(unav_node ${hardware_unav_SRC})
-target_link_libraries(unav_node or_bus  ${Boost_INCLUDE_DIRS} ${catkin_LIBRARIES})
+target_link_libraries(unav_node or_bus ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 add_definitions(-std=c++11)
 

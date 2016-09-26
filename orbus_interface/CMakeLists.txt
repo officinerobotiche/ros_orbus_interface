@@ -83,17 +83,12 @@ add_library(or_bus
     ../or_bus_c.X/src/or_bus/or_frame.c
 )
 
-#add_library(lib_orbus_cpp
-#   lib_orb_cpp/src/serial_parser_packet/AsyncSerial.cpp
-#   lib_orb_cpp/src/serial_parser_packet/PacketSerial.cpp
-#   lib_orb_cpp/src/serial_parser_packet/ParserPacket.cpp
-#)
-
 set(hardware_unav_SRC
      src/hw_interface.cpp
      src/hardware/serial_controller.cpp
      src/hardware/GenericController.cpp
      src/hardware/uNavController.cpp
+     src/hardware/Motor.cpp
 #    src/configurator/MotorPIDConfigurator.cpp
 #    src/configurator/MotorParamConfigurator.cpp
 #    src/configurator/MotorEmergencyConfigurator.cpp

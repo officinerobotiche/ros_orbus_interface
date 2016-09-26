@@ -160,7 +160,7 @@ bool serial_controller::readPacket()
 
         if( !mSerial.waitReadable() )
         {
-            ROS_ERROR_STREAM( "IMU timeout connecting");
+            ROS_ERROR_STREAM( "Serial timeout connecting");
             return false;
         }
 

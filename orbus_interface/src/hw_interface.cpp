@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
     // Run the serial controller
     orbusSerial.start();
 
-    ORController::uNavController controller(&orbusSerial);
+    ORController::uNavController controller(nh, &orbusSerial);
 
     motor_command_map_t command;
     command.bitset.motor = 0;
@@ -54,7 +54,6 @@ int main(int argc, char **argv) {
     packet_information_t packet = createPacket(command.command_message, PACKET_REQUEST, HASHMAP_MOTOR, NULL, 0);
 
     orbusSerial.addFrame(packet)->addFrame(packet)->sendList();
-
 
     // Process remainder of ROS callbacks separately, mainly ControlManager related
     //ros::spin();

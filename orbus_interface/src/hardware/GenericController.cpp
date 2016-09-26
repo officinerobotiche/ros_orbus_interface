@@ -3,7 +3,7 @@
 namespace ORController
 {
 
-GenericController::GenericController(orbus::serial_controller *serial) : mSerial(serial)
+GenericController::GenericController(const ros::NodeHandle &nh, orbus::serial_controller *serial) : mNh(nh), mSerial(serial)
 {
     bool initCallback = mSerial->addCallback(&GenericController::systemFrame, this, HASHMAP_SYSTEM);
 }

@@ -7,6 +7,9 @@
 
 #include "hardware/GenericController.h"
 
+namespace ORController
+{
+
 class uNavController : public GenericController, public hardware_interface::RobotHW
 {
 public:
@@ -18,5 +21,7 @@ public:
 private:
     void motorFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
 };
+
+}
 
 #endif // UNAVCONTROLLER_H

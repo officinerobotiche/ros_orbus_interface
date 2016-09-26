@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
     // Run the serial controller
     orbusSerial.start();
 
-    uNavController controller(&orbusSerial);
+    ORController::uNavController controller(&orbusSerial);
 
     motor_command_map_t command;
     command.bitset.motor = 0;

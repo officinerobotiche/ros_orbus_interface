@@ -4,6 +4,9 @@
 #include <ros/ros.h>
 #include "hardware/serial_controller.h"
 
+namespace ORController
+{
+
 class GenericController
 {
 public:
@@ -17,5 +20,7 @@ protected:
 private:
     void systemFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
 };
+
+}
 
 #endif // GENERICCONTROLLER_H

@@ -37,6 +37,10 @@ uNavInterface::uNavInterface(const ros::NodeHandle &nh, orbus::serial_controller
     list_motor.push_back(motor0);
     list_motor.push_back(motor1);
 
+    //Initialize motors
+    motor0.initializeMotor();
+    motor1.initializeMotor();
+
     /// Register all control interface avaiable
     registerControlInterfaces();
 

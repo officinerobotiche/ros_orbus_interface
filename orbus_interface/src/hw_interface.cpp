@@ -19,14 +19,16 @@
 
 #include "hardware/serial_controller.h"
 
+#include "hardware/GenericController.h"
+
 using namespace std;
 
-packet_information_t save_frame_motor(unsigned char option, unsigned char type, unsigned char command, message_abstract_u* message) {
+packet_information_t save_frame_motor(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
     ROS_INFO("SAVE I'm here!");
     return CREATE_PACKET_EMPTY;
 }
 
-packet_information_t send_frame_motor(unsigned char option, unsigned char type, unsigned char command, message_abstract_u* message) {
+packet_information_t send_frame_motor(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
     ROS_INFO("SEND I'm here!");
     return CREATE_PACKET_EMPTY;
 }
@@ -52,7 +54,9 @@ int main(int argc, char **argv) {
     orbusSerial.start();
 
     // Add frame_motor control
-    set_frame_reader(HASHMAP_MOTOR, &send_frame_motor, &save_frame_motor);
+    //set_frame_reader(HASHMAP_MOTOR, &send_frame_motor, &save_frame_motor);
+
+    GenericController controller(&orbusSerial);
 
     vector<packet_information_t> list_send;
 
@@ -66,6 +70,8 @@ int main(int argc, char **argv) {
     if(orbusSerial.sendSerialFrame(list_send)) {
         ROS_INFO_STREAM("OK");
     }
+
+
 
     // Process remainder of ROS callbacks separately, mainly ControlManager related
     //ros::spin();

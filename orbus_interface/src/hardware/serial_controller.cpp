@@ -56,6 +56,14 @@ bool serial_controller::stop()
     mStopped = true;
 }
 
+void serial_controller::addCallback(const callback_data_packet_t &callback, unsigned char type)
+{
+    //set_frame_reader(type, NULL, serial_controller::Save);
+    //set_frame_reader(type, NULL, serial_controller::Save);
+    set_frame_reader(type, NULL, orbus::Save);
+    list_callback.push_back(callback);
+}
+
 void* serial_controller::run()
 {
 
@@ -143,5 +151,20 @@ bool serial_controller::readPacket()
         }
     } while(true);
 }
+
+//packet_information_t Save(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
+
+
+////    //serial_controller* p = reinterpret_cast<serial_controller*>(option, type, command, message);
+
+//////    for(unsigned i=0; i< this->list_callback.size(); ++i)
+//////    {
+//////        //this->list_callback.at(i);
+//////    }
+/////
+
+//    ROS_INFO("I'm in save function");
+//    return CREATE_PACKET_EMPTY;
+//}
 
 }

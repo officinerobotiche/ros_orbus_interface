@@ -16,14 +16,39 @@
  */
 
 #include <ros/ros.h>
+#include <controller_manager/controller_manager.h>
+#include <ros/callback_queue.h>
 
 #include "hardware/serial_controller.h"
 
-#include "hardware/uNavController.h"
+#include "hardware/uNavInterface.h"
 
-#include <thread>
+#include <boost/chrono.hpp>
+
+typedef boost::chrono::steady_clock time_source;
 
 using namespace std;
+using namespace ORInterface;
+
+/**
+* Control loop not realtime safe
+*/
+void controlLoop(uNavInterface &orb,
+                 controller_manager::ControllerManager &cm,
+                 time_source::time_point &last_time)
+{
+
+  // Calculate monotonic time difference
+  time_source::time_point this_time = time_source::now();
+  boost::chrono::duration<double> elapsed_duration = this_time - last_time;
+  ros::Duration elapsed(elapsed_duration.count());
+  last_time = this_time;
+
+  // Process control loop
+  orb.updateJointsFromHardware();
+  cm.update(ros::Time::now(), elapsed);
+  orb.writeCommandsToHardware(elapsed);
+}
 
 int main(int argc, char **argv) {
 
@@ -32,8 +57,8 @@ int main(int argc, char **argv) {
 
     //Hardware information
     double control_frequency, diagnostic_frequency;
-    private_nh.param<double>("control_frequency", control_frequency, 10.0);
-    private_nh.param<double>("diagnostic_frequency", diagnostic_frequency, 10.0);
+    private_nh.param<double>("control_frequency", control_frequency, 1.0);
+    private_nh.param<double>("diagnostic_frequency", diagnostic_frequency, 1.0);
 
     string serial_port_string;
     int32_t baud_rate;
@@ -41,22 +66,36 @@ int main(int argc, char **argv) {
     private_nh.param<string>("serial_port", serial_port_string, "/dev/ttyUSB0");
     private_nh.param<int32_t>("serial_rate", baud_rate, 115200);
 
+    ROS_INFO_STREAM("Open Serial " << serial_port_string << ":" << baud_rate);
+
     orbus::serial_controller orbusSerial(serial_port_string, baud_rate);
     // Run the serial controller
     orbusSerial.start();
 
-    ORController::uNavController controller(nh, &orbusSerial);
+    uNavInterface interface(nh, &orbusSerial);
+    controller_manager::ControllerManager cm(&interface, nh);
 
-    motor_command_map_t command;
-    command.bitset.motor = 0;
-    command.bitset.command = MOTOR_VEL_PID;
+    // Setup separate queue and single-threaded spinner to process timer callbacks
+    // that interface with uNav hardware.
+    // This avoids having to lock around hardware access, but precludes realtime safety
+    // in the control loop.
+    ros::CallbackQueue unav_queue;
+    ros::AsyncSpinner unav_spinner(1, &unav_queue);
 
-    packet_information_t packet = createPacket(command.command_message, PACKET_REQUEST, HASHMAP_MOTOR, NULL, 0);
+    time_source::time_point last_time = time_source::now();
+    ros::TimerOptions control_timer(
+                ros::Duration(1 / control_frequency),
+                boost::bind(controlLoop, boost::ref(interface), boost::ref(cm), boost::ref(last_time)),
+                &unav_queue);
+    ros::Timer control_loop = nh.createTimer(control_timer);
 
-    orbusSerial.addFrame(packet)->addFrame(packet)->sendList();
+    unav_spinner.start();
+
+    std::string name_node = ros::this_node::getName();
+    ROS_INFO("Started %s", name_node.c_str());
 
     // Process remainder of ROS callbacks separately, mainly ControlManager related
-    //ros::spin();
+    ros::spin();
 
     return 0;
 }

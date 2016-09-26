@@ -7,7 +7,7 @@
 #include <joint_limits_interface/joint_limits_urdf.h>
 #include <joint_limits_interface/joint_limits_rosparam.h>
 
-namespace ORController
+namespace ORInterface
 {
 
 Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, unsigned int number)

@@ -8,15 +8,15 @@
 #include <urdf/model.h>
 
 #include "hardware/Motor.h"
-#include "hardware/GenericController.h"
+#include "hardware/GenericInterface.h"
 
-namespace ORController
+namespace ORInterface
 {
 
-class uNavController : public GenericController, public hardware_interface::RobotHW
+class uNavInterface : public GenericInterface, public hardware_interface::RobotHW
 {
 public:
-    uNavController(const ros::NodeHandle &nh, orbus::serial_controller *serial);
+    uNavInterface(const ros::NodeHandle &nh, orbus::serial_controller *serial);
 
     void updateJointsFromHardware();
     void writeCommandsToHardware(ros::Duration period);

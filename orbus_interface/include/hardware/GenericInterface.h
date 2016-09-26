@@ -4,13 +4,13 @@
 #include <ros/ros.h>
 #include "hardware/serial_controller.h"
 
-namespace ORController
+namespace ORInterface
 {
 
-class GenericController
+class GenericInterface
 {
 public:
-    GenericController(const ros::NodeHandle &nh, orbus::serial_controller *serial);
+    GenericInterface(const ros::NodeHandle &nh, orbus::serial_controller *serial);
 
 protected:
     void connectCallback(const ros::SingleSubscriberPublisher& pub);

@@ -17,8 +17,6 @@ serial_controller::serial_controller(string port, unsigned long baudrate) : mSer
     orb_message_init(&mReceive);           ///< Initialize buffer serial error
     orb_frame_init();                      ///< Initialize hash map packet
 
-    orbus::serial_data = this;
-
     mTimeout = 500;
 }
 
@@ -58,12 +56,17 @@ bool serial_controller::stop()
     mStopped = true;
 }
 
-void serial_controller::addCallback(const callback_data_packet_t &callback, unsigned char type)
+bool serial_controller::addCallback(const callback_data_packet_t &callback, unsigned char type)
 {
-    //set_frame_reader(type, NULL, serial_controller::Save);
-    //set_frame_reader(type, NULL, serial_controller::Save);
-    set_frame_reader(type, NULL, serial_controller::Save);
-    list_callback.push_back(callback);
+    if (hashmap.find(type) != hashmap.end())
+    {
+        return false;
+    } else
+    {
+        hashmap[type] = callback;
+        return true;
+    }
+
 }
 
 void* serial_controller::run()
@@ -71,22 +74,38 @@ void* serial_controller::run()
 
 }
 
+serial_controller* serial_controller::addFrame(packet_information_t packet)
+{
+    list_send.push_back(packet);
+    return this;
+}
+
+bool serial_controller::sendList()
+{
+    return sendSerialFrame(list_send);
+}
+
 bool serial_controller::sendSerialFrame(vector<packet_information_t> list_send)
 {
     if(list_send.size())
     {
-        // Build a same array with same size of packet to send
-        packet_information_t list_data[list_send.size()];
-        size_t len = 0;
         // Encode the list of frames
         packet_t packet = encoder(list_send.data(), list_send.size());
         // Send the packet in serial and wait the received data
         packet_t receive = sendSerialPacket(packet);
         // Read all frame and if is true send a packet with all new information
-        if(parser(&receive, &list_data[0], &len)) {
-            ROS_DEBUG_STREAM("Parsing packet ok!");
-            return true;
+        for (int i = 0; i < receive.length; i += receive.buffer[i]) {
+            packet_information_t info;
+            memcpy((unsigned char*) &info, &receive.buffer[i], receive.buffer[i]);
+            // Check if is available on the hashmap
+            if (hashmap.find(info.type) != hashmap.end())
+            {
+                // Send the message
+                callback_data_packet_t callback = hashmap[info.type];
+                callback(info.option, info.type, info.command, info.message);
+            }
         }
+        return true;
     }
     return false;
 }
@@ -152,16 +171,6 @@ bool serial_controller::readPacket()
             }
         }
     } while(true);
-}
-
-packet_information_t serial_controller::Save(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message)
-{
-    orbus::serial_data->test = 1;
-
-    //serial->addCallback();
-
-    ROS_INFO_STREAM("Static function write: " << orbus::serial_data->test);
-    return CREATE_PACKET_EMPTY;
 }
 
 }

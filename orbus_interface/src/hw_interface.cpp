@@ -23,16 +23,6 @@
 
 using namespace std;
 
-packet_information_t save_frame_motor(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
-    ROS_INFO("SAVE I'm here!");
-    return CREATE_PACKET_EMPTY;
-}
-
-packet_information_t send_frame_motor(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
-    ROS_INFO("SEND I'm here!");
-    return CREATE_PACKET_EMPTY;
-}
-
 int main(int argc, char **argv) {
 
     ros::init(argc, argv, "unav_interface");
@@ -53,9 +43,6 @@ int main(int argc, char **argv) {
     // Run the serial controller
     orbusSerial.start();
 
-    // Add frame_motor control
-    //set_frame_reader(HASHMAP_MOTOR, &send_frame_motor, &save_frame_motor);
-
     GenericController controller(&orbusSerial);
 
     vector<packet_information_t> list_send;
@@ -65,13 +52,8 @@ int main(int argc, char **argv) {
     command.bitset.command = MOTOR_VEL_PID;
 
     packet_information_t packet = createPacket(command.command_message, PACKET_REQUEST, HASHMAP_MOTOR, NULL, 0);
-    list_send.push_back(packet);
 
-    if(orbusSerial.sendSerialFrame(list_send)) {
-        ROS_INFO_STREAM("OK");
-    }
-
-
+    orbusSerial.addFrame(packet)->addFrame(packet)->sendList();
 
     // Process remainder of ROS callbacks separately, mainly ControlManager related
     //ros::spin();

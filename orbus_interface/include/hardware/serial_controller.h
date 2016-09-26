@@ -16,9 +16,6 @@ namespace orbus
 /// Read complete callback - Array of callback
 typedef function<packet_information_t (unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) > callback_data_packet_t;
 
-class serial_controller;
-static serial_controller* serial_data;
-
 class serial_controller
 {
 public:
@@ -40,33 +37,22 @@ public:
     bool stop();
 
     /**
-     * @brief sendSerialFrame
-     * @param list_send
-     * @return
-     */
-    bool sendSerialFrame(vector<packet_information_t> list_send);
-    /**
-     * @brief sendSerialPacket
-     * @param packet
-     * @return
-     */
-    packet_t sendSerialPacket(packet_t packet);
-
-    /**
      * @brief addCallback
      * @param callback
      * @param type
      */
-    void addCallback(const callback_data_packet_t &callback, unsigned char type);
+    bool addCallback(const callback_data_packet_t &callback, unsigned char type);
 
     /**
      *
      */
-    template <class T> void addCallback(packet_information_t(T::*fp)(unsigned char, unsigned char, unsigned char, message_abstract_u), T* obj, unsigned char type) {
-        addCallback(bind(fp, obj, _1, _2, _3, _4), type);
+    template <class T> bool addCallback(packet_information_t(T::*fp)(unsigned char, unsigned char, unsigned char, message_abstract_u), T* obj, unsigned char type) {
+        return addCallback(bind(fp, obj, _1, _2, _3, _4), type);
     }
 
-    int test;
+    serial_controller *addFrame(packet_information_t packet);
+
+    bool sendList();
 
 protected:
     // >>>>> Ctrl+C handler
@@ -78,6 +64,19 @@ protected:
         ROS_INFO_STREAM("Ctrl+C pressed by user" );
     }
     // <<<<< Ctrl+C handler
+
+    /**
+     * @brief sendSerialFrame
+     * @param list_send
+     * @return
+     */
+    bool sendSerialFrame(vector<packet_information_t> list_send);
+    /**
+     * @brief sendSerialPacket
+     * @param packet
+     * @return
+     */
+    packet_t sendSerialPacket(packet_t packet);
 
     /*!
      * \brief run
@@ -118,9 +117,6 @@ private:
      */
     bool readPacket();
 
-    static packet_information_t Save(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
-
-
 private:
     // Serial port object
     serial::Serial mSerial;
@@ -140,8 +136,11 @@ private:
     // buffer to send in Tx transimssion
     unsigned char BufferTx[MAX_BUFF_TX];
 
-    /// List to send messages to serial
-    vector<callback_data_packet_t> list_callback;
+    // Hashmap with all type of message
+    map<int, callback_data_packet_t> hashmap;
+
+    // List of all frame to send
+    vector<packet_information_t> list_send;
 };
 
 }

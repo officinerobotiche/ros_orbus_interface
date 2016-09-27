@@ -15,8 +15,6 @@ Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, unsign
     , mNh(nh)
     , mSerial(serial)
     , mName("motor_" + to_string(number))
-    //, pid_velocity(nh, serial, mName, "velocity", MOTOR_VEL_PID, number)
-    //, pid_current(nh, serial, mName, "current", MOTOR_CURRENT_PID, number)
 {
     command.bitset.motor = number;
     mNumber = number;
@@ -24,6 +22,7 @@ Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, unsign
     pid_velocity = new MotorPIDConfigurator(nh, serial, mName, "velocity", MOTOR_VEL_PID, number);
     pid_current = new MotorPIDConfigurator(nh, serial, mName, "current", MOTOR_CURRENT_PID, number);
     parameter = new MotorParamConfigurator(nh, serial, mName, number);
+    emergency = new MotorEmergencyConfigurator(nh, serial, mName, number);
 
 }
 
@@ -32,6 +31,7 @@ void Motor::initializeMotor()
     pid_velocity->initConfigurator();
     pid_current->initConfigurator();
     parameter->initConfigurator();
+    emergency->initConfigurator();
 }
 
 void Motor::registerControlInterfaces(hardware_interface::JointStateInterface joint_state_interface, hardware_interface::VelocityJointInterface velocity_joint_interface, boost::shared_ptr<urdf::ModelInterface> urdf)

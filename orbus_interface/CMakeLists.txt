@@ -94,8 +94,7 @@ set(hardware_unav_SRC
     src/configurator/GenericConfigurator.cpp
     src/configurator/MotorPIDConfigurator.cpp
     src/configurator/MotorParamConfigurator.cpp
-#    src/configurator/MotorEmergencyConfigurator.cpp
-#    src/diagnostic/MotorTask.cpp
+    src/configurator/MotorEmergencyConfigurator.cpp
 )
 
 ## Declare a cpp executable

@@ -15,6 +15,7 @@
 
 #include "configurator/MotorPIDConfigurator.h"
 #include "configurator/MotorParamConfigurator.h"
+#include "configurator/MotorEmergencyConfigurator.h"
 
 using namespace std;
 
@@ -74,6 +75,8 @@ private:
     MotorPIDConfigurator *pid_velocity, *pid_current;
 
     MotorParamConfigurator *parameter;
+
+    MotorEmergencyConfigurator *emergency;
 };
 
 }

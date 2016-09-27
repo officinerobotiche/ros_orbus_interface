@@ -77,7 +77,7 @@ void uNavInterface::registerControlInterfaces()
         // Get motor
         Motor *motor_obj = list_motor.at(i);
         // Register interface
-        motor_obj->registerControlInterfaces(joint_state_interface, velocity_joint_interface, urdf);
+        motor_obj->registerControlInterfaces(&joint_state_interface, &velocity_joint_interface, urdf);
     }
     ROS_INFO_STREAM("Send all Constraint configuration");
     // Send list of Command

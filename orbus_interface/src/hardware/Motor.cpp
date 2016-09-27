@@ -39,16 +39,17 @@ void Motor::initializeMotor()
     emergency->initConfigurator();
 }
 
-void Motor::registerControlInterfaces(hardware_interface::JointStateInterface joint_state_interface, hardware_interface::VelocityJointInterface velocity_joint_interface, boost::shared_ptr<urdf::ModelInterface> urdf)
+void Motor::registerControlInterfaces(hardware_interface::JointStateInterface *joint_state_interface, hardware_interface::VelocityJointInterface *velocity_joint_interface, boost::shared_ptr<urdf::ModelInterface> urdf)
 {
     /// Joint hardware interface
+    ROS_INFO_STREAM("Hardware interface: "<< mName);
     hardware_interface::JointStateHandle joint_state_handle(mName, &position, &velocity, &effort);
 
-    joint_state_interface.registerHandle(joint_state_handle);
+    joint_state_interface->registerHandle(joint_state_handle);
 
     /// Differential drive interface
     hardware_interface::JointHandle joint_handle(joint_state_handle, &velocity_command);
-    velocity_joint_interface.registerHandle(joint_handle);
+    velocity_joint_interface->registerHandle(joint_handle);
 
     setupLimits(joint_handle, urdf);
 }

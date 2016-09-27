@@ -32,31 +32,25 @@
 
 #include <ros/ros.h>
 
-#include "hardware/SerialController.h"
-
-#include <dynamic_reconfigure/server.h>
 #include <orbus_interface/UnavEmergencyConfig.h>
 
-class MotorEmergencyConfigurator {
+#include "hardware/serial_controller.h"
+#include "configurator/GenericConfigurator.h"
+
+
+class MotorEmergencyConfigurator : public GenericConfigurator
+{
 public:
-    MotorEmergencyConfigurator(const ros::NodeHandle& nh, SerialController *serial, std::string name, unsigned int number);
+    MotorEmergencyConfigurator(const ros::NodeHandle &nh, orbus::serial_controller *serial, std::string name, unsigned int number);
+
+    void initConfigurator();
 
     void setParam(motor_emergency_t emergency);
     motor_emergency_t getParam();
 
 private:
-    /// Associate name space
-    std::string name_;
-    /// Private namespace
-    ros::NodeHandle nh_;
-    /// Serial port
-    SerialController* serial_;
-    /// Command map
-    motor_command_map_t command_;
 
     motor_emergency_t last_emergency_, default_emer_;
-
-    bool setup_;
 
     dynamic_reconfigure::Server<orbus_interface::UnavEmergencyConfig> *dsrv_;
     void reconfigureCB(orbus_interface::UnavEmergencyConfig &config, uint32_t level);

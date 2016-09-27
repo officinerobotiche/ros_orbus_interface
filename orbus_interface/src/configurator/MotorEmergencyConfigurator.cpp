@@ -33,36 +33,33 @@
 
 using namespace std;
 
-MotorEmergencyConfigurator::MotorEmergencyConfigurator(const ros::NodeHandle& nh, SerialController *serial, std::string name, unsigned int number)
-    : nh_(nh), serial_(serial)
+MotorEmergencyConfigurator::MotorEmergencyConfigurator(const ros::NodeHandle &nh, orbus::serial_controller *serial, std::string name, unsigned int number)
+    : GenericConfigurator(nh, serial, number)
 {
-    //Namespace
-    name_ = name + "/emergency";
+    // Find path param
+    mName = nh_.getNamespace() + "/" + name + "/emergency";
     // Set command message
-    command_.bitset.motor = number;
-    command_.bitset.command = MOTOR_EMERGENCY;
-
-    /// Check existence namespace otherwise get information from board
-    if (!nh_.hasParam(name_)) {
-        //ROS_INFO("GET from board");
-        serial_->addPacketSend(serial_->createPacket(command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
-    } else {
-        /// Send configuration to board
-        //ROS_INFO("WRITE to board");
-        motor_emergency_t parameter = getParam();
-        serial_->addPacketSend(serial_->createDataPacket(command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & parameter));
-    }
+    mCommand.bitset.command = MOTOR_EMERGENCY;
 
     //Load dynamic reconfigure
-    dsrv_ = new dynamic_reconfigure::Server<orbus_interface::UnavEmergencyConfig>(ros::NodeHandle("~" + name_));
+    dsrv_ = new dynamic_reconfigure::Server<orbus_interface::UnavEmergencyConfig>(ros::NodeHandle(mName));
     dynamic_reconfigure::Server<orbus_interface::UnavEmergencyConfig>::CallbackType cb = boost::bind(&MotorEmergencyConfigurator::reconfigureCB, this, _1, _2);
     dsrv_->setCallback(cb);
 }
 
+void MotorEmergencyConfigurator::initConfigurator()
+{
+    /// Send configuration to board
+    message_abstract_u temp;
+    temp.motor.emergency= getParam();
+    /// Call the function in Generic Reconfigurator
+    SendParameterToBoard(temp);
+}
+
 void MotorEmergencyConfigurator::setParam(motor_emergency_t emergency) {
-    nh_.setParam(name_ + "/Slope_time", emergency.slope_time);
-    nh_.setParam(name_ + "/Bridge_off", emergency.bridge_off);
-    nh_.setParam(name_ + "/Timeout", emergency.timeout);
+    nh_.setParam(mName + "/Slope_time", emergency.slope_time);
+    nh_.setParam(mName + "/Bridge_off", emergency.bridge_off);
+    nh_.setParam(mName + "/Timeout", emergency.timeout);
 }
 
 motor_emergency_t MotorEmergencyConfigurator::getParam() {
@@ -70,13 +67,13 @@ motor_emergency_t MotorEmergencyConfigurator::getParam() {
     int temp_int;
     double temp_double;
 
-    nh_.getParam(name_ + "/Slope_time", temp_double);
+    nh_.getParam(mName + "/Slope_time", temp_double);
     emergency.slope_time = (float) temp_double;
 
-    nh_.getParam(name_ + "/Bridge_off", temp_double);
+    nh_.getParam(mName + "/Bridge_off", temp_double);
     emergency.bridge_off = (float) temp_double;
 
-    nh_.getParam(name_ + "/Timeout", temp_int);
+    nh_.getParam(mName + "/Timeout", temp_int);
     emergency.timeout = (uint16_t) temp_int;
 
     return emergency;
@@ -105,10 +102,12 @@ void MotorEmergencyConfigurator::reconfigureCB(orbus_interface::UnavEmergencyCon
       config.restore_defaults = false;
     }
 
-    /// Send to serial
-    serial_->addPacketSend(serial_->createDataPacket(command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & emergency));
+    /// Send configuration to board
+    message_abstract_u temp;
+    temp.motor.emergency = emergency;
+    /// Call the function in Generic Reconfigurator
+    SendParameterToBoard(temp);
 
+    // Store last emergency data
     last_emergency_ = emergency;
-
-
 }

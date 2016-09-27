@@ -141,5 +141,4 @@ void MotorPIDConfigurator::reconfigureCB(orbus_interface::UnavPIDConfig &config,
 
     // Store last value of PID
     last_pid_ = pid;
-
 }

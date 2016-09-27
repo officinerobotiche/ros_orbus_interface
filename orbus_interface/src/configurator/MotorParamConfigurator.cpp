@@ -60,7 +60,6 @@ MotorParamConfigurator::MotorParamConfigurator(const ros::NodeHandle &nh, orbus:
     ds_bridge = new dynamic_reconfigure::Server<orbus_interface::UnavBridgeConfig>(ros::NodeHandle(mName + PARAM_BRIDGE_STRING));
     dynamic_reconfigure::Server<orbus_interface::UnavBridgeConfig>::CallbackType cb_bridge = boost::bind(&MotorParamConfigurator::reconfigureCBBridge, this, _1, _2);
     ds_bridge->setCallback(cb_bridge);
-
 }
 
 void MotorParamConfigurator::initConfigurator()
@@ -162,6 +161,9 @@ void MotorParamConfigurator::reconfigureCBParam(orbus_interface::UnavParameterCo
     temp.motor.parameter = parameter;
     /// Call the function in Generic Reconfigurator
     SendParameterToBoard(temp);
+
+    // Store last parameter data
+    last_param_ = parameter;
 }
 
 void MotorParamConfigurator::reconfigureCBEncoder(orbus_interface::UnavEncoderConfig &config, uint32_t level) {
@@ -186,6 +188,9 @@ void MotorParamConfigurator::reconfigureCBEncoder(orbus_interface::UnavEncoderCo
     temp.motor.parameter = parameter;
     /// Call the function in Generic Reconfigurator
     SendParameterToBoard(temp);
+
+    // Store last parameter data
+    last_param_ = parameter;
 }
 
 void MotorParamConfigurator::reconfigureCBBridge(orbus_interface::UnavBridgeConfig &config, uint32_t level) {
@@ -213,4 +218,7 @@ void MotorParamConfigurator::reconfigureCBBridge(orbus_interface::UnavBridgeConf
     temp.motor.parameter = parameter;
     /// Call the function in Generic Reconfigurator
     SendParameterToBoard(temp);
+
+    // Store last parameter data
+    last_param_ = parameter;
 }

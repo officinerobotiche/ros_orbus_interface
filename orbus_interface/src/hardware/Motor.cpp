@@ -26,6 +26,9 @@ Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, unsign
     diagnostic_current = new MotorDiagnosticConfigurator(nh, serial, mName, "current", number);
     diagnostic_temperature = new MotorDiagnosticConfigurator(nh, serial, mName, "temperature", number);
 
+    // Add a status motor publisher
+    motor_publisher = mNh.advertise<orbus_msgs::MotorStatus>(mName + "/status", 10);
+
 }
 
 void Motor::initializeMotor()
@@ -195,12 +198,18 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
         status_msg.state = frame.motor.state;
         velocity = ((double)frame.motor.velocity) / 1000.0;
         status_msg.velocity = velocity;
+        // publish a message
+        status_msg.header.stamp = ros::Time::now();
+        motor_publisher.publish(status_msg);
         break;
         case MOTOR_DIAGNOSTIC:
         status_msg.watt = (frame.diagnostic.watt/1000.0); /// in W
         status_msg.time_execution = frame.diagnostic.time_control;
         status_msg.voltage = (frame.diagnostic.volt/1000.0); /// in V;
         status_msg.temperature = frame.diagnostic.temperature;
+        // publish a message
+        status_msg.header.stamp = ros::Time::now();
+        motor_publisher.publish(status_msg);
         break;
         case MOTOR_VEL_PID:
         if(option == PACKET_DATA)

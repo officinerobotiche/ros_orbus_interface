@@ -16,21 +16,12 @@
 #include "configurator/MotorPIDConfigurator.h"
 #include "configurator/MotorParamConfigurator.h"
 #include "configurator/MotorEmergencyConfigurator.h"
+#include "configurator/MotorDiagnosticConfigurator.h"
 
 using namespace std;
 
 namespace ORInterface
 {
-
-typedef struct _MotorLevels
-{
-    double criticalCurrent; //!< Critical current motor
-    double warningCurrent;  //!< Warning current motor
-    double criticalTemperature; //!< Critical current motor
-    double warningTemperature;  //!< Warning current motor
-    //double output; //!< Output value (V)
-    //double outputToll; //!< Tollerance on output value (V)
-} MotorLevels;
 
 class Motor : public diagnostic_updater::DiagnosticTask
 {
@@ -81,15 +72,11 @@ private:
 
     // Number message
     motor_command_map_t command;
-
+    /// Load all configurators
     MotorPIDConfigurator *pid_velocity, *pid_current;
-
     MotorParamConfigurator *parameter;
-
     MotorEmergencyConfigurator *emergency;
-
-    //Diagnostic
-    MotorLevels mlevels;
+    MotorDiagnosticConfigurator *diagnostic_current, *diagnostic_temperature;
 };
 
 }

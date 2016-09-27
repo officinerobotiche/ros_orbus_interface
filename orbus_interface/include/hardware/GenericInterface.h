@@ -20,6 +20,9 @@ protected:
     ros::NodeHandle private_mNh;
     // Serial controller communication
     orbus::serial_controller *mSerial;
+
+    //Name of device
+    string name_board;
 private:
     void systemFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
 

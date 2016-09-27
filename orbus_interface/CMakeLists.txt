@@ -51,6 +51,7 @@ generate_dynamic_reconfigure_options(
     cfg/UnavEncoder.cfg
     cfg/UnavBridge.cfg
     cfg/UnavEmergency.cfg
+    cfg/UnavDiagnostic.cfg
 )
 
 ###################################
@@ -97,6 +98,7 @@ set(hardware_unav_SRC
     src/configurator/MotorPIDConfigurator.cpp
     src/configurator/MotorParamConfigurator.cpp
     src/configurator/MotorEmergencyConfigurator.cpp
+    src/configurator/MotorDiagnosticConfigurator.cpp
 )
 
 ## Declare a cpp executable

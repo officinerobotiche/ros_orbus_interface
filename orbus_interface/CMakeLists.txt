@@ -3,17 +3,17 @@ project(orbus_interface)
 
 #########################################################
 ## Options
-#option( DEBUG_ACTIVE "Enable Debug build" OFF )
+option( DEBUG_ACTIVE "Enable Debug build" ON )
 
-#if(DEBUG_ACTIVE)
-#    MESSAGE( "Debug compilation active" )
-#    set(ROS_BUILD_TYPE Debug)
-#    set(CMAKE_BUILD_TYPE Debug)
-#else()
-#    MESSAGE( "Release compilation active" )
-#    set(ROS_BUILD_TYPE Release)
-#    set(CMAKE_BUILD_TYPE Release)
-#endif()
+if(DEBUG_ACTIVE)
+    MESSAGE( "Debug compilation active" )
+    set(ROS_BUILD_TYPE Debug)
+    set(CMAKE_BUILD_TYPE Debug)
+else()
+    MESSAGE( "Release compilation active" )
+    set(ROS_BUILD_TYPE Release)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
 #########################################################
 
 ## Find catkin macros and librariess

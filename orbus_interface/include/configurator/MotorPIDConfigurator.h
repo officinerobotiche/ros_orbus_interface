@@ -35,10 +35,12 @@
 #include <orbus_interface/UnavPIDConfig.h>
 
 #include "hardware/serial_controller.h"
+#include "configurator/GenericConfigurator.h"
 
 using namespace std;
 
-class MotorPIDConfigurator {
+class MotorPIDConfigurator : public GenericConfigurator
+{
 public:
     /**
      * @brief MotorPIDConfigurator Initialize the dynamic reconfigurator
@@ -61,18 +63,17 @@ public:
     motor_pid_t getParam();
 
 private:
-    /// Associate name space
-    string mName;
-    /// Private namespace
-    ros::NodeHandle nh_;
-    /// Serial port
-    orbus::serial_controller* mSerial;
-    /// Command map
-    motor_command_map_t mCommand;
+//    /// Associate name space
+//    string mName;
+//    /// Private namespace
+//    ros::NodeHandle nh_;
+//    /// Serial port
+//    orbus::serial_controller* mSerial;
+//    /// Command map
+//    motor_command_map_t mCommand;
     /// PID message
     motor_pid_t last_pid_, default_pid_;
-
-    bool setup_;
+    orbus_interface::UnavPIDConfig default_config;
 
     /**
      * @brief dsrv_ server where is located the dynamic reconfigurator

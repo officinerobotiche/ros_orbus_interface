@@ -34,18 +34,15 @@
 using namespace std;
 
 MotorPIDConfigurator::MotorPIDConfigurator(const ros::NodeHandle &nh, orbus::serial_controller *serial, string path, string name, unsigned int type, unsigned int number)
-    : nh_(nh)
-    , mSerial(serial)
+    : GenericConfigurator(nh, serial, number)
 {
     // Find path param
     mName = nh_.getNamespace() + "/" + path + "/pid/" + name;
 
     ROS_DEBUG_STREAM("Param " << path + "/pid/" + name << " has " << mName << " N:" << number);
     // Set command message
-    mCommand.bitset.motor = number;
+//    mCommand.bitset.motor = number;
     mCommand.bitset.command = type;
-    // Set false in the first run
-    setup_ = false;
 
     //Load dynamic reconfigure
     dsrv_ = new dynamic_reconfigure::Server<orbus_interface::UnavPIDConfig>(ros::NodeHandle(mName));
@@ -58,16 +55,8 @@ void MotorPIDConfigurator::initConfigurator()
     /// Send configuration to board
     message_abstract_u temp;
     temp.motor.pid = getParam();
-    packet_information_t frame = CREATE_PACKET_DATA(mCommand.command_message, HASHMAP_MOTOR, temp);
-    // Add packet in the frame and send
-    if(mSerial->addFrame(frame)->sendList())
-    {
-        ROS_INFO_STREAM("Write PARAM:" << mName << " in uNav");
-    }
-    else
-    {
-        ROS_ERROR_STREAM("Unable to receive packet from uNav");
-    }
+    /// Call the function in Generic Reconfigurator
+    SendParameterToBoard(temp);
 
 //    else {
 //        ROS_WARN_STREAM("Any PID paramerter for: " << key << " . Send request to uNav");
@@ -129,6 +118,7 @@ void MotorPIDConfigurator::reconfigureCB(orbus_interface::UnavPIDConfig &config,
         ROS_DEBUG_STREAM("First setup " << mName);
         last_pid_ = pid;
         default_pid_ = last_pid_;
+        default_config = config;
         setup_ = true;
         return;
     }
@@ -146,15 +136,10 @@ void MotorPIDConfigurator::reconfigureCB(orbus_interface::UnavPIDConfig &config,
     /// Send configuration to board
     message_abstract_u temp;
     temp.motor.pid = pid;
-    packet_information_t frame = CREATE_PACKET_DATA(mCommand.command_message, HASHMAP_MOTOR, temp);
-    // Add packet in the frame and send
-    if(mSerial->addFrame(frame)->sendList())
-    {
-        ROS_INFO_STREAM("Write PARAM:" << mName << " in uNav");
-    }
-    else
-    {
-        ROS_ERROR_STREAM("Unable to receive packet from uNav");
-    }
+    /// Call the function in Generic Reconfigurator
+    SendParameterToBoard(temp);
+
+    // Store last value of PID
+    last_pid_ = pid;
 
 }

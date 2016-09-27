@@ -33,156 +33,184 @@
 
 using namespace std;
 
-MotorParamConfigurator::MotorParamConfigurator(const ros::NodeHandle &nh, SerialController *serial, std::string name, unsigned int number)
-    : nh_(nh), serial_(serial), dsrv_(config_mutex, ros::NodeHandle("~" + name))
+#define PARAM_BRIDGE_STRING "/bridge"
+#define PARAM_ENCODER_STRING "/encoder"
+
+MotorParamConfigurator::MotorParamConfigurator(const ros::NodeHandle &nh, orbus::serial_controller *serial, std::string name, unsigned int number)
+    : GenericConfigurator(nh, serial, number)
 {
-    //Namespace
-    name_ = name;// + "/param";
+    // Find path param
+    mName = nh_.getNamespace() + "/" + name;
     // Set command message
-    command_.bitset.motor = number;
-    command_.bitset.command = MOTOR_PARAMETER;
-    // Set message to frequency information
-    last_frequency_.hashmap = HASHMAP_MOTOR;
-    last_frequency_.number = 0; ///< TODO To correct
+    mCommand.bitset.command = MOTOR_PARAMETER;
 
-    /// Check existence namespace otherwise get information from board
-    if (!nh_.hasParam(name_)) {
-        //ROS_INFO_STREAM("SEND Request for: " << name_);
-        serial_->addPacketSend(serial_->createPacket(command_.command_message, PACKET_REQUEST, HASHMAP_MOTOR));
-    } else {
-        //ROS_INFO_STREAM("GET param from " <<  name_ << " and send");
-        /// Send configuration to board
-        motor_parameter_t parameter = getParam();
-        serial_->addPacketSend(serial_->createDataPacket(command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & parameter));
+    setup_param = false;
+    setup_encoder = false;
+    setup_bridge = false;
 
-        /// Update Dynamic reconfigurator
-        orbus_interface::UnavParameterConfig config;
-        convertParam(config, parameter);
-        config.restore_defaults = false;
-        config.Store_in_EEPROM = false;
-        boost::recursive_mutex::scoped_lock dyn_reconf_lock(config_mutex);
-        dsrv_.updateConfig(config);
-        dyn_reconf_lock.unlock();
-    }
+    //Load dynamic reconfigure
+    ds_param = new dynamic_reconfigure::Server<orbus_interface::UnavParameterConfig>(ros::NodeHandle(mName));
+    dynamic_reconfigure::Server<orbus_interface::UnavParameterConfig>::CallbackType cb_param = boost::bind(&MotorParamConfigurator::reconfigureCBParam, this, _1, _2);
+    ds_param->setCallback(cb_param);
 
-    dynamic_reconfigure::Server<orbus_interface::UnavParameterConfig>::CallbackType cb = boost::bind(&MotorParamConfigurator::reconfigureCB, this, _1, _2);
-    dsrv_.setCallback(cb);
+    ds_encoder = new dynamic_reconfigure::Server<orbus_interface::UnavEncoderConfig>(ros::NodeHandle(mName + PARAM_ENCODER_STRING));
+    dynamic_reconfigure::Server<orbus_interface::UnavEncoderConfig>::CallbackType cb_encoder = boost::bind(&MotorParamConfigurator::reconfigureCBEncoder, this, _1, _2);
+    ds_encoder->setCallback(cb_encoder);
+
+    ds_bridge = new dynamic_reconfigure::Server<orbus_interface::UnavBridgeConfig>(ros::NodeHandle(mName + PARAM_BRIDGE_STRING));
+    dynamic_reconfigure::Server<orbus_interface::UnavBridgeConfig>::CallbackType cb_bridge = boost::bind(&MotorParamConfigurator::reconfigureCBBridge, this, _1, _2);
+    ds_bridge->setCallback(cb_bridge);
 
 }
 
-void MotorParamConfigurator::convertParam(orbus_interface::UnavParameterConfig &config, motor_parameter_t parameter) {
-    config.Ratio = parameter.ratio;
-    config.Rotation = parameter.rotation;
-
-    config.H_bridge_enable = parameter.bridge.enable;
-    config.PWM_Dead_zone = parameter.bridge.pwm_dead_zone;
-    config.PWM_Frequency = parameter.bridge.pwm_frequency;
-    config.Voltage_Offset = parameter.bridge.volt_offset;
-    config.Voltage_Gain = parameter.bridge.volt_gain;
-    config.Current_Offset = parameter.bridge.current_offset;
-    config.Current_Gain = parameter.bridge.current_gain;
-
-    config.CPR = parameter.encoder.cpr;
-    config.Encoder_Position = parameter.encoder.type.position;
-    config.Encoder_Z_index = parameter.encoder.type.z_index;
-    config.Encoder_Channels = parameter.encoder.type.channels + 1;
+void MotorParamConfigurator::initConfigurator()
+{    
+    /// Send configuration to board
+    message_abstract_u temp;
+    temp.motor.parameter = getParam();
+    /// Call the function in Generic Reconfigurator
+    SendParameterToBoard(temp);
 }
 
 void MotorParamConfigurator::setParam(motor_parameter_t parameter) {
     motor_parameter_encoder_t encoder = parameter.encoder;
     motor_parameter_bridge_t bridge = parameter.bridge;
-    nh_.setParam(name_ + "/Ratio", (double) parameter.ratio);
-    nh_.setParam(name_ + "/Rotation", (int) parameter.rotation);
+    nh_.setParam(mName + "/ratio", (double) parameter.ratio);
+    nh_.setParam(mName + "/rotation", (int) parameter.rotation);
 
-    nh_.setParam(name_ + "/Bridge/Enable", (int) bridge.enable);
-    nh_.setParam(name_ + "/Bridge/PWM_Dead_zone", (int) bridge.pwm_dead_zone);
-    nh_.setParam(name_ + "/Bridge/PWM_Frequency", (int) bridge.pwm_frequency);
-    nh_.setParam(name_ + "/Bridge/Volt_Offset", (double) bridge.volt_offset);
-    nh_.setParam(name_ + "/Bridge/Volt_Gain", (double) bridge.volt_gain);
-    nh_.setParam(name_ + "/Bridge/Current_Offset", (double) bridge.current_offset);
-    nh_.setParam(name_ + "/Bridge/Current_Gain", (double) bridge.current_gain);
+    nh_.setParam(mName + PARAM_BRIDGE_STRING + "/h_bridge_enable", (int) bridge.enable);
+    nh_.setParam(mName + PARAM_BRIDGE_STRING + "/PWM_dead_zone", (int) bridge.pwm_dead_zone);
+    nh_.setParam(mName + PARAM_BRIDGE_STRING + "/PWM_frequency", (int) bridge.pwm_frequency);
+    nh_.setParam(mName + PARAM_BRIDGE_STRING + "/volt_offset", (double) bridge.volt_offset);
+    nh_.setParam(mName + PARAM_BRIDGE_STRING + "/volt_gain", (double) bridge.volt_gain);
+    nh_.setParam(mName + PARAM_BRIDGE_STRING + "/current_offset", (double) bridge.current_offset);
+    nh_.setParam(mName + PARAM_BRIDGE_STRING + "/current_gain", (double) bridge.current_gain);
 
-    nh_.setParam(name_ + "/Encoder/CPR", (int) encoder.cpr);
-    nh_.setParam(name_ + "/Encoder/Position", (int) encoder.type.position);
-    nh_.setParam(name_ + "/Encoder/Z_index", (int) encoder.type.z_index);
-    nh_.setParam(name_ + "/Encoder/Channels", (int) (encoder.type.channels + 1));
+    nh_.setParam(mName + PARAM_ENCODER_STRING + "/CPR", (int) encoder.cpr);
+    nh_.setParam(mName + PARAM_ENCODER_STRING + "/position", (int) encoder.type.position);
+    nh_.setParam(mName + PARAM_ENCODER_STRING + "/z_index", (int) encoder.type.z_index);
+    nh_.setParam(mName + PARAM_ENCODER_STRING + "/channels", (int) (encoder.type.channels + 1));
 }
 
 motor_parameter_t MotorParamConfigurator::getParam() {
     motor_parameter_t parameter;
     int temp_int;
     double temp_double;
-    nh_.getParam(name_ + "/Ratio", temp_double);
+    nh_.getParam(mName + "/ratio", temp_double);
     parameter.ratio = (float) temp_double;
-    nh_.getParam(name_ + "/Rotation", temp_int);
+    nh_.getParam(mName + "/rotation", temp_int);
     parameter.rotation = (int8_t) temp_int;
+    ROS_INFO_STREAM("Read param from " << mName << " [Ratio:" << parameter.ratio << ", Rotation:" << (int) parameter.rotation << "]");
 
-    nh_.getParam(name_ + "/Bridge/Enable", temp_int);
+    nh_.getParam(mName + PARAM_BRIDGE_STRING + "/h_bridge_enable", temp_int);
     parameter.bridge.enable = (uint8_t) temp_int;
-    nh_.getParam(name_ + "/Bridge/PWM_Dead_zone", temp_int);
+    nh_.getParam(mName + PARAM_BRIDGE_STRING + "/PWM_dead_zone", temp_int);
     parameter.bridge.pwm_dead_zone = (uint16_t) temp_int;
-    nh_.getParam(name_ + "/Bridge/PWM_Frequency", temp_int);
+    nh_.getParam(mName + PARAM_BRIDGE_STRING + "/PWM_frequency", temp_int);
     parameter.bridge.pwm_frequency = (uint16_t) temp_int;
-    nh_.getParam(name_ + "/Bridge/Volt_Offset", temp_double);
+    nh_.getParam(mName + PARAM_BRIDGE_STRING + "/volt_offset", temp_double);
     parameter.bridge.volt_offset = (float) temp_double;
-    nh_.getParam(name_ + "/Bridge/Volt_Gain", temp_double);
+    nh_.getParam(mName + PARAM_BRIDGE_STRING + "/voltage_gain", temp_double);
     parameter.bridge.volt_gain = (float) temp_double;
-    nh_.getParam(name_ + "/Bridge/Current_Offset", temp_double);
+    nh_.getParam(mName + PARAM_BRIDGE_STRING + "/current_offset", temp_double);
     parameter.bridge.current_offset = (float) temp_double;
-    nh_.getParam(name_ + "/Bridge/Current_Gain", temp_double);
+    nh_.getParam(mName + PARAM_BRIDGE_STRING + "/current_gain", temp_double);
     parameter.bridge.current_gain = (float) temp_double;
 
-    nh_.getParam(name_ + "/Encoder/CPR", temp_int);
+    ROS_INFO_STREAM("Read param from " << mName << " [Enable:" << (int) parameter.bridge.enable
+                    << ", PWM_Dead_zone:" << parameter.bridge.pwm_dead_zone
+                    << ", PWM_Frequency:" << parameter.bridge.pwm_frequency
+                    << ", Volt_Offset:" << parameter.bridge.volt_offset
+                    << ", Volt_Gain:" << parameter.bridge.volt_gain
+                    << ", Current_Offset:" << parameter.bridge.current_offset
+                    << ", Current_Gain:" << parameter.bridge.current_gain << "]");
+
+    nh_.getParam(mName + PARAM_ENCODER_STRING + "/CPR", temp_int);
     parameter.encoder.cpr = (uint16_t) temp_int;
-    nh_.getParam(name_ + "/Encoder/Position", temp_int);
+    nh_.getParam(mName + PARAM_ENCODER_STRING + "/position", temp_int);
     parameter.encoder.type.position = (uint8_t) temp_int;
-    nh_.getParam(name_ + "/Encoder/Z_index", temp_int);
+    nh_.getParam(mName + PARAM_ENCODER_STRING + "/z_index", temp_int);
     parameter.encoder.type.z_index = (uint8_t) temp_int;
-    nh_.getParam(name_ + "/Encoder/Channels", temp_int);
+    nh_.getParam(mName + PARAM_ENCODER_STRING + "/channels", temp_int);
     parameter.encoder.type.channels = (uint8_t) (temp_int - 1);
+
+    ROS_INFO_STREAM("Read param from " << mName << " [CPR:" << parameter.encoder.cpr
+                    << ", Position:" << (int) parameter.encoder.type.position
+                    << ", Z_index:" << (int) parameter.encoder.type.z_index
+                    << ", Channels:" << (int) parameter.encoder.type.channels << "]");
 
     return parameter;
 }
 
-void MotorParamConfigurator::reconfigureCB(orbus_interface::UnavParameterConfig &config, uint32_t level) {
+void MotorParamConfigurator::reconfigureCBParam(orbus_interface::UnavParameterConfig &config, uint32_t level) {
 
-    motor_parameter_t parameter;
-    parameter.ratio = (float) config.Ratio;
-    parameter.rotation = (int8_t) config.Rotation;
-
-    parameter.bridge.enable = (uint8_t) config.H_bridge_enable;
-    parameter.bridge.pwm_dead_zone = (uint16_t) config.PWM_Dead_zone;
-    parameter.bridge.pwm_frequency = (uint16_t) config.PWM_Frequency;
-    parameter.bridge.volt_offset = (float) config.Voltage_Offset;
-    parameter.bridge.volt_gain = (float) config.Voltage_Gain;
-    parameter.bridge.current_offset = (float) config.Current_Offset;
-    parameter.bridge.current_gain = (float) config.Current_Gain;
-
-    parameter.encoder.cpr = (uint16_t) config.CPR;
-    parameter.encoder.type.position = (uint8_t) config.Encoder_Position;
-    parameter.encoder.type.z_index = (uint8_t) config.Encoder_Z_index;
-    parameter.encoder.type.channels = (uint8_t) (config.Encoder_Channels - 1);
-
-
+    parameter.ratio = (float) config.ratio;
+    parameter.rotation = (int8_t) config.rotation;
 
     //The first time we're called, we just want to make sure we have the
     //original configuration
-    if(!setup_)
+    if(!setup_param)
     {
       last_param_ = parameter;
       default_param_ = last_param_;
-      setup_ = true;
+      setup_param = true;
       return;
     }
 
-    if(config.restore_defaults) {
-      parameter = default_param_;
-      //if someone sets restore defaults on the parameter server, prevent looping
-      config.restore_defaults = false;
+    /// Send configuration to board
+    message_abstract_u temp;
+    temp.motor.parameter = parameter;
+    /// Call the function in Generic Reconfigurator
+    SendParameterToBoard(temp);
+}
+
+void MotorParamConfigurator::reconfigureCBEncoder(orbus_interface::UnavEncoderConfig &config, uint32_t level) {
+
+    parameter.encoder.cpr = (uint16_t) config.CPR;
+    parameter.encoder.type.position = (uint8_t) config.position;
+    parameter.encoder.type.z_index = (uint8_t) config.z_index;
+    parameter.encoder.type.channels = (uint8_t) (config.channels - 1);
+
+    //The first time we're called, we just want to make sure we have the
+    //original configuration
+    if(!setup_encoder)
+    {
+      last_param_ = parameter;
+      default_param_ = last_param_;
+      setup_encoder = true;
+      return;
     }
 
-    /// Send to serial
-    serial_->addPacketSend(serial_->createDataPacket(command_.command_message, HASHMAP_MOTOR, (message_abstract_u*) & parameter));
+    /// Send configuration to board
+    message_abstract_u temp;
+    temp.motor.parameter = parameter;
+    /// Call the function in Generic Reconfigurator
+    SendParameterToBoard(temp);
+}
 
-    last_param_ = parameter;
+void MotorParamConfigurator::reconfigureCBBridge(orbus_interface::UnavBridgeConfig &config, uint32_t level) {
+
+    parameter.bridge.enable = (uint8_t) config.h_bridge_enable;
+    parameter.bridge.pwm_dead_zone = (uint16_t) config.PWM_dead_zone;
+    parameter.bridge.pwm_frequency = (uint16_t) config.PWM_frequency;
+    parameter.bridge.volt_offset = (float) config.volt_offset;
+    parameter.bridge.volt_gain = (float) config.volt_gain;
+    parameter.bridge.current_offset = (float) config.current_offset;
+    parameter.bridge.current_gain = (float) config.current_gain;
+
+    //The first time we're called, we just want to make sure we have the
+    //original configuration
+    if(!setup_bridge)
+    {
+      last_param_ = parameter;
+      default_param_ = last_param_;
+      setup_bridge = true;
+      return;
+    }
+
+    /// Send configuration to board
+    message_abstract_u temp;
+    temp.motor.parameter = parameter;
+    /// Call the function in Generic Reconfigurator
+    SendParameterToBoard(temp);
 }

@@ -66,7 +66,7 @@ private:
     joint_limits_interface::VelocityJointSoftLimitsInterface vel_limits_interface;
 
     // Publisher diagnostic information
-    ros::Publisher diagnostic_publisher;
+    ros::Publisher motor_publisher;
     // Message
     orbus_msgs::MotorStatus status_msg;
 

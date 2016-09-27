@@ -14,18 +14,22 @@ Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, unsign
     : DiagnosticTask("motor_" + to_string(number) + "_status")
     , mNh(nh)
     , mSerial(serial)
+    , mName("motor_" + to_string(number))
+    //, pid_velocity(nh, serial, mName, "velocity", MOTOR_VEL_PID, number)
+    //, pid_current(nh, serial, mName, "current", MOTOR_CURRENT_PID, number)
 {
     command.bitset.motor = number;
-    mName = "motor_" + to_string(number);
     mNumber = number;
+
+    pid_velocity = new MotorPIDConfigurator(nh, serial, mName, "velocity", MOTOR_VEL_PID, number);
+    pid_current = new MotorPIDConfigurator(nh, serial, mName, "current", MOTOR_CURRENT_PID, number);
 
 }
 
 void Motor::initializeMotor()
 {
-    pid_velocity = new MotorPIDConfigurator(mNh, mSerial, mName, "velocity", MOTOR_VEL_PID, mNumber);
-    //pid_velocity(nh, serial, mName, "velocity", MOTOR_VEL_PID, number);
-    //pid_current(nh, serial, mName, "current", MOTOR_CURRENT_PID, number);
+    pid_velocity->initConfigurator();
+    pid_current->initConfigurator();
 }
 
 void Motor::registerControlInterfaces(hardware_interface::JointStateInterface joint_state_interface, hardware_interface::VelocityJointInterface velocity_joint_interface, boost::shared_ptr<urdf::ModelInterface> urdf)
@@ -136,12 +140,18 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
 //        status_msg.velocity = velocity;
         break;
         case MOTOR_VEL_PID:
-        ROS_INFO_STREAM("Velocity PID parameter");
-        pid_velocity->setParam(frame.pid);
+        if(option == PACKET_DATA)
+        {
+            ROS_INFO_STREAM("Velocity PID parameter");
+            pid_velocity->setParam(frame.pid);
+        }
         break;
         case MOTOR_CURRENT_PID:
-        ROS_INFO_STREAM("Current PID parameter");
-        pid_current->setParam(frame.pid);
+        if(option == PACKET_DATA)
+        {
+            ROS_INFO_STREAM("Current PID parameter");
+            pid_current->setParam(frame.pid);
+        }
         break;
     }
 }

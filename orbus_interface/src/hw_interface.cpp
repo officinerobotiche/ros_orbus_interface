@@ -25,10 +25,15 @@
 
 #include <boost/chrono.hpp>
 
+
+//include "configurator/MotorPIDConfigurator.h"
+
 typedef boost::chrono::steady_clock time_source;
 
 using namespace std;
 using namespace ORInterface;
+
+
 
 /**
 * Control loop not realtime safe
@@ -72,24 +77,34 @@ int main(int argc, char **argv) {
     // Run the serial controller
     orbusSerial.start();
 
-    uNavInterface interface(nh, &orbusSerial);
-    controller_manager::ControllerManager cm(&interface, nh);
+//    //MotorPIDConfigurator test(nh, &orbusSerial, "a", "b", MOTOR_VEL_PID, 0);
+//    Motor* test;
+//    test = new Motor(private_nh, &orbusSerial, 0);
+
+//    //Motor test(private_nh, &orbusSerial, 0);
+//    test->initializeMotor();
+
+    uNavInterface interface(nh, private_nh, &orbusSerial);
+
+    interface.initialize();
+
+//    controller_manager::ControllerManager cm(&interface, nh);
 
     // Setup separate queue and single-threaded spinner to process timer callbacks
     // that interface with uNav hardware.
     // This avoids having to lock around hardware access, but precludes realtime safety
     // in the control loop.
-    ros::CallbackQueue unav_queue;
-    ros::AsyncSpinner unav_spinner(1, &unav_queue);
+//    ros::CallbackQueue unav_queue;
+//    ros::AsyncSpinner unav_spinner(1, &unav_queue);
 
-    time_source::time_point last_time = time_source::now();
-    ros::TimerOptions control_timer(
-                ros::Duration(1 / control_frequency),
-                boost::bind(controlLoop, boost::ref(interface), boost::ref(cm), boost::ref(last_time)),
-                &unav_queue);
-    ros::Timer control_loop = nh.createTimer(control_timer);
+//    time_source::time_point last_time = time_source::now();
+//    ros::TimerOptions control_timer(
+//                ros::Duration(1 / control_frequency),
+//                boost::bind(controlLoop, boost::ref(interface), boost::ref(cm), boost::ref(last_time)),
+//                &unav_queue);
+//    ros::Timer control_loop = nh.createTimer(control_timer);
 
-    unav_spinner.start();
+//    unav_spinner.start();
 
     std::string name_node = ros::this_node::getName();
     ROS_INFO("Started %s", name_node.c_str());

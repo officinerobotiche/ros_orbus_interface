@@ -13,7 +13,8 @@
 namespace ORInterface
 {
 
-uNavInterface::uNavInterface(const ros::NodeHandle &nh, orbus::serial_controller *serial) : GenericInterface(nh, serial)
+uNavInterface::uNavInterface(const ros::NodeHandle &nh, const ros::NodeHandle &private_nh, orbus::serial_controller *serial)
+    : GenericInterface(nh, private_nh, serial)
 {
     /// Added all callback to receive information about messages
     bool initCallback = mSerial->addCallback(&uNavInterface::allMotorsFrame, this, HASHMAP_MOTOR);
@@ -31,19 +32,25 @@ uNavInterface::uNavInterface(const ros::NodeHandle &nh, orbus::serial_controller
     }
 
     //Initialize motors
-    Motor motor0(nh, serial, 0);
-    Motor motor1(nh, serial, 1);
+    Motor motor0(private_mNh, serial, 0);
+    Motor motor1(private_mNh, serial, 1);
     // Add Two motors on list
     list_motor.push_back(motor0);
     list_motor.push_back(motor1);
+}
 
+void uNavInterface::initialize()
+{
     //Initialize motors
-    motor0.initializeMotor();
-    motor1.initializeMotor();
+    for(unsigned i=0; i < list_motor.size(); ++i)
+    {
+        // Get motor
+        Motor motor_obj = list_motor.at(i);
+        motor_obj.initializeMotor();
+    }
 
     /// Register all control interface avaiable
     registerControlInterfaces();
-
 }
 
 void uNavInterface::registerControlInterfaces()

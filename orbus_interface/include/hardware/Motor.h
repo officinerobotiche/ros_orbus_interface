@@ -9,7 +9,7 @@
 #include <hardware_interface/joint_command_interface.h>
 #include <joint_limits_interface/joint_limits_interface.h>
 
-#include <orbus_msgs/MotorStatus.h>
+//#include <orbus_msgs/MotorStatus.h>
 
 #include "hardware/serial_controller.h"
 

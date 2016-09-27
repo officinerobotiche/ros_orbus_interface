@@ -3,7 +3,10 @@
 namespace ORInterface
 {
 
-GenericInterface::GenericInterface(const ros::NodeHandle &nh, orbus::serial_controller *serial) : mNh(nh), mSerial(serial)
+GenericInterface::GenericInterface(const ros::NodeHandle &nh, const ros::NodeHandle &private_nh, orbus::serial_controller *serial)
+    : mNh(nh)
+    , private_mNh(private_nh)
+    , mSerial(serial)
 {
     bool initCallback = mSerial->addCallback(&GenericInterface::systemFrame, this, HASHMAP_SYSTEM);
 }

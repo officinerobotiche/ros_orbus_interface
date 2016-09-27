@@ -16,7 +16,9 @@ namespace ORInterface
 class uNavInterface : public GenericInterface, public hardware_interface::RobotHW
 {
 public:
-    uNavInterface(const ros::NodeHandle &nh, orbus::serial_controller *serial);
+    uNavInterface(const ros::NodeHandle &nh, const ros::NodeHandle &private_nh, orbus::serial_controller *serial);
+
+    void initialize();
 
     void updateJointsFromHardware();
     void writeCommandsToHardware(ros::Duration period);

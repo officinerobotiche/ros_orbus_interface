@@ -10,13 +10,14 @@ namespace ORInterface
 class GenericInterface
 {
 public:
-    GenericInterface(const ros::NodeHandle &nh, orbus::serial_controller *serial);
+    GenericInterface(const ros::NodeHandle &nh, const ros::NodeHandle &private_nh, orbus::serial_controller *serial);
 
 protected:
     void connectCallback(const ros::SingleSubscriberPublisher& pub);
     //Initialization object
     //NameSpace for bridge controller
     ros::NodeHandle mNh;
+    ros::NodeHandle private_mNh;
     // Serial controller communication
     orbus::serial_controller *mSerial;
 private:

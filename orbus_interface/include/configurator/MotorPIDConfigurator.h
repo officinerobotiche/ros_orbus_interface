@@ -36,27 +36,52 @@
 
 #include "hardware/serial_controller.h"
 
+using namespace std;
+
 class MotorPIDConfigurator {
 public:
-    MotorPIDConfigurator(const ros::NodeHandle& nh, orbus::serial_controller *serial, string path, std::string name, unsigned int type, unsigned int number);
+    /**
+     * @brief MotorPIDConfigurator Initialize the dynamic reconfigurator
+     * @param nh Nodehandle of the system
+     * @param serial serial port
+     * @param path original path to start to find all rosparam variable
+     * @param name name of the PID configuration
+     * @param type type of message required to send the information to the unav
+     * @param number number of motor
+     */
+    MotorPIDConfigurator(const ros::NodeHandle& nh, orbus::serial_controller *serial, string path, string name, unsigned int type, unsigned int number);
 
-    void setParam(motor_pid_t parameter);
+    void initConfigurator();
+
+    void setParam(motor_pid_t pid);
+    /**
+     * @brief getParam from ROSPARAM and save in motor_pid_t function
+     * @return t return the motor_pid_t function
+     */
     motor_pid_t getParam();
 
 private:
     /// Associate name space
-    std::string mName;
+    string mName;
     /// Private namespace
     ros::NodeHandle nh_;
     /// Serial port
     orbus::serial_controller* mSerial;
     /// Command map
     motor_command_map_t mCommand;
-//    /// PID message
-//    motor_pid_t last_pid_, default_pid_;
+    /// PID message
+    motor_pid_t last_pid_, default_pid_;
 
-//    bool setup_;
+    bool setup_;
 
+    /**
+     * @brief dsrv_ server where is located the dynamic reconfigurator
+     */
     dynamic_reconfigure::Server<orbus_interface::UnavPIDConfig> *dsrv_;
+    /**
+     * @brief reconfigureCB when the dynamic reconfigurator change some values start this method
+     * @param config variable with all configuration from dynamic reconfigurator
+     * @param level
+     */
     void reconfigureCB(orbus_interface::UnavPIDConfig &config, uint32_t level);
 };

@@ -31,37 +31,33 @@
 
 #include <ros/ros.h>
 
-#include <dynamic_reconfigure/server.h>
 #include <orbus_interface/UnavParameterConfig.h>
+#include <orbus_interface/UnavEncoderConfig.h>
+#include <orbus_interface/UnavBridgeConfig.h>
 
-#include "hardware/SerialController.h"
+#include "configurator/GenericConfigurator.h"
 
-class MotorParamConfigurator {
+class MotorParamConfigurator : public GenericConfigurator
+{
 public:
-    MotorParamConfigurator(const ros::NodeHandle& nh, SerialController *serial, std::string name, unsigned int number);
+    MotorParamConfigurator(const ros::NodeHandle& nh, orbus::serial_controller *serial, std::string name, unsigned int number);
+
+    void initConfigurator();
 
     void setParam(motor_parameter_t parameter);
     motor_parameter_t getParam();
-
-    void convertParam(orbus_interface::UnavParameterConfig &config, motor_parameter_t parameter);
-
 private:
-    boost::recursive_mutex config_mutex;
-    /// Associate name space
-    std::string name_;
-    /// Private namespace
-    ros::NodeHandle nh_;
-    /// uNav to send messages
-    SerialController* serial_;
-    /// Command map
-    motor_command_map_t command_;
-    /// Frequency message
-    system_task_t last_frequency_, default_frequency_;
+    /// Setup variable
+    bool setup_param, setup_encoder, setup_bridge;
 
-    motor_parameter_t last_param_, default_param_;
+    motor_parameter_t parameter, last_param_, default_param_;
 
-    bool setup_;
+    dynamic_reconfigure::Server<orbus_interface::UnavParameterConfig> *ds_param;
+    void reconfigureCBParam(orbus_interface::UnavParameterConfig &config, uint32_t level);
 
-    dynamic_reconfigure::Server<orbus_interface::UnavParameterConfig> dsrv_;
-    void reconfigureCB(orbus_interface::UnavParameterConfig &config, uint32_t level);
+    dynamic_reconfigure::Server<orbus_interface::UnavEncoderConfig> *ds_encoder;
+    void reconfigureCBEncoder(orbus_interface::UnavEncoderConfig &config, uint32_t level);
+
+    dynamic_reconfigure::Server<orbus_interface::UnavBridgeConfig> *ds_bridge;
+    void reconfigureCBBridge(orbus_interface::UnavBridgeConfig &config, uint32_t level);
 };

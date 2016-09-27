@@ -47,6 +47,8 @@ find_package(Boost REQUIRED
 generate_dynamic_reconfigure_options(
     cfg/UnavPID.cfg
     cfg/UnavParameter.cfg
+    cfg/UnavEncoder.cfg
+    cfg/UnavBridge.cfg
     cfg/UnavEmergency.cfg
 )
 
@@ -89,8 +91,9 @@ set(hardware_unav_SRC
     src/hardware/GenericInterface.cpp
     src/hardware/uNavInterface.cpp
     src/hardware/Motor.cpp
+    src/configurator/GenericConfigurator.cpp
     src/configurator/MotorPIDConfigurator.cpp
-#    src/configurator/MotorParamConfigurator.cpp
+    src/configurator/MotorParamConfigurator.cpp
 #    src/configurator/MotorEmergencyConfigurator.cpp
 #    src/diagnostic/MotorTask.cpp
 )

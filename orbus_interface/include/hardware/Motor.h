@@ -14,6 +14,7 @@
 #include "hardware/serial_controller.h"
 
 #include "configurator/MotorPIDConfigurator.h"
+#include "configurator/MotorParamConfigurator.h"
 
 using namespace std;
 
@@ -71,6 +72,8 @@ private:
     motor_command_map_t command;
 
     MotorPIDConfigurator *pid_velocity, *pid_current;
+
+    MotorParamConfigurator *parameter;
 };
 
 }

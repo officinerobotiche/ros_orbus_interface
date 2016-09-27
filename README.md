@@ -1,74 +1,13 @@
-![Officine Robotiche][Logo] - ros_orbus_interface [![Build Status](https://travis-ci.org/officinerobotiche/ros_orbus_interface.svg?branch=develop)](https://travis-ci.org/officinerobotiche/ros_orbus_interface)
+![Officine Robotiche][Logo] - ros_orbus_interface [![Build Status](https://travis-ci.org/officinerobotiche/ros_orbus_interface.svg?branch=develop)](https://travis-ci.org/officinerobotiche/ros_orbus_interface) [![Join the chat at https://gitter.im/officinerobotiche/ros_orbus_interface](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/officinerobotiche/ros_orbus_interface?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 ======
 
-[![Join the chat at https://gitter.im/officinerobotiche/ros_orbus_interface](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/officinerobotiche/ros_orbus_interface?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
 With this node you can control with ROS all boards with orbus protocoll, in particular:
-- [**µNAV**](http://unav.officinerobotiche.it) The motion control board for two DC brushed motors.
-- [**Navigation Board**](http://raffaello.officinerobotiche.it/boards/old-boards/navigation-board/) A board to read all data from infrared sensor
+- [**µNAV**](http://rnext.it/project/unav) The motion control board for two DC brushed motors.
+- [**Navigation Board**](http://rnext.it/project/board/motion-control/) A board to read all data from infrared sensor
 
-# Release
-- [**Download last stable release**](https://github.com/officinerobotiche/ros_serial_bridge/releases)
-- [wiki] with all detailed information about firmware
+## Wiki
+- [Wiki](https://github.com/officinerobotiche/ros_orbus_interface/wiki) with all detailed information about this packet
+- [Example](https://github.com/officinerobotiche/example_robot) An example of use of orbus_interfare in a robot
 
-# Installation
-```bash
-cd ~/catkin_ws/src
-git clone https://github.com/officinerobotiche/ros_orbus_interface.git
-cd ros_orbus_interface
-git submodule update --init --recursive
-sudo apt-get install ros-<distro>-joint-limits-interface ros-<distro>-controller-manager ros-<distro>-diagnostic-updater ros-<distro>-roslint ros-<distro>-urdf
-cd ~/catkin_ws
-catkin_make
-```
-Build your ros package:
-```bash
-catkin_create_pkg myrobot_tutorial orbus_interface diff_drive_controller joint_state_controller
-cd myrobot_tutorial
-mkdir launch
-cd launch
-```
-And create your personal launch script:
-```xml
-<launch>
-    <!-- Your script with your URDF file -->
-    <param name="robot_description" file="$(find myrobot_tutorial)/urdf/myrobot.urdf"/>
-
-    <!-- ORBus harware driver -->
-    <node pkg="orbus_interface" type="hardware_unav" name="unav" output="screen">
-        <rosparam subst_value="true">
-            serial_port: /dev/ttyUSB0
-            serial_rate: 115000
-
-            control_frequency: 10.0
-            diagnostic_frequency: 1.0
-        </rosparam>
-    </node>
-
-    <!-- Differential controller parameters and basic localization -->
-    <rosparam command="load" file="$(find myrobot_tutorial)/config/control.yaml" />
-    
-    <node name="base_controller_spawner" pkg="controller_manager" type="spawner" 
-            args="unav_joint_publisher unav_velocity_controller --shutdown-timeout 3"/>
-    
-    <!-- Diagnostic Aggregator -->
-    <!--<node pkg="diagnostic_aggregator" type="aggregator_node" name="diagnostic_aggregator">
-        <rosparam command="load" file="$(find husky_base)/config/diagnostics.yaml"/>
-    </node>-->
-</launch>
-```
-and save `driver.launch`
-# Run
-Now you can launch you personal script with
-```bash
-roslaunch myrobot_tutorial driver.launch
-```
-
-# API
-## Published Topics
-
-## Subscribed Topics
-
-[wiki]:http://wiki.officinerobotiche.it/
 [Officine Robotiche]:http://www.officinerobotiche.it/
 [Logo]:http://2014.officinerobotiche.it/wp-content/uploads/sites/4/2014/09/ORlogoSimpleSmall.png

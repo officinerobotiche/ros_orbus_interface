@@ -102,7 +102,7 @@ void uNavInterface::allMotorsFrame(unsigned char option, unsigned char type, uns
     motor_command_map_t motor;
     motor.command_message = command;
     int number_motor = (int) motor.bitset.motor;
-    ROS_INFO_STREAM("Frame [Option: " << option << ", HashMap: " << type << ", Nmotor: " << number_motor << ", Command: " << (int) motor.bitset.command << "]");
+    ROS_DEBUG_STREAM("Frame [Option: " << option << ", HashMap: " << type << ", Nmotor: " << number_motor << ", Command: " << (int) motor.bitset.command << "]");
     if(number_motor < list_motor.size())
     {
         // Get motor

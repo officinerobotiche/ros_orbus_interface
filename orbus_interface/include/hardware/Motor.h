@@ -9,7 +9,7 @@
 #include <hardware_interface/joint_command_interface.h>
 #include <joint_limits_interface/joint_limits_interface.h>
 
-//#include <orbus_msgs/MotorStatus.h>
+#include <orbus_msgs/MotorStatus.h>
 
 #include "hardware/serial_controller.h"
 
@@ -21,6 +21,16 @@ using namespace std;
 
 namespace ORInterface
 {
+
+typedef struct _MotorLevels
+{
+    double criticalCurrent; //!< Critical current motor
+    double warningCurrent;  //!< Warning current motor
+    double criticalTemperature; //!< Critical current motor
+    double warningTemperature;  //!< Warning current motor
+    //double output; //!< Output value (V)
+    //double outputToll; //!< Tollerance on output value (V)
+} MotorLevels;
 
 class Motor : public diagnostic_updater::DiagnosticTask
 {
@@ -67,7 +77,7 @@ private:
     // Publisher diagnostic information
     ros::Publisher diagnostic_publisher;
     // Message
-    //orbus_msgs::MotorStatus status_msg;
+    orbus_msgs::MotorStatus status_msg;
 
     // Number message
     motor_command_map_t command;
@@ -77,6 +87,9 @@ private:
     MotorParamConfigurator *parameter;
 
     MotorEmergencyConfigurator *emergency;
+
+    //Diagnostic
+    MotorLevels mlevels;
 };
 
 }

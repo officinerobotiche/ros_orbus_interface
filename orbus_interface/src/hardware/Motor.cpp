@@ -122,37 +122,110 @@ void Motor::setupLimits(hardware_interface::JointHandle joint_handle, boost::sha
 
 void Motor::run(diagnostic_updater::DiagnosticStatusWrapper &stat)
 {
+    // Set type of command
+    command.bitset.command = MOTOR_DIAGNOSTIC;
+    // Build a packet
+    packet_information_t frame = CREATE_PACKET_RESPONSE(command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
+    // Add packet in the frame
+    if(mSerial->addFrame(frame)->sendList())
+    {
+        ROS_INFO_STREAM("Request Diagnostic COMPLETED from:" << mName << " in uNav");
+    }
+    else
+    {
+        ROS_ERROR_STREAM("Unable to receive packet from uNav");
+    }
 
+    stat.add("State ", (int) status_msg.state);
+    stat.add("PWM rate (%)", status_msg.pwm);
+    stat.add("Position (deg)", ((double)status_msg.position) * 180.0/M_PI);
+    stat.add("Velociy (rad/s)", status_msg.velocity);
+    stat.add("Torque (Nm)", status_msg.effort);
+
+    stat.add("Current (A)", status_msg.current);
+    stat.add("Voltage (V)", status_msg.voltage);
+    stat.add("Watt (W)", status_msg.watt);
+    stat.add("Temperature (°C)", status_msg.temperature);
+
+    stat.add("Time execution (nS)", status_msg.time_execution);
+
+    stat.summary(diagnostic_msgs::DiagnosticStatus::OK, "Motor Ready!");
+
+    if (status_msg.temperature > mlevels.criticalTemperature)
+    {
+        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::ERROR, "Critical temperature: %5.2f > %5.2f °C", status_msg.temperature, mlevels.criticalTemperature);
+    }
+    else if (status_msg.temperature > mlevels.warningTemperature)
+    {
+        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::WARN, "Temperature over: %5.2f > %5.2f °C", status_msg.temperature, mlevels.warningTemperature);
+    }
+    else
+    {
+        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::OK, "Temperature OK: %5.2f °C", status_msg.temperature);
+    }
+
+    if (status_msg.current > mlevels.criticalCurrent)
+    {
+        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::ERROR, "Critical current: %5.2f > %5.2f A", status_msg.current, mlevels.criticalCurrent);
+    }
+    else if (status_msg.current > mlevels.warningCurrent)
+    {
+        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::WARN, "Current over %5.2f > %5.2f A", status_msg.current, mlevels.warningCurrent);
+    }
+    else
+    {
+        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::OK, "Current OK: %5.2f A", status_msg.current);
+    }
 }
 
 
 void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char command, motor_frame_u frame)
 {
-    ROS_INFO_STREAM("Motor decode " << mName );
+    ROS_DEBUG_STREAM("Motor decode " << mName );
     switch(command)
     {
         case MOTOR_MEASURE:
-//        status_msg.current = frame.motor.current;
-//        status_msg.effort = frame.motor.current; ///< TODO Change with a good estimation
-//        status_msg.position = frame.motor.position;
-//        position += frame.motor.position_delta;
-//        status_msg.pwm = ((double) frame.motor.pwm) * 100.0 / INT16_MAX;
-//        status_msg.state = frame.motor.state;
-//        velocity = ((double)frame.motor.velocity) / 1000.0;
-//        status_msg.velocity = velocity;
+        status_msg.current = frame.motor.current;
+        status_msg.effort = frame.motor.current; ///< TODO Change with a good estimation
+        status_msg.position = frame.motor.position;
+        position += frame.motor.position_delta;
+        status_msg.pwm = ((double) frame.motor.pwm) * 100.0 / INT16_MAX;
+        status_msg.state = frame.motor.state;
+        velocity = ((double)frame.motor.velocity) / 1000.0;
+        status_msg.velocity = velocity;
+        break;
+        case MOTOR_DIAGNOSTIC:
+        status_msg.watt = (frame.diagnostic.watt/1000.0); /// in W
+        status_msg.time_execution = frame.diagnostic.time_control;
+        status_msg.voltage = (frame.diagnostic.volt/1000.0); /// in V;
+        status_msg.temperature = frame.diagnostic.temperature;
         break;
         case MOTOR_VEL_PID:
         if(option == PACKET_DATA)
         {
-            ROS_INFO_STREAM("Velocity PID parameter");
+            ROS_INFO_STREAM("Velocity PID frame");
             pid_velocity->setParam(frame.pid);
         }
         break;
         case MOTOR_CURRENT_PID:
         if(option == PACKET_DATA)
         {
-            ROS_INFO_STREAM("Current PID parameter");
+            ROS_INFO_STREAM("Current PID frame");
             pid_current->setParam(frame.pid);
+        }
+        break;
+        case MOTOR_EMERGENCY:
+        if(option == PACKET_DATA)
+        {
+            ROS_INFO_STREAM("Emergency frame");
+            emergency->setParam(frame.emergency);
+        }
+        break;
+        case MOTOR_PARAMETER:
+        if(option == PACKET_DATA)
+        {
+            ROS_INFO_STREAM("Parameter frame");
+            parameter->setParam(frame.parameter);
         }
         break;
     }

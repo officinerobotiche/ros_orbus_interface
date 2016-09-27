@@ -9,6 +9,8 @@ GenericInterface::GenericInterface(const ros::NodeHandle &nh, const ros::NodeHan
     , mSerial(serial)
 {
     bool initCallback = mSerial->addCallback(&GenericInterface::systemFrame, this, HASHMAP_SYSTEM);
+
+    name_board = "Unknown";
 }
 
 void GenericInterface::connectCallback(const ros::SingleSubscriberPublisher& pub) {

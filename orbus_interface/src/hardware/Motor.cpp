@@ -23,6 +23,8 @@ Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, unsign
     pid_current = new MotorPIDConfigurator(nh, serial, mName, "current", MOTOR_CURRENT_PID, number);
     parameter = new MotorParamConfigurator(nh, serial, mName, number);
     emergency = new MotorEmergencyConfigurator(nh, serial, mName, number);
+    diagnostic_current = new MotorDiagnosticConfigurator(nh, serial, mName, "current", number);
+    diagnostic_temperature = new MotorDiagnosticConfigurator(nh, serial, mName, "temperature", number);
 
 }
 
@@ -129,7 +131,7 @@ void Motor::run(diagnostic_updater::DiagnosticStatusWrapper &stat)
     // Add packet in the frame
     if(mSerial->addFrame(frame)->sendList())
     {
-        ROS_INFO_STREAM("Request Diagnostic COMPLETED from:" << mName << " in uNav");
+        ROS_DEBUG_STREAM("Request Diagnostic COMPLETED from:" << mName << " in uNav");
     }
     else
     {
@@ -151,26 +153,26 @@ void Motor::run(diagnostic_updater::DiagnosticStatusWrapper &stat)
 
     stat.summary(diagnostic_msgs::DiagnosticStatus::OK, "Motor Ready!");
 
-    if (status_msg.temperature > mlevels.criticalTemperature)
+    if (status_msg.temperature > diagnostic_temperature->levels.critical)
     {
-        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::ERROR, "Critical temperature: %5.2f > %5.2f °C", status_msg.temperature, mlevels.criticalTemperature);
+        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::ERROR, "Critical temperature: %5.2f > %5.2f °C", status_msg.temperature, diagnostic_temperature->levels.critical);
     }
-    else if (status_msg.temperature > mlevels.warningTemperature)
+    else if (status_msg.temperature > diagnostic_temperature->levels.warning)
     {
-        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::WARN, "Temperature over: %5.2f > %5.2f °C", status_msg.temperature, mlevels.warningTemperature);
+        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::WARN, "Temperature over: %5.2f > %5.2f °C", status_msg.temperature, diagnostic_temperature->levels.warning);
     }
     else
     {
         stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::OK, "Temperature OK: %5.2f °C", status_msg.temperature);
     }
 
-    if (status_msg.current > mlevels.criticalCurrent)
+    if (status_msg.current > diagnostic_current->levels.critical)
     {
-        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::ERROR, "Critical current: %5.2f > %5.2f A", status_msg.current, mlevels.criticalCurrent);
+        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::ERROR, "Critical current: %5.2f > %5.2f A", status_msg.current, diagnostic_current->levels.critical);
     }
-    else if (status_msg.current > mlevels.warningCurrent)
+    else if (status_msg.current > diagnostic_current->levels.warning)
     {
-        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::WARN, "Current over %5.2f > %5.2f A", status_msg.current, mlevels.warningCurrent);
+        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::WARN, "Current over %5.2f > %5.2f A", status_msg.current, diagnostic_current->levels.warning);
     }
     else
     {

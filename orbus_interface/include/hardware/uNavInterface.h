@@ -20,8 +20,21 @@ public:
 
     void initialize();
 
+    /**
+     * @brief updateJointsFromHardware
+     */
     void updateJointsFromHardware();
+
+    /**
+     * @brief writeCommandsToHardware
+     * @param period
+     */
     void writeCommandsToHardware(ros::Duration period);
+
+    /**
+     * @brief updateDiagnostics
+     */
+    void updateDiagnostics();
 
 private:
 
@@ -34,11 +47,14 @@ private:
     boost::shared_ptr<urdf::ModelInterface> urdf;
 
     // List of motors
-    vector<Motor> list_motor;
+    vector<Motor*> list_motor;
 
     /// ROS Control interfaces
     hardware_interface::JointStateInterface joint_state_interface;
     hardware_interface::VelocityJointInterface velocity_joint_interface;
+
+    // Diagnostic
+    diagnostic_updater::Updater diagnostic_updater;
 };
 
 }

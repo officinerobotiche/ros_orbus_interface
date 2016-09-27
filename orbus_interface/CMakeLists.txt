@@ -30,6 +30,7 @@ find_package(catkin REQUIRED
                     dynamic_reconfigure
                     urdf
                     joint_limits_interface
+                    orbus_msgs
 )
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED
@@ -67,6 +68,7 @@ catkin_package(
         roscpp
         sensor_msgs
         joint_limits_interface
+        orbus_msgs
     DEPENDS
         Boost
 )

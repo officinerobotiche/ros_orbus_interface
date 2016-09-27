@@ -99,7 +99,7 @@ motor_parameter_t MotorParamConfigurator::getParam() {
     parameter.ratio = (float) temp_double;
     nh_.getParam(mName + "/rotation", temp_int);
     parameter.rotation = (int8_t) temp_int;
-    ROS_INFO_STREAM("Read param from " << mName << " [Ratio:" << parameter.ratio << ", Rotation:" << (int) parameter.rotation << "]");
+    ROS_DEBUG_STREAM("Read param from " << mName << " [Ratio:" << parameter.ratio << ", Rotation:" << (int) parameter.rotation << "]");
 
     nh_.getParam(mName + PARAM_BRIDGE_STRING + "/h_bridge_enable", temp_int);
     parameter.bridge.enable = (uint8_t) temp_int;
@@ -116,7 +116,7 @@ motor_parameter_t MotorParamConfigurator::getParam() {
     nh_.getParam(mName + PARAM_BRIDGE_STRING + "/current_gain", temp_double);
     parameter.bridge.current_gain = (float) temp_double;
 
-    ROS_INFO_STREAM("Read param from " << mName << " [Enable:" << (int) parameter.bridge.enable
+    ROS_DEBUG_STREAM("Read param from " << mName << " [Enable:" << (int) parameter.bridge.enable
                     << ", PWM_Dead_zone:" << parameter.bridge.pwm_dead_zone
                     << ", PWM_Frequency:" << parameter.bridge.pwm_frequency
                     << ", Volt_Offset:" << parameter.bridge.volt_offset
@@ -133,7 +133,7 @@ motor_parameter_t MotorParamConfigurator::getParam() {
     nh_.getParam(mName + PARAM_ENCODER_STRING + "/channels", temp_int);
     parameter.encoder.type.channels = (uint8_t) (temp_int - 1);
 
-    ROS_INFO_STREAM("Read param from " << mName << " [CPR:" << parameter.encoder.cpr
+    ROS_DEBUG_STREAM("Read param from " << mName << " [CPR:" << parameter.encoder.cpr
                     << ", Position:" << (int) parameter.encoder.type.position
                     << ", Z_index:" << (int) parameter.encoder.type.z_index
                     << ", Channels:" << (int) parameter.encoder.type.channels << "]");

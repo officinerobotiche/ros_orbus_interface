@@ -30,6 +30,7 @@
     <build_depend>dynamic_reconfigure</build_depend>
     <build_depend>urdf</build_depend>
     <build_depend>joint_limits_interface</build_depend>
+    <build_depend>orbus_msgs</build_depend>
 
     <run_depend>serial</run_depend>
     <run_depend>controller_manager</run_depend>
@@ -44,5 +45,6 @@
     <run_depend>topic_tools</run_depend>
     <run_depend>dynamic_reconfigure</run_depend>
     <run_depend>joint_limits_interface</run_depend>
+    <run_depend>orbus_msgs</run_depend>
 
 </package>

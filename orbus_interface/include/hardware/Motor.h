@@ -32,8 +32,8 @@ public:
 
     void run(diagnostic_updater::DiagnosticStatusWrapper &stat);
 
-    void registerControlInterfaces(hardware_interface::JointStateInterface joint_state_interface,
-                                   hardware_interface::VelocityJointInterface velocity_joint_interface,
+    void registerControlInterfaces(hardware_interface::JointStateInterface *joint_state_interface,
+                                   hardware_interface::VelocityJointInterface *velocity_joint_interface,
                                    boost::shared_ptr<urdf::ModelInterface> urdf);
 
     void motorFrame(unsigned char option, unsigned char type, unsigned char command, motor_frame_u frame);

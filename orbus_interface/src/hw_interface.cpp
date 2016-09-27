@@ -50,7 +50,7 @@ void controlLoop(uNavInterface &orb,
   last_time = this_time;
 
   // Process control loop
-  orb.updateJointsFromHardware();
+  //orb.updateJointsFromHardware();
   cm.update(ros::Time::now(), elapsed);
 //  orb.writeCommandsToHardware(elapsed);
 }
@@ -60,7 +60,7 @@ void controlLoop(uNavInterface &orb,
 */
 void diagnosticLoop(uNavInterface &orb)
 {
-  orb.updateDiagnostics();
+  //orb.updateDiagnostics();
 }
 
 int main(int argc, char **argv) {

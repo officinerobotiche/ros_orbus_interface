@@ -42,26 +42,6 @@ uNavInterface::uNavInterface(const ros::NodeHandle &nh, const ros::NodeHandle &p
     name_board = "unav";
 }
 
-void uNavInterface::initialize()
-{
-    ROS_INFO_STREAM("Name: " << name_board);
-    diagnostic_updater.setHardwareID(name_board);
-
-    //Initialize motors
-    for(unsigned i=0; i < list_motor.size(); ++i)
-    {
-        // Get motor
-        Motor *motor_obj = list_motor.at(i);
-        motor_obj->initializeMotor();
-
-        //Add motor in diagnostic updater
-        diagnostic_updater.add(*motor_obj);
-    }
-
-    /// Register all control interface avaiable
-    registerControlInterfaces();
-}
-
 void uNavInterface::updateDiagnostics()
 {
     // Force update all diagnostic parts
@@ -69,15 +49,23 @@ void uNavInterface::updateDiagnostics()
     ROS_DEBUG_STREAM("Update diagnostic");
 }
 
-void uNavInterface::registerControlInterfaces()
+void uNavInterface::initializeInterfaces()
 {
+
+    ROS_INFO_STREAM("Name: " << name_board);
+    diagnostic_updater.setHardwareID(name_board);
+
     ROS_INFO_STREAM("Register Control interfaces");
     for(unsigned i=0; i < list_motor.size(); ++i)
     {
         // Get motor
         Motor *motor_obj = list_motor.at(i);
+        // Initialize all components
+        motor_obj->initializeMotor();
         // Register interface
         motor_obj->registerControlInterfaces(&joint_state_interface, &velocity_joint_interface, urdf);
+        //Add motor in diagnostic updater
+        diagnostic_updater.add(*motor_obj);
     }
     ROS_INFO_STREAM("Send all Constraint configuration");
     // Send list of Command

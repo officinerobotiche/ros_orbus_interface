@@ -18,8 +18,11 @@ class uNavInterface : public GenericInterface, public hardware_interface::RobotH
 public:
     uNavInterface(const ros::NodeHandle &nh, const ros::NodeHandle &private_nh, orbus::serial_controller *serial);
 
-    void initialize();
-
+    /**
+     * @brief initializeInterfaces Initialize all motors.
+     * Add all Control Interface availbles and add in diagnostic task
+     */
+    void initializeInterfaces();
     /**
      * @brief updateJointsFromHardware
      */
@@ -38,7 +41,7 @@ public:
 
 private:
 
-    void registerControlInterfaces();
+
 
     void allMotorsFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
 

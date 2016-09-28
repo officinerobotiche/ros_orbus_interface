@@ -25,9 +25,6 @@
 
 #include <boost/chrono.hpp>
 
-
-//include "configurator/MotorPIDConfigurator.h"
-
 typedef boost::chrono::steady_clock time_source;
 
 using namespace std;
@@ -72,13 +69,13 @@ int main(int argc, char **argv) {
     double control_frequency, diagnostic_frequency;
     private_nh.param<double>("control_frequency", control_frequency, 1.0);
     private_nh.param<double>("diagnostic_frequency", diagnostic_frequency, 1.0);
+    ROS_INFO_STREAM("Control:" << control_frequency << "Hz - Diagnostic:" << diagnostic_frequency << "Hz");
 
     string serial_port_string;
     int32_t baud_rate;
 
     private_nh.param<string>("serial_port", serial_port_string, "/dev/ttyUSB0");
     private_nh.param<int32_t>("serial_rate", baud_rate, 115200);
-
     ROS_INFO_STREAM("Open Serial " << serial_port_string << ":" << baud_rate);
 
     orbus::serial_controller orbusSerial(serial_port_string, baud_rate);
@@ -86,8 +83,8 @@ int main(int argc, char **argv) {
     orbusSerial.start();
 
     uNavInterface interface(nh, private_nh, &orbusSerial);
-
-    interface.initialize();
+    //Initialize all interfaces and setup diagnostic messages
+    interface.initializeInterfaces();
 
     controller_manager::ControllerManager cm(&interface, nh);
 

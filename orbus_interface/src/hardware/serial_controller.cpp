@@ -38,7 +38,7 @@ bool serial_controller::start()
     }
 
     if(mSerial.isOpen()){
-        ROS_INFO_STREAM("Serial Port correctly initialized: " << mSerialPort );
+        ROS_DEBUG_STREAM("Serial Port correctly initialized: " << mSerialPort );
     }
     else
     {
@@ -46,7 +46,7 @@ bool serial_controller::start()
         return false;
     }
 
-    ROS_INFO_STREAM( "Serial port ready" );
+    ROS_DEBUG_STREAM( "Serial port ready" );
     mStopping = false;
     return true;
 }

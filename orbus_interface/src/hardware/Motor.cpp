@@ -42,7 +42,7 @@ void Motor::initializeMotor()
 void Motor::registerControlInterfaces(hardware_interface::JointStateInterface *joint_state_interface, hardware_interface::VelocityJointInterface *velocity_joint_interface, boost::shared_ptr<urdf::ModelInterface> urdf)
 {
     /// Joint hardware interface
-    ROS_INFO_STREAM("Hardware interface: "<< mName);
+    ROS_DEBUG_STREAM("Hardware interface: "<< mName);
     hardware_interface::JointStateHandle joint_state_handle(mName, &position, &velocity, &effort);
 
     joint_state_interface->registerHandle(joint_state_handle);
@@ -91,12 +91,12 @@ void Motor::setupLimits(hardware_interface::JointHandle joint_handle, boost::sha
     // Limits not specified in the parameter server preserve their existing values
     const bool rosparam_limits_ok = getJointLimits(mName, mNh, limits);
     if(rosparam_limits_ok) {
-        ROS_INFO_STREAM("LOAD " << mName << " limits from ROSPARAM: |" << limits.max_velocity << "| rad/s");
+        ROS_WARN_STREAM("OVERLOAD " << mName << " limits from ROSPARAM: |" << limits.max_velocity << "| rad/s");
         state = false;
     }
     else
     {
-        ROS_WARN("Setup limits, PARAM NOT available");
+        ROS_DEBUG("Setup limits, PARAM NOT available");
     }
     // If does not read any parameter from URDF or rosparm load default parameter
     if(state)

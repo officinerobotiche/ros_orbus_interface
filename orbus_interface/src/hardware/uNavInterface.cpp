@@ -38,7 +38,7 @@ uNavInterface::uNavInterface(const ros::NodeHandle &nh, const ros::NodeHandle &p
     list_motor.push_back(motor1);
 
     //TODO send a message to the board to update the name
-    name_board = "unav";
+    name_board = "uNav";
 }
 
 bool uNavInterface::updateDiagnostics()
@@ -68,7 +68,7 @@ void uNavInterface::initializeMotors()
         Motor *motor_obj = list_motor.at(i);
         // Initialize all components
         motor_obj->initializeMotor();
-        ROS_INFO_STREAM("Motor [" << (int) i << "] Initialized");
+        ROS_DEBUG_STREAM("Motor [" << (int) i << "] Initialized");
     }
     // Send list of Command
     serial_status = mSerial->sendList();
@@ -77,7 +77,7 @@ void uNavInterface::initializeMotors()
 void uNavInterface::initializeInterfaces()
 {
 
-    ROS_INFO_STREAM("Name: " << name_board);
+    ROS_INFO_STREAM("Name board: " << name_board);
     diagnostic_updater.setHardwareID(name_board);
 
     for(unsigned i=0; i < list_motor.size(); ++i)
@@ -88,7 +88,7 @@ void uNavInterface::initializeInterfaces()
         motor_obj->registerControlInterfaces(&joint_state_interface, &velocity_joint_interface, urdf);
         //Add motor in diagnostic updater
         diagnostic_updater.add(*motor_obj);
-        ROS_INFO_STREAM("Motor [" << (int) i << "] Registered");
+        ROS_DEBUG_STREAM("Motor [" << (int) i << "] Registered");
     }
     ROS_INFO_STREAM("Send all Constraint configuration");
     // Send list of Command

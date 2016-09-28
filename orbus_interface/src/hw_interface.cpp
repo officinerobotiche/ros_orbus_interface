@@ -42,7 +42,7 @@ void siginthandler(int param)
   control_loop.stop();
   diagnostic_loop.stop();
   ROS_INFO("Control and diagnostic loop stopped");
-  ROS_INFO_STREAM("-------------------------------------");
+  ROS_INFO_STREAM("--------- UNAV_NODE STOPPED ----------");
   ros::shutdown();
 
 }

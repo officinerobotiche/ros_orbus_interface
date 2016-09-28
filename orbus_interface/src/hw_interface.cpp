@@ -72,7 +72,15 @@ void controlLoop(uNavInterface &orb,
         return;
     }
     cm.update(ros::Time::now(), elapsed);
-    //  orb.writeCommandsToHardware(elapsed);
+
+    if(!orb.writeCommandsToHardware(elapsed))
+    {
+        // If the communcation is lost stop the control loop
+        // and wait from diagnostic if the unav is available
+        control_loop.stop();
+        return;
+    }
+
 }
 
 /**

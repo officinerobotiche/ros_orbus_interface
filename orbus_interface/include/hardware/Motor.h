@@ -55,6 +55,7 @@ private:
     // Name of the motor
     string mName;
     unsigned int mNumber;
+    string mMotorName;
     // State of the motor
     double position;
     double position_offset;

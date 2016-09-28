@@ -19,6 +19,17 @@ Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, unsign
     command.bitset.motor = number;
     mNumber = number;
 
+    //Initialize the name of the motor
+    if(nh.hasParam(mName + "/name"))
+    {
+        nh.getParam(mName + "/name", mMotorName);
+    }
+    else
+    {
+        nh.setParam(mName + "/name", mName);
+        mMotorName = mName;
+    }
+
     pid_velocity = new MotorPIDConfigurator(nh, serial, mName, "velocity", MOTOR_VEL_PID, number);
     pid_current = new MotorPIDConfigurator(nh, serial, mName, "current", MOTOR_CURRENT_PID, number);
     parameter = new MotorParamConfigurator(nh, serial, mName, number);
@@ -42,8 +53,8 @@ void Motor::initializeMotor()
 void Motor::registerControlInterfaces(hardware_interface::JointStateInterface *joint_state_interface, hardware_interface::VelocityJointInterface *velocity_joint_interface, boost::shared_ptr<urdf::ModelInterface> urdf)
 {
     /// Joint hardware interface
-    ROS_DEBUG_STREAM("Hardware interface: "<< mName);
-    hardware_interface::JointStateHandle joint_state_handle(mName, &position, &velocity, &effort);
+    ROS_DEBUG_STREAM("Hardware interface: "<< mMotorName);
+    hardware_interface::JointStateHandle joint_state_handle(mMotorName, &position, &velocity, &effort);
 
     joint_state_interface->registerHandle(joint_state_handle);
 
@@ -57,7 +68,6 @@ void Motor::registerControlInterfaces(hardware_interface::JointStateInterface *j
 void Motor::setupLimits(hardware_interface::JointHandle joint_handle, boost::shared_ptr<urdf::ModelInterface> urdf)
 {
     /// Add a velocity joint limits infomations
-    /// Populate with any of the methods presented in the previous example...
     joint_limits_interface::JointLimits limits;
     joint_limits_interface::SoftJointLimits soft_limits;
 
@@ -70,14 +80,14 @@ void Motor::setupLimits(hardware_interface::JointHandle joint_handle, boost::sha
     // Limits specified in URDF overwrite existing values in 'limits' and 'soft_limits'
     // Limits not specified in URDF preserve their existing values
     if(urdf != NULL) {
-        boost::shared_ptr<const urdf::Joint> urdf_joint = urdf->getJoint(mName);
+        boost::shared_ptr<const urdf::Joint> urdf_joint = urdf->getJoint(mMotorName);
         const bool urdf_limits_ok = getJointLimits(urdf_joint, limits);
         const bool urdf_soft_limits_ok = getSoftJointLimits(urdf_joint, soft_limits);
         if(urdf_limits_ok) {
-            ROS_INFO_STREAM("LOAD " << mName << " limits from URDF: |" << limits.max_velocity << "| rad/s");
+            ROS_INFO_STREAM("LOAD [" << mMotorName << "] limits from URDF: |" << limits.max_velocity << "| rad/s");
         }
         if(urdf_soft_limits_ok) {
-            ROS_INFO_STREAM("LOAD " << mName << " soft limits from URDF: |" << limits.max_velocity << "| rad/s");
+            ROS_INFO_STREAM("LOAD [" << mMotorName << "] soft limits from URDF: |" << limits.max_velocity << "| rad/s");
         }
         state = false;
     }
@@ -89,9 +99,9 @@ void Motor::setupLimits(hardware_interface::JointHandle joint_handle, boost::sha
     // Populate (soft) joint limits from the ros parameter server
     // Limits specified in the parameter server overwrite existing values in 'limits' and 'soft_limits'
     // Limits not specified in the parameter server preserve their existing values
-    const bool rosparam_limits_ok = getJointLimits(mName, mNh, limits);
+    const bool rosparam_limits_ok = getJointLimits(mMotorName, mNh, limits);
     if(rosparam_limits_ok) {
-        ROS_WARN_STREAM("OVERLOAD " << mName << " limits from ROSPARAM: |" << limits.max_velocity << "| rad/s");
+        ROS_WARN_STREAM("OVERLOAD [" << mMotorName << "] limits from ROSPARAM: |" << limits.max_velocity << "| rad/s");
         state = false;
     }
     else
@@ -101,7 +111,7 @@ void Motor::setupLimits(hardware_interface::JointHandle joint_handle, boost::sha
     // If does not read any parameter from URDF or rosparm load default parameter
     if(state)
     {
-        ROS_INFO_STREAM("Load " << mName << " with limit = |" << limits.max_velocity << "| rad/s");
+        ROS_INFO_STREAM("Load [" << mMotorName << "] with limit = |" << limits.max_velocity << "| rad/s");
     }
 
     // Send joint limits information to board
@@ -135,7 +145,7 @@ void Motor::run(diagnostic_updater::DiagnosticStatusWrapper &stat)
     // Add packet in the frame
     if(mSerial->addFrame(frame)->sendList())
     {
-        ROS_DEBUG_STREAM("Request Diagnostic COMPLETED from:" << mName << " in uNav");
+        ROS_DEBUG_STREAM("Request Diagnostic COMPLETED from:" << mMotorName << " in uNav");
     }
     else
     {

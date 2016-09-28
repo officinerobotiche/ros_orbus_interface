@@ -145,7 +145,16 @@ bool serial_controller::writePacket(packet_t packet)
     //Build a message to send to serial
     build_pkg(BufferTx, packet);
     // Send the packet on serial
-    int written = mSerial.write(BufferTx, dataSize);
+    int written = 0;
+    try
+    {
+        written = mSerial.write(BufferTx, dataSize);
+    }
+    catch (serial::IOException& e)
+    {
+        ROS_ERROR_STREAM("Unable to write serial port " << mSerialPort << " - Error: "  << e.what() );
+        return false;
+    }
 
     if ( written != dataSize )
     {
@@ -171,8 +180,16 @@ bool serial_controller::readPacket()
             ROS_ERROR_STREAM( "Serial timeout connecting");
             return false;
         }
-
-        string reply = mSerial.read( mSerial.available() );
+        string reply;
+        try
+        {
+            reply = mSerial.read( mSerial.available() );
+        }
+        catch (serial::IOException& e)
+        {
+            ROS_ERROR_STREAM("Unable to read serial port " << mSerialPort << " - Error: "  << e.what() );
+            return false;
+        }
 
         ROS_DEBUG_STREAM( "Received " << reply.size() << " bytes" );
 

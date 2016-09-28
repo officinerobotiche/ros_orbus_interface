@@ -105,7 +105,7 @@ set(hardware_unav_SRC
 add_executable(unav_node ${hardware_unav_SRC})
 target_link_libraries(unav_node or_bus ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
-add_definitions(-std=c++11)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 #roslint_cpp(${hardware_unav_SRC})
 

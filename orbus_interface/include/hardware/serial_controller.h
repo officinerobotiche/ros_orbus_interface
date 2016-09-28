@@ -22,7 +22,9 @@ typedef enum serial_status
 {
     OK,
     TIMEOUT,
-    BUFFER_FULL
+    BUFFER_FULL,
+    IOEXCEPTION,
+    SERIALEXCEPTION
 
 } serial_status_t;
 
@@ -35,6 +37,8 @@ public:
      * @param set the baudrate
      */
     serial_controller(string port, unsigned long baudrate);
+
+    ~serial_controller();
     /**
      * @brief start Initialize the serial communcation
      * @return if open the connection return true
@@ -65,16 +69,6 @@ public:
     bool sendList();
 
 protected:
-    // >>>>> Ctrl+C handler
-    /*! Ctrl+C handler
-     */
-    static void sighandler(int signo)
-    {
-        serial_controller::mStopping = (signo == SIGINT);
-        ROS_INFO_STREAM("Ctrl+C pressed by user" );
-    }
-    // <<<<< Ctrl+C handler
-
     /**
      * @brief sendSerialFrame
      * @param list_send
@@ -129,10 +123,8 @@ private:
     uint32_t mBaudrate;
     // Timeout open serial port
     uint32_t mTimeout;
-
-    static bool mStopping; ///< Used to stop driver using Ctrl+C
-    bool mStopped; ///< Used to stop the serial processing
-    bool mPaused; ///< Used to pause asynchronous data processing
+    // Used to stop the serial processing
+    bool mStopping;
     // Status of the serial communication
     serial_status_t mStatus;
 

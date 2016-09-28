@@ -31,7 +31,22 @@ using namespace std;
 using namespace ORInterface;
 
 ros::Timer control_loop;
+ros::Timer diagnostic_loop;
+
 bool status = true;
+
+// >>>>> Ctrl+C handler
+void siginthandler(int param)
+{
+  ROS_INFO("User pressed Ctrl+C Shutting down...");
+  control_loop.stop();
+  diagnostic_loop.stop();
+  ROS_INFO("Control and diagnostic loop stopped");
+  ROS_INFO_STREAM("-------------------------------------");
+  ros::shutdown();
+
+}
+// <<<<< Ctrl+C handler
 
 /**
 * Control loop not realtime safe
@@ -91,8 +106,9 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "unav_interface");
     ros::NodeHandle nh, private_nh("~");
 
-    ROS_INFO_STREAM("-----------------------------");
-    ROS_INFO_STREAM("--------- UNAV_NODE ---------");
+    signal(SIGINT, siginthandler);
+    ROS_INFO_STREAM("-------------------------------------");
+    ROS_INFO_STREAM("------------- UNAV_NODE -------------");
     //Hardware information
     double control_frequency, diagnostic_frequency;
     private_nh.param<double>("control_frequency", control_frequency, 1.0);
@@ -137,7 +153,7 @@ int main(int argc, char **argv) {
                 ros::Duration(1 / diagnostic_frequency),
                 boost::bind(diagnosticLoop, boost::ref(interface)),
                 &unav_queue);
-    ros::Timer diagnostic_loop = nh.createTimer(diagnostic_timer);
+    diagnostic_loop = nh.createTimer(diagnostic_timer);
 
     unav_spinner.start();
 

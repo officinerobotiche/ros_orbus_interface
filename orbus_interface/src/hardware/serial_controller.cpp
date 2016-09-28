@@ -3,23 +3,21 @@
 namespace orbus
 {
 
-bool serial_controller::mStopping = false;
-
-serial_controller::serial_controller(string port, unsigned long baudrate) : mSerialPort(port), mBaudrate(baudrate)
+serial_controller::serial_controller(string port, unsigned long baudrate)
+    : mSerialPort(port)
+    , mBaudrate(baudrate)
 {
-//    // >>>>> Ctrl+C handling
-//    struct sigaction sigAct;
-//    memset( &sigAct, 0, sizeof(sigAct) );
-//    sigAct.sa_handler = serial_controller::sighandler;
-//    sigaction(SIGINT, &sigAct, 0);
-//    // <<<<< Ctrl+C handling
-
     orb_message_init(&mReceive);           ///< Initialize buffer serial error
     orb_frame_init();                      ///< Initialize hash map packet
     // Start status of the serial controller
     mStatus = OK;
     // Default timeout
     mTimeout = 500;
+}
+
+serial_controller::~serial_controller()
+{
+    stop();
 }
 
 bool serial_controller::start()
@@ -49,13 +47,18 @@ bool serial_controller::start()
     }
 
     ROS_INFO_STREAM( "Serial port ready" );
-
+    mStopping = false;
     return true;
 }
 
 bool serial_controller::stop()
 {
-    mStopped = true;
+    // Stop the reader
+    mStopping = true;
+    // Clean all messages
+    list_send.clear();
+    // Close the serial port
+    mSerial.close();
 }
 
 bool serial_controller::addCallback(const callback_data_packet_t &callback, unsigned char type)
@@ -150,8 +153,15 @@ bool serial_controller::writePacket(packet_t packet)
     {
         written = mSerial.write(BufferTx, dataSize);
     }
+    catch (serial::SerialException& e)
+    {
+        mStatus = SERIALEXCEPTION;
+        ROS_ERROR_STREAM("Unable to write serial port " << mSerialPort << " - Error: "  << e.what() );
+        return false;
+    }
     catch (serial::IOException& e)
     {
+        mStatus = IOEXCEPTION;
         ROS_ERROR_STREAM("Unable to write serial port " << mSerialPort << " - Error: "  << e.what() );
         return false;
     }
@@ -170,8 +180,7 @@ bool serial_controller::readPacket()
 
         if( mStopping )
         {
-            stop();
-            break;
+            return false;
         }
 
         if( !mSerial.waitReadable() )
@@ -185,8 +194,15 @@ bool serial_controller::readPacket()
         {
             reply = mSerial.read( mSerial.available() );
         }
+        catch (serial::SerialException& e)
+        {
+            mStatus = SERIALEXCEPTION;
+            ROS_ERROR_STREAM("Unable to read serial port " << mSerialPort << " - Error: "  << e.what() );
+            return false;
+        }
         catch (serial::IOException& e)
         {
+            mStatus = IOEXCEPTION;
             ROS_ERROR_STREAM("Unable to read serial port " << mSerialPort << " - Error: "  << e.what() );
             return false;
         }

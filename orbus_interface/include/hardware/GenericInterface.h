@@ -20,6 +20,8 @@ protected:
     ros::NodeHandle private_mNh;
     // Serial controller communication
     orbus::serial_controller *mSerial;
+    // Status connection
+    bool serial_status;
 
     //Name of device
     string name_board;

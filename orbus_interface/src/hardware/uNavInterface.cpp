@@ -7,7 +7,6 @@
 #include <hardware_interface/joint_state_interface.h>
 #include <hardware_interface/joint_command_interface.h>
 
-
 #include "hardware/uNavInterface.h"
 
 namespace ORInterface
@@ -42,11 +41,37 @@ uNavInterface::uNavInterface(const ros::NodeHandle &nh, const ros::NodeHandle &p
     name_board = "unav";
 }
 
-void uNavInterface::updateDiagnostics()
+bool uNavInterface::updateDiagnostics()
 {
-    // Force update all diagnostic parts
-    diagnostic_updater.force_update();
-    ROS_DEBUG_STREAM("Update diagnostic");
+    if(serial_status)
+    {
+        ROS_DEBUG_STREAM("Update diagnostic");
+        // Force update all diagnostic parts
+        diagnostic_updater.force_update();
+    }
+    else
+    {
+        ROS_ERROR("Error connection! Try to connect again ...");
+        // Send list of Command
+        serial_status = mSerial->sendList();
+        if(serial_status)
+            ROS_INFO("... connected!");
+    }
+    return serial_status;
+}
+
+void uNavInterface::initializeMotors()
+{
+    for(unsigned i=0; i < list_motor.size(); ++i)
+    {
+        // Get motor
+        Motor *motor_obj = list_motor.at(i);
+        // Initialize all components
+        motor_obj->initializeMotor();
+        ROS_INFO_STREAM("Motor [" << (int) i << "] Initialized");
+    }
+    // Send list of Command
+    serial_status = mSerial->sendList();
 }
 
 void uNavInterface::initializeInterfaces()
@@ -55,40 +80,40 @@ void uNavInterface::initializeInterfaces()
     ROS_INFO_STREAM("Name: " << name_board);
     diagnostic_updater.setHardwareID(name_board);
 
-    ROS_INFO_STREAM("Register Control interfaces");
     for(unsigned i=0; i < list_motor.size(); ++i)
     {
         // Get motor
         Motor *motor_obj = list_motor.at(i);
-        // Initialize all components
-        motor_obj->initializeMotor();
         // Register interface
         motor_obj->registerControlInterfaces(&joint_state_interface, &velocity_joint_interface, urdf);
         //Add motor in diagnostic updater
         diagnostic_updater.add(*motor_obj);
+        ROS_INFO_STREAM("Motor [" << (int) i << "] Registered");
     }
     ROS_INFO_STREAM("Send all Constraint configuration");
     // Send list of Command
-    mSerial->sendList();
+    serial_status = mSerial->sendList();
 
     /// Register interfaces
     registerInterface(&joint_state_interface);
     registerInterface(&velocity_joint_interface);
 }
 
-void uNavInterface::updateJointsFromHardware()
+bool uNavInterface::updateJointsFromHardware()
 {
-    ROS_DEBUG_STREAM("Update joint information from uNav");
+    ROS_DEBUG_STREAM("Get measure from uNav");
     for(unsigned i=0; i < list_motor.size(); ++i)
     {
         // Get motor
         Motor *motor_obj = list_motor.at(i);
         motor_obj->addRequestMeasure();
     }
-    mSerial->sendList();
+    //Send all messages
+    serial_status = mSerial->sendList();
+    return serial_status;
 }
 
-void uNavInterface::writeCommandsToHardware(ros::Duration period)
+bool uNavInterface::writeCommandsToHardware(ros::Duration period)
 {
     ROS_DEBUG_STREAM("Write command to uNav");
     for(unsigned i=0; i < list_motor.size(); ++i)
@@ -97,7 +122,9 @@ void uNavInterface::writeCommandsToHardware(ros::Duration period)
         Motor *motor_obj = list_motor.at(i);
         motor_obj->writeCommandsToHardware(period);
     }
-    mSerial->sendList();
+    //Send all messages
+    serial_status = mSerial->sendList();
+    return serial_status;
 }
 
 void uNavInterface::allMotorsFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message)

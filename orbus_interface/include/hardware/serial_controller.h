@@ -18,6 +18,14 @@ namespace orbus
 /// Read complete callback - Array of callback
 typedef function<void (unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) > callback_data_packet_t;
 
+typedef enum serial_status
+{
+    OK,
+    TIMEOUT,
+    BUFFER_FULL
+
+} serial_status_t;
+
 class serial_controller
 {
 public:
@@ -80,13 +88,6 @@ protected:
      */
     packet_t sendSerialPacket(packet_t packet);
 
-    /*!
-     * \brief run
-     * Thread function. Process the serial data continously when
-     * the \ref Acquisition is called
-     */
-    void* run();
-
 private:
     /**
      * @brief writePacket Send a packet from serial
@@ -132,6 +133,8 @@ private:
     static bool mStopping; ///< Used to stop driver using Ctrl+C
     bool mStopped; ///< Used to stop the serial processing
     bool mPaused; ///< Used to pause asynchronous data processing
+    // Status of the serial communication
+    serial_status_t mStatus;
 
     // The packet received from serial
     packet_t mReceive;

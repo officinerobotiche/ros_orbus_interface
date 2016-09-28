@@ -16,7 +16,9 @@ serial_controller::serial_controller(string port, unsigned long baudrate) : mSer
 
     orb_message_init(&mReceive);           ///< Initialize buffer serial error
     orb_frame_init();                      ///< Initialize hash map packet
-
+    // Start status of the serial controller
+    mStatus = OK;
+    // Default timeout
     mTimeout = 500;
 }
 
@@ -68,12 +70,6 @@ bool serial_controller::addCallback(const callback_data_packet_t &callback, unsi
     }
 
 }
-
-void* serial_controller::run()
-{
-
-}
-
 serial_controller* serial_controller::addFrame(packet_information_t packet)
 {
     mMutex.lock();
@@ -88,7 +84,7 @@ bool serial_controller::sendList()
     if(state) {
         list_send.clear();
     }
-    return state;
+    return (mStatus == OK);
 }
 
 bool serial_controller::sendSerialFrame(vector<packet_information_t> list_send)
@@ -96,22 +92,31 @@ bool serial_controller::sendSerialFrame(vector<packet_information_t> list_send)
     if(list_send.size())
     {
         // Encode the list of frames
-        packet_t packet = encoder(list_send.data(), list_send.size());
-        // Send the packet in serial and wait the received data
-        packet_t receive = sendSerialPacket(packet);
-        // Read all frame and if is true send a packet with all new information
-        for (int i = 0; i < receive.length; i += receive.buffer[i]) {
-            packet_information_t info;
-            memcpy((unsigned char*) &info, &receive.buffer[i], receive.buffer[i]);
-            // Check if is available on the hashmap
-            if (hashmap.find(info.type) != hashmap.end())
+        packet_t packet;
+        unsigned int n_packet = encoder(&packet, list_send.data(), list_send.size());
+        if(n_packet == list_send.size())
+        {
+            // Send the packet in serial and wait the received data
+            packet_t receive = sendSerialPacket(packet);
+            if(receive.length > 0)
             {
-                // Send the message
-                callback_data_packet_t callback = hashmap[info.type];
-                callback(info.option, info.type, info.command, info.message);
+                // Read all frame and if is true send a packet with all new information
+                for (int i = 0; i < receive.length; i += receive.buffer[i]) {
+                    packet_information_t info;
+                    memcpy((unsigned char*) &info, &receive.buffer[i], receive.buffer[i]);
+                    // Check if is available on the hashmap
+                    if (hashmap.find(info.type) != hashmap.end())
+                    {
+                        // Send the message
+                        callback_data_packet_t callback = hashmap[info.type];
+                        callback(info.option, info.type, info.command, info.message);
+                    }
+                }
+                mStatus = OK;
+                return true;
             }
         }
-        return true;
+        mStatus = BUFFER_FULL;
     }
     return false;
 }
@@ -126,7 +131,9 @@ packet_t serial_controller::sendSerialPacket(packet_t packet)
             return mReceive;
         }
     }
-    //return 0;
+    packet_t empty;
+    empty.length = 0;
+    return empty;
 }
 
 bool serial_controller::writePacket(packet_t packet)
@@ -160,6 +167,7 @@ bool serial_controller::readPacket()
 
         if( !mSerial.waitReadable() )
         {
+            mStatus = TIMEOUT;
             ROS_ERROR_STREAM( "Serial timeout connecting");
             return false;
         }

@@ -19,6 +19,10 @@ public:
     uNavInterface(const ros::NodeHandle &nh, const ros::NodeHandle &private_nh, orbus::serial_controller *serial);
 
     /**
+     * @brief initializeMotors
+     */
+    void initializeMotors();
+    /**
      * @brief initializeInterfaces Initialize all motors.
      * Add all Control Interface availbles and add in diagnostic task
      */
@@ -26,18 +30,18 @@ public:
     /**
      * @brief updateJointsFromHardware
      */
-    void updateJointsFromHardware();
+    bool updateJointsFromHardware();
 
     /**
      * @brief writeCommandsToHardware
      * @param period
      */
-    void writeCommandsToHardware(ros::Duration period);
+    bool writeCommandsToHardware(ros::Duration period);
 
     /**
      * @brief updateDiagnostics
      */
-    void updateDiagnostics();
+    bool updateDiagnostics();
 
 private:
 

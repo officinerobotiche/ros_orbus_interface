@@ -7,6 +7,7 @@ GenericInterface::GenericInterface(const ros::NodeHandle &nh, const ros::NodeHan
     : mNh(nh)
     , private_mNh(private_nh)
     , mSerial(serial)
+    , serial_status(true)
 {
     bool initCallback = mSerial->addCallback(&GenericInterface::systemFrame, this, HASHMAP_SYSTEM);
 

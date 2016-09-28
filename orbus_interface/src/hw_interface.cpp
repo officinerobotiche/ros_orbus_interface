@@ -30,7 +30,8 @@ typedef boost::chrono::steady_clock time_source;
 using namespace std;
 using namespace ORInterface;
 
-
+ros::Timer control_loop;
+bool status = true;
 
 /**
 * Control loop not realtime safe
@@ -40,16 +41,23 @@ void controlLoop(uNavInterface &orb,
                  time_source::time_point &last_time)
 {
 
-  // Calculate monotonic time difference
-  time_source::time_point this_time = time_source::now();
-  boost::chrono::duration<double> elapsed_duration = this_time - last_time;
-  ros::Duration elapsed(elapsed_duration.count());
-  last_time = this_time;
+    // Calculate monotonic time difference
+    time_source::time_point this_time = time_source::now();
+    boost::chrono::duration<double> elapsed_duration = this_time - last_time;
+    ros::Duration elapsed(elapsed_duration.count());
+    last_time = this_time;
 
-  // Process control loop
-  //orb.updateJointsFromHardware();
-  cm.update(ros::Time::now(), elapsed);
-//  orb.writeCommandsToHardware(elapsed);
+    //ROS_INFO_STREAM("CONTROL - running");
+    // Process control loop
+    if(!orb.updateJointsFromHardware())
+    {
+        // If the communcation is lost stop the control loop
+        // and wait from diagnostic if the unav is available
+        control_loop.stop();
+        return;
+    }
+    cm.update(ros::Time::now(), elapsed);
+    //  orb.writeCommandsToHardware(elapsed);
 }
 
 /**
@@ -57,7 +65,25 @@ void controlLoop(uNavInterface &orb,
 */
 void diagnosticLoop(uNavInterface &orb)
 {
-  //orb.updateDiagnostics();
+    //ROS_INFO_STREAM("DIAGNOSTIC - running");
+    bool diagnostic = orb.updateDiagnostics();
+    // Set true if the diagnostic change with the before status
+    if(status != diagnostic)
+    {
+    if(diagnostic)
+    {
+        ROS_INFO_STREAM("DIAGNOSTIC - Initialize again the unav and restart control loop");
+        orb.initializeMotors();
+        control_loop.start();
+    }
+    else
+    {
+        // Stopping control node
+        ROS_ERROR_STREAM("DIAGNOSTIC - Stop control loop");
+        control_loop.stop();
+    }
+    }
+    status = diagnostic;
 }
 
 int main(int argc, char **argv) {
@@ -65,6 +91,8 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "unav_interface");
     ros::NodeHandle nh, private_nh("~");
 
+    ROS_INFO_STREAM("-----------------------------");
+    ROS_INFO_STREAM("--------- UNAV_NODE ---------");
     //Hardware information
     double control_frequency, diagnostic_frequency;
     private_nh.param<double>("control_frequency", control_frequency, 1.0);
@@ -83,6 +111,8 @@ int main(int argc, char **argv) {
     orbusSerial.start();
 
     uNavInterface interface(nh, private_nh, &orbusSerial);
+    // Initialize the motor parameters
+    interface.initializeMotors();
     //Initialize all interfaces and setup diagnostic messages
     interface.initializeInterfaces();
 
@@ -100,7 +130,8 @@ int main(int argc, char **argv) {
                 ros::Duration(1 / control_frequency),
                 boost::bind(controlLoop, boost::ref(interface), boost::ref(cm), boost::ref(last_time)),
                 &unav_queue);
-    ros::Timer control_loop = nh.createTimer(control_timer);
+    // Global variable
+    control_loop = nh.createTimer(control_timer);
 
     ros::TimerOptions diagnostic_timer(
                 ros::Duration(1 / diagnostic_frequency),

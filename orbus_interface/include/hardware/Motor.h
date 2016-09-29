@@ -36,6 +36,8 @@ public:
 
     void addRequestMeasure();
 
+    void resetPosition(double position);
+
     void writeCommandsToHardware(ros::Duration period, double velocity_command);
 
     void setupLimits(hardware_interface::JointHandle joint_handle, boost::shared_ptr<urdf::ModelInterface> urdf);

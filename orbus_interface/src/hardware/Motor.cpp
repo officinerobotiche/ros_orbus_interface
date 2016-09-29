@@ -246,6 +246,18 @@ void Motor::addRequestMeasure()
     mSerial->addFrame(frame);
 }
 
+void Motor::resetPosition(double position)
+{
+    // Set type of command
+    command.bitset.command = MOTOR_POS_RESET;
+    // Build a packet
+    message_abstract_u temp;
+    temp.motor.reference = static_cast<motor_control_t>(position*1000.0);
+    packet_information_t frame = CREATE_PACKET_DATA(command.command_message, HASHMAP_MOTOR, temp);
+    // Add packet in the frame
+    mSerial->addFrame(frame);
+}
+
 void Motor::writeCommandsToHardware(ros::Duration period, double velocity_command)
 {
     // Enforce joint limits for all registered handles

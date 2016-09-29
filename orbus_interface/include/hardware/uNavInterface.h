@@ -63,9 +63,6 @@ private:
     /// URDF information about robot
     boost::shared_ptr<urdf::ModelInterface> urdf;
 
-    // List of motors
-    joint_t joint[2];
-
     /// ROS Control interfaces
     hardware_interface::JointStateInterface joint_state_interface;
     hardware_interface::VelocityJointInterface velocity_joint_interface;

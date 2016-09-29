@@ -13,6 +13,8 @@ namespace ORInterface
 {
 
 #define NUM_MOTORS 2
+// List of motors
+joint_t joint[NUM_MOTORS];
 
 uNavInterface::uNavInterface(const ros::NodeHandle &nh, const ros::NodeHandle &private_nh, orbus::serial_controller *serial)
     : GenericInterface(nh, private_nh, serial)
@@ -95,6 +97,10 @@ void uNavInterface::initializeInterfaces()
         velocity_joint_interface.registerHandle(joint_handle);
         // Setup limits
         joint[i].motor->setupLimits(joint_handle, urdf);
+
+        // reset position joint
+        ROS_DEBUG_STREAM("Reset position motor: " << joint[i].motor->mMotorName);
+        joint[i].motor->resetPosition(0);
     }
 
     ROS_INFO_STREAM("Send all Constraint configuration");
@@ -138,13 +144,15 @@ void uNavInterface::allMotorsFrame(unsigned char option, unsigned char type, uns
     motor_command_map_t motor;
     motor.command_message = command;
     int number_motor = (int) motor.bitset.motor;
-    ROS_INFO_STREAM("Frame [Option: " << option << ", HashMap: " << type << ", Nmotor: " << number_motor << ", Command: " << (int) motor.bitset.command << "]");
+    ROS_DEBUG_STREAM("Frame [Option: " << option << ", HashMap: " << type << ", Nmotor: " << number_motor << ", Command: " << (int) motor.bitset.command << "]");
     if(number_motor < NUM_MOTORS)
     {
         // Update information
         joint[number_motor].motor->motorFrame(option, type, motor.bitset.command, message.motor);
+        // Update status joint
         if(motor.bitset.command == MOTOR_MEASURE)
         {
+            joint[number_motor].effort = message.motor.motor.current;
             joint[number_motor].position += message.motor.motor.position_delta;
             joint[number_motor].velocity = ((double)message.motor.motor.velocity) / 1000.0;
         }

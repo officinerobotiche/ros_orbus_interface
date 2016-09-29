@@ -20,13 +20,13 @@ Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, unsign
     mNumber = number;
 
     //Initialize the name of the motor
-    if(nh.hasParam(mName + "/name"))
+    if(nh.hasParam(mName + "/name_joint"))
     {
-        nh.getParam(mName + "/name", mMotorName);
+        nh.getParam(mName + "/name_joint", mMotorName);
     }
     else
     {
-        nh.setParam(mName + "/name", mName);
+        nh.setParam(mName + "/name_joint", mName);
         mMotorName = mName;
     }
 
@@ -48,21 +48,6 @@ void Motor::initializeMotor()
     pid_current->initConfigurator();
     parameter->initConfigurator();
     emergency->initConfigurator();
-}
-
-void Motor::registerControlInterfaces(hardware_interface::JointStateInterface *joint_state_interface, hardware_interface::VelocityJointInterface *velocity_joint_interface, boost::shared_ptr<urdf::ModelInterface> urdf)
-{
-    /// Joint hardware interface
-    ROS_DEBUG_STREAM("Hardware interface: "<< mMotorName);
-    hardware_interface::JointStateHandle joint_state_handle(mMotorName, &position, &velocity, &effort);
-
-    joint_state_interface->registerHandle(joint_state_handle);
-
-    /// Differential drive interface
-    hardware_interface::JointHandle joint_handle(joint_state_handle, &velocity_command);
-    velocity_joint_interface->registerHandle(joint_handle);
-
-    setupLimits(joint_handle, urdf);
 }
 
 void Motor::setupLimits(hardware_interface::JointHandle joint_handle, boost::shared_ptr<urdf::ModelInterface> urdf)
@@ -204,11 +189,9 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
         status_msg.current = frame.motor.current;
         status_msg.effort = frame.motor.current; ///< TODO Change with a good estimation
         status_msg.position = frame.motor.position;
-        position += frame.motor.position_delta;
         status_msg.pwm = ((double) frame.motor.pwm) * 100.0 / INT16_MAX;
         status_msg.state = frame.motor.state;
-        velocity = ((double)frame.motor.velocity) / 1000.0;
-        status_msg.velocity = velocity;
+        status_msg.velocity = ((double)frame.motor.velocity) / 1000.0;
         // publish a message
         status_msg.header.stamp = ros::Time::now();
         motor_publisher.publish(status_msg);
@@ -263,7 +246,7 @@ void Motor::addRequestMeasure()
     mSerial->addFrame(frame);
 }
 
-void Motor::writeCommandsToHardware(ros::Duration period)
+void Motor::writeCommandsToHardware(ros::Duration period, double velocity_command)
 {
     // Enforce joint limits for all registered handles
     // Note: one can also enforce limits on a per-handle basis: handle.enforceLimits(period)

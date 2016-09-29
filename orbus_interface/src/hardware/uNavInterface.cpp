@@ -12,6 +12,8 @@
 namespace ORInterface
 {
 
+#define NUM_MOTORS 2
+
 uNavInterface::uNavInterface(const ros::NodeHandle &nh, const ros::NodeHandle &private_nh, orbus::serial_controller *serial)
     : GenericInterface(nh, private_nh, serial)
 {
@@ -29,13 +31,15 @@ uNavInterface::uNavInterface(const ros::NodeHandle &nh, const ros::NodeHandle &p
     {
         ROS_WARN_STREAM("/robot_description NOT found!");
     }
-
-    //Initialize motors
-    Motor *motor0 = new Motor(private_mNh, serial, 0);
-    Motor *motor1 = new Motor(private_mNh, serial, 1);
-    // Add Two motors on list
-    list_motor.push_back(motor0);
-    list_motor.push_back(motor1);
+    // Initialize Joints
+    for(unsigned i=0; i< NUM_MOTORS; i++)
+    {
+        joint[i].effort = 0;
+        joint[i].motor = new Motor(private_mNh, serial, i);
+        joint[i].position = 0;
+        joint[i].velocity = 0;
+        joint[i].velocity_command = 0;
+    }
 
     //TODO send a message to the board to update the name
     name_board = "uNav";
@@ -62,14 +66,13 @@ bool uNavInterface::updateDiagnostics()
 
 void uNavInterface::initializeMotors()
 {
-    for(unsigned i=0; i < list_motor.size(); ++i)
+    for(unsigned i=0; i< NUM_MOTORS; i++)
     {
-        // Get motor
-        Motor *motor_obj = list_motor.at(i);
         // Initialize all components
-        motor_obj->initializeMotor();
+        joint[i].motor->initializeMotor();
         ROS_DEBUG_STREAM("Motor [" << (int) i << "] Initialized");
     }
+
     // Send list of Command
     serial_status = mSerial->sendList();
 }
@@ -80,16 +83,20 @@ void uNavInterface::initializeInterfaces()
     ROS_INFO_STREAM("Name board: " << name_board);
     diagnostic_updater.setHardwareID(name_board);
 
-    for(unsigned i=0; i < list_motor.size(); ++i)
+    for(unsigned i=0; i < NUM_MOTORS; i++)
     {
-        // Get motor
-        Motor *motor_obj = list_motor.at(i);
-        // Register interface
-        motor_obj->registerControlInterfaces(&joint_state_interface, &velocity_joint_interface, urdf);
-        //Add motor in diagnostic updater
-        diagnostic_updater.add(*motor_obj);
-        ROS_DEBUG_STREAM("Motor [" << (int) i << "] Registered");
+        ROS_DEBUG_STREAM("Hardware interface: "<< joint[i].motor->mMotorName);
+        hardware_interface::JointStateHandle joint_state_handle(joint[i].motor->mMotorName, &joint[i].position, &joint[i].velocity, &joint[i].effort);
+
+        joint_state_interface.registerHandle(joint_state_handle);
+
+        /// Differential drive interface
+        hardware_interface::JointHandle joint_handle(joint_state_handle, &joint[i].velocity_command);
+        velocity_joint_interface.registerHandle(joint_handle);
+        // Setup limits
+        joint[i].motor->setupLimits(joint_handle, urdf);
     }
+
     ROS_INFO_STREAM("Send all Constraint configuration");
     // Send list of Command
     serial_status = mSerial->sendList();
@@ -102,11 +109,10 @@ void uNavInterface::initializeInterfaces()
 bool uNavInterface::updateJointsFromHardware()
 {
     ROS_DEBUG_STREAM("Get measure from uNav");
-    for(unsigned i=0; i < list_motor.size(); ++i)
+    for(unsigned i=0; i < NUM_MOTORS; i++)
     {
         // Get motor
-        Motor *motor_obj = list_motor.at(i);
-        motor_obj->addRequestMeasure();
+        joint[i].motor->addRequestMeasure();
     }
     //Send all messages
     serial_status = mSerial->sendList();
@@ -116,11 +122,10 @@ bool uNavInterface::updateJointsFromHardware()
 bool uNavInterface::writeCommandsToHardware(ros::Duration period)
 {
     ROS_DEBUG_STREAM("Write command to uNav");
-    for(unsigned i=0; i < list_motor.size(); ++i)
+    for(unsigned i=0; i < NUM_MOTORS; i++)
     {
-        // Get motor
-        Motor *motor_obj = list_motor.at(i);
-        motor_obj->writeCommandsToHardware(period);
+        // Write command
+        joint[i].motor->writeCommandsToHardware(period, joint[i].velocity_command);
     }
     //Send all messages
     serial_status = mSerial->sendList();
@@ -133,13 +138,16 @@ void uNavInterface::allMotorsFrame(unsigned char option, unsigned char type, uns
     motor_command_map_t motor;
     motor.command_message = command;
     int number_motor = (int) motor.bitset.motor;
-    ROS_DEBUG_STREAM("Frame [Option: " << option << ", HashMap: " << type << ", Nmotor: " << number_motor << ", Command: " << (int) motor.bitset.command << "]");
-    if(number_motor < list_motor.size())
+    ROS_INFO_STREAM("Frame [Option: " << option << ", HashMap: " << type << ", Nmotor: " << number_motor << ", Command: " << (int) motor.bitset.command << "]");
+    if(number_motor < NUM_MOTORS)
     {
-        // Get motor
-        Motor *motor_obj = list_motor.at(number_motor);
         // Update information
-        motor_obj->motorFrame(option, type, motor.bitset.command, message.motor);
+        joint[number_motor].motor->motorFrame(option, type, motor.bitset.command, message.motor);
+        if(motor.bitset.command == MOTOR_MEASURE)
+        {
+            joint[number_motor].position += message.motor.motor.position_delta;
+            joint[number_motor].velocity = ((double)message.motor.motor.velocity) / 1000.0;
+        }
     }
     else
     {

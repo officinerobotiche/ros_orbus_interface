@@ -13,6 +13,16 @@
 namespace ORInterface
 {
 
+typedef struct joint
+{
+    Motor *motor;
+    // State of the motor
+    double position;
+    double velocity;
+    double effort;
+    double velocity_command;
+} joint_t;
+
 class uNavInterface : public GenericInterface, public hardware_interface::RobotHW
 {
 public:
@@ -54,7 +64,7 @@ private:
     boost::shared_ptr<urdf::ModelInterface> urdf;
 
     // List of motors
-    vector<Motor*> list_motor;
+    joint_t joint[2];
 
     /// ROS Control interfaces
     hardware_interface::JointStateInterface joint_state_interface;

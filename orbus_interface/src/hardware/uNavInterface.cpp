@@ -101,6 +101,10 @@ void uNavInterface::initializeInterfaces()
         // reset position joint
         ROS_DEBUG_STREAM("Reset position motor: " << joint[i].motor->mMotorName);
         joint[i].motor->resetPosition(0);
+
+        //Add motor in diagnostic updater
+        diagnostic_updater.add(*joint[i].motor);
+        ROS_DEBUG_STREAM("Motor [" << (int) i << "] Registered");
     }
 
     ROS_INFO_STREAM("Send all Constraint configuration");

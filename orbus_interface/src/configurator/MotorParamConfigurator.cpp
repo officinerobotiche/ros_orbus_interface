@@ -109,7 +109,7 @@ motor_parameter_t MotorParamConfigurator::getParam() {
     parameter.bridge.pwm_frequency = (uint16_t) temp_int;
     nh_.getParam(mName + PARAM_BRIDGE_STRING + "/volt_offset", temp_double);
     parameter.bridge.volt_offset = (float) temp_double;
-    nh_.getParam(mName + PARAM_BRIDGE_STRING + "/voltage_gain", temp_double);
+    nh_.getParam(mName + PARAM_BRIDGE_STRING + "/volt_gain", temp_double);
     parameter.bridge.volt_gain = (float) temp_double;
     nh_.getParam(mName + PARAM_BRIDGE_STRING + "/current_offset", temp_double);
     parameter.bridge.current_offset = (float) temp_double;

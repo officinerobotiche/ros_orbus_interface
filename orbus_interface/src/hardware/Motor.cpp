@@ -186,8 +186,8 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
     switch(command)
     {
         case MOTOR_MEASURE:
-        status_msg.current = frame.motor.current;
-        status_msg.effort = frame.motor.current; ///< TODO Change with a good estimation
+        status_msg.current = ((double) frame.motor.current) / 1000.0;
+        status_msg.effort = ((double) frame.motor.current) / 1000.0 ; ///< TODO Change with a good estimation
         status_msg.position = frame.motor.position;
         status_msg.pwm = ((double) frame.motor.pwm) * 100.0 / INT16_MAX;
         status_msg.state = frame.motor.state;
@@ -264,9 +264,9 @@ void Motor::writeCommandsToHardware(ros::Duration period, double velocity_comman
     // Note: one can also enforce limits on a per-handle basis: handle.enforceLimits(period)
     vel_limits_interface.enforceLimits(period);
 
-    long int velocity_long = static_cast<long int>(velocity_command*1000.0);
+    long long int velocity_long = static_cast<long long int>(velocity_command*1000.0);
     motor_control_t velocity;
-    // >>>>> Saturation on 16 bit values
+    // >>>>> Saturation on 32 bit values
     if(velocity_long > MOTOR_CONTROL_MAX) {
         velocity = MOTOR_CONTROL_MAX;
     } else if (velocity_long < MOTOR_CONTROL_MIN) {
@@ -274,7 +274,7 @@ void Motor::writeCommandsToHardware(ros::Duration period, double velocity_comman
     } else {
         velocity = (motor_control_t) velocity_long;
     }
-    // <<<<< Saturation on 16 bit values
+    // <<<<< Saturation on 32 bit values
 
     // Set type of command
     command.bitset.command = MOTOR_VEL_REF;

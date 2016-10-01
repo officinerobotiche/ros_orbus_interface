@@ -61,7 +61,10 @@ bool uNavInterface::updateDiagnostics()
         // Send list of Command
         serial_status = mSerial->sendList();
         if(serial_status)
+        {
             ROS_INFO("... connected!");
+            return true;
+        }
     }
     return serial_status;
 }
@@ -156,7 +159,7 @@ void uNavInterface::allMotorsFrame(unsigned char option, unsigned char type, uns
         // Update status joint
         if(motor.bitset.command == MOTOR_MEASURE)
         {
-            joint[number_motor].effort = message.motor.motor.current;
+            joint[number_motor].effort = ((double) message.motor.motor.current) / 1000.0;
             joint[number_motor].position += message.motor.motor.position_delta;
             joint[number_motor].velocity = ((double)message.motor.motor.velocity) / 1000.0;
         }

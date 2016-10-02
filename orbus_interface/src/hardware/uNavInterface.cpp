@@ -42,9 +42,6 @@ uNavInterface::uNavInterface(const ros::NodeHandle &nh, const ros::NodeHandle &p
         joint[i].velocity = 0;
         joint[i].velocity_command = 0;
     }
-
-    //TODO send a message to the board to update the name
-    //name_board = "uNav";
 }
 
 bool uNavInterface::updateDiagnostics()

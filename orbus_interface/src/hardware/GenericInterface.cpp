@@ -127,11 +127,14 @@ bool GenericInterface::service_Callback(orbus_interface::Service::Request &req, 
     else if(req.service.compare("reset") == 0)
     {
         packet_information_t frame_reset = CREATE_PACKET_RESPONSE(SYSTEM_RESET, HASHMAP_SYSTEM, PACKET_REQUEST);
+        // Send reset
         mSerial->addFrame(frame_reset)->sendList();
+        // return message
+        msg.information = "System reset";
     }
     else
     {
-        msg.information = "\n List of commands availabes: \n"
+        msg.information = "\nList of commands availabes: \n"
                           "* info  - information about this board \n"
                           "* reset - software reset of " + code_board_name + "\n"
                           "* help  - this help.";

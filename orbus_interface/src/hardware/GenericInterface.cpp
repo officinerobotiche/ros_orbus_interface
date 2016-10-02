@@ -28,7 +28,7 @@ GenericInterface::GenericInterface(const ros::NodeHandle &nh, const ros::NodeHan
 
     if(mSerial->addFrame(frame_code_date)->addFrame(frame_code_version)->addFrame(frame_code_author)->addFrame(frame_code_board_type)->addFrame(frame_code_board_name)->sendList())
     {
-        ROS_INFO_STREAM("Send Service information messages");
+        ROS_DEBUG_STREAM("Send Service information messages");
     }
     else
     {
@@ -38,7 +38,7 @@ GenericInterface::GenericInterface(const ros::NodeHandle &nh, const ros::NodeHan
 
 void GenericInterface::initializeDiagnostic() {
 
-    ROS_INFO_STREAM("Name board: " << code_board_name << " " << code_version);
+    ROS_INFO_STREAM("Name board: " << code_board_name << " - " << code_version);
     diagnostic_updater.setHardwareID(code_board_name);
 
     // Initialize this diagnostic interface
@@ -46,18 +46,26 @@ void GenericInterface::initializeDiagnostic() {
 }
 
 void GenericInterface::run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
-    ROS_INFO_STREAM("DIAGNOSTIC Generic interface I'm here!");
+    ROS_DEBUG_STREAM("DIAGNOSTIC Generic interface I'm here!");
     // Build a packet
     packet_information_t frame = CREATE_PACKET_RESPONSE(SYSTEM_TIME, HASHMAP_SYSTEM, PACKET_REQUEST);
     // Add packet in the frame
     if(mSerial->addFrame(frame)->sendList())
     {
-        ROS_INFO_STREAM("Request Diagnostic COMPLETED");
+        ROS_DEBUG_STREAM("Request Diagnostic COMPLETED");
     }
     else
     {
         ROS_ERROR_STREAM("Unable to receive packet from uNav");
     }
+
+    stat.add("Idle (%)", (int) msg.idle);
+    stat.add("ADC (nS)", (int) msg.ADC);
+    stat.add("LED (nS)", (int) msg.led);
+    stat.add("Serial parser (nS)", (int) msg.serial_parser);
+    stat.add("I2C (nS)", (int) msg.I2C);
+
+    stat.summary(diagnostic_msgs::DiagnosticStatus::OK, "Board ready!");
 }
 
 void GenericInterface::connectCallback(const ros::SingleSubscriberPublisher& pub) {

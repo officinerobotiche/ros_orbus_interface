@@ -67,8 +67,6 @@ private:
     hardware_interface::JointStateInterface joint_state_interface;
     hardware_interface::VelocityJointInterface velocity_joint_interface;
 
-    // Diagnostic
-    diagnostic_updater::Updater diagnostic_updater;
 };
 
 }

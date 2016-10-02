@@ -4,7 +4,8 @@ namespace ORInterface
 {
 
 GenericInterface::GenericInterface(const ros::NodeHandle &nh, const ros::NodeHandle &private_nh, orbus::serial_controller *serial)
-    : mNh(nh)
+    : DiagnosticTask("board")
+    , mNh(nh)
     , private_mNh(private_nh)
     , mSerial(serial)
     , serial_status(true)
@@ -35,6 +36,30 @@ GenericInterface::GenericInterface(const ros::NodeHandle &nh, const ros::NodeHan
     }
 }
 
+void GenericInterface::initializeDiagnostic() {
+
+    ROS_INFO_STREAM("Name board: " << code_board_name << " " << code_version);
+    diagnostic_updater.setHardwareID(code_board_name);
+
+    // Initialize this diagnostic interface
+    diagnostic_updater.add(*this);
+}
+
+void GenericInterface::run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
+    ROS_INFO_STREAM("DIAGNOSTIC Generic interface I'm here!");
+    // Build a packet
+    packet_information_t frame = CREATE_PACKET_RESPONSE(SYSTEM_TIME, HASHMAP_SYSTEM, PACKET_REQUEST);
+    // Add packet in the frame
+    if(mSerial->addFrame(frame)->sendList())
+    {
+        ROS_INFO_STREAM("Request Diagnostic COMPLETED");
+    }
+    else
+    {
+        ROS_ERROR_STREAM("Unable to receive packet from uNav");
+    }
+}
+
 void GenericInterface::connectCallback(const ros::SingleSubscriberPublisher& pub) {
     ROS_INFO("Connect: %s - %s", pub.getSubscriberName().c_str(), pub.getTopic().c_str());
 }
@@ -57,11 +82,18 @@ void GenericInterface::systemFrame(unsigned char option, unsigned char type, uns
     case SYSTEM_CODE_BOARD_NAME:
         code_board_name = string((char*)message.system.service);
         break;
-    //case SYSTEM_TIME:
-        //msg.idle
+    case SYSTEM_TIME:
+        msg.idle = message.system.time.idle;
+        msg.ADC = message.system.time.adc;
+        msg.led = message.system.time.led;
+        msg.serial_parser = message.system.time.parser;
+        msg.I2C = message.system.time.i2c;
+        // publish a message
+        msg.header.stamp = ros::Time::now();
+        pub_time.publish(msg);
         break;
     default:
-        ROS_ERROR_STREAM("System message "<< command << " does not implemented!");
+        ROS_ERROR_STREAM("System message \""<< command << "\"=(" << (int) command << ")" << " does not implemented!");
         break;
     }
 }

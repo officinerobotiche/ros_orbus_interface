@@ -8,7 +8,7 @@ GenericConfigurator::GenericConfigurator(const ros::NodeHandle &nh, orbus::seria
 {
     // Set command message
     mCommand.bitset.motor = number;
-    // Set false in the first run
+    // Set false on first run
     setup_ = false;
 }
 

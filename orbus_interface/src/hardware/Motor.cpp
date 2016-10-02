@@ -185,7 +185,7 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
     ROS_DEBUG_STREAM("Motor decode " << mName );
     switch(command)
     {
-        case MOTOR_MEASURE:
+    case MOTOR_MEASURE:
         status_msg.current = ((double) frame.motor.current) / 1000.0;
         status_msg.effort = ((double) frame.motor.current) / 1000.0 ; ///< TODO Change with a good estimation
         status_msg.position = frame.motor.position;
@@ -196,7 +196,7 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
         status_msg.header.stamp = ros::Time::now();
         motor_publisher.publish(status_msg);
         break;
-        case MOTOR_DIAGNOSTIC:
+    case MOTOR_DIAGNOSTIC:
         status_msg.watt = (frame.diagnostic.watt/1000.0); /// in W
         status_msg.time_execution = frame.diagnostic.time_control;
         status_msg.voltage = (frame.diagnostic.volt/1000.0); /// in V;
@@ -205,32 +205,38 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
         status_msg.header.stamp = ros::Time::now();
         motor_publisher.publish(status_msg);
         break;
-        case MOTOR_VEL_PID:
+    case MOTOR_VEL_PID:
         if(option == PACKET_DATA)
         {
             ROS_INFO_STREAM("Velocity PID frame");
             pid_velocity->setParam(frame.pid);
         }
         break;
-        case MOTOR_CURRENT_PID:
+    case MOTOR_CURRENT_PID:
         if(option == PACKET_DATA)
         {
             ROS_INFO_STREAM("Current PID frame");
             pid_current->setParam(frame.pid);
         }
         break;
-        case MOTOR_EMERGENCY:
+    case MOTOR_EMERGENCY:
         if(option == PACKET_DATA)
         {
             ROS_INFO_STREAM("Emergency frame");
             emergency->setParam(frame.emergency);
         }
         break;
-        case MOTOR_PARAMETER:
+    case MOTOR_PARAMETER:
         if(option == PACKET_DATA)
         {
             ROS_INFO_STREAM("Parameter frame");
             parameter->setParam(frame.parameter);
+        }
+        break;
+    default:
+        if(option != PACKET_ACK)
+        {
+            ROS_ERROR_STREAM("Motor[" << mNumber << "] message \""<< command << "\"=(" << (int) command << ")" << " does not implemented!");
         }
         break;
     }

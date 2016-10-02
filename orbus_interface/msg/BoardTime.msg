@@ -4,7 +4,13 @@ Header header
 uint64 idle
 
 # Parsing
-uint64 parsing
+uint64 ADC
 
 # ADC conversion
-uint64 adc
+uint64 led
+
+# ADC conversion
+uint64 serial_parser
+
+# ADC conversion
+uint64 I2C

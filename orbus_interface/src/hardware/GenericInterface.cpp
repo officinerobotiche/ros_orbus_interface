@@ -59,6 +59,12 @@ void GenericInterface::run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
         ROS_ERROR_STREAM("Unable to receive packet from uNav");
     }
 
+    stat.add("Name board", code_board_name);
+    stat.add("Type board", code_board_type);
+    stat.add("Author", code_author);
+    stat.add("Version", code_version);
+    stat.add("Build", code_date);
+
     stat.add("Idle (%)", (int) msg.idle);
     stat.add("ADC (nS)", (int) msg.ADC);
     stat.add("LED (nS)", (int) msg.led);

@@ -44,7 +44,7 @@ uNavInterface::uNavInterface(const ros::NodeHandle &nh, const ros::NodeHandle &p
     }
 
     //TODO send a message to the board to update the name
-    name_board = "uNav";
+    //name_board = "uNav";
 }
 
 bool uNavInterface::updateDiagnostics()
@@ -84,9 +84,8 @@ void uNavInterface::initializeMotors()
 
 void uNavInterface::initializeInterfaces()
 {
-
-    ROS_INFO_STREAM("Name board: " << name_board);
-    diagnostic_updater.setHardwareID(name_board);
+    ROS_INFO_STREAM("Name board: " << code_board_name);
+    diagnostic_updater.setHardwareID(code_board_name);
 
     for(unsigned i=0; i < NUM_MOTORS; i++)
     {

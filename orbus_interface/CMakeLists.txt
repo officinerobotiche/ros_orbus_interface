@@ -23,7 +23,6 @@ find_package(catkin REQUIRED
                     hardware_interface
                     diagnostic_updater
                     roslaunch
-#                    roslint
                     serial
                     roscpp
                     sensor_msgs
@@ -31,6 +30,9 @@ find_package(catkin REQUIRED
                     urdf
                     joint_limits_interface
                     orbus_msgs
+                    genmsg
+                    std_srvs
+                    std_msgs
 )
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED
@@ -44,6 +46,12 @@ find_package(Boost REQUIRED
 ## Declare ROS messages, services and actions ##
 ################################################
 
+## Generate services in the 'srv' folder
+add_service_files(
+   FILES
+   Service.srv
+)
+
 # dynamic reconfigure
 generate_dynamic_reconfigure_options(
     cfg/UnavPID.cfg
@@ -53,6 +61,9 @@ generate_dynamic_reconfigure_options(
     cfg/UnavEmergency.cfg
     cfg/UnavDiagnostic.cfg
 )
+
+## Generate added messages and services
+generate_messages(DEPENDENCIES std_msgs)
 
 ###################################
 ## catkin specific configuration ##
@@ -106,8 +117,6 @@ add_executable(unav_node ${hardware_unav_SRC})
 target_link_libraries(unav_node or_bus ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-
-#roslint_cpp(${hardware_unav_SRC})
 
 #############
 ## Install ##

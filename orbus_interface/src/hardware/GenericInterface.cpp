@@ -75,11 +75,17 @@ bool GenericInterface::service_Callback(orbus_interface::Service::Request &req, 
                           "Version: " + code_version + "\n"
                           "Build: " + code_date + "\n";
     }
+    else if(req.service.compare("reset") == 0)
+    {
+        packet_information_t frame_reset = CREATE_PACKET_RESPONSE(SYSTEM_RESET, HASHMAP_SYSTEM, PACKET_REQUEST);
+        mSerial->addFrame(frame_reset)->sendList();
+    }
     else
     {
         msg.information = "\n List of commands availabes: \n"
-                          "* info - information about this board \n"
-                          "* help - this help.";
+                          "* info  - information about this board \n"
+                          "* reset - software reset of " + code_board_name + "\n"
+                          "* help  - this help.";
     }
     return true;
 }

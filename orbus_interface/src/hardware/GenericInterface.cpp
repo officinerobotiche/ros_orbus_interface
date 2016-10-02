@@ -136,7 +136,7 @@ bool GenericInterface::service_Callback(orbus_interface::Service::Request &req, 
     {
         msg.information = "\nList of commands availabes: \n"
                           "* info  - information about this board \n"
-                          "* reset - software reset of " + code_board_name + "\n"
+                          "* reset - " + code_board_name + " board software reset\n"
                           "* help  - this help.";
     }
     return true;

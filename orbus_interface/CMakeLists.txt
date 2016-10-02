@@ -46,6 +46,12 @@ find_package(Boost REQUIRED
 ## Declare ROS messages, services and actions ##
 ################################################
 
+## Generate messages in the 'msg' folder
+add_message_files(
+    FILES
+    BoardTime.msg
+)
+
 ## Generate services in the 'srv' folder
 add_service_files(
    FILES
@@ -81,6 +87,8 @@ catkin_package(
         sensor_msgs
         joint_limits_interface
         orbus_msgs
+        std_msgs
+        std_srvs
     DEPENDS
         Boost
 )

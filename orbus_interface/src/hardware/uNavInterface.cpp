@@ -84,7 +84,7 @@ void uNavInterface::initializeMotors()
 
 void uNavInterface::initializeInterfaces()
 {
-    ROS_INFO_STREAM("Name board: " << code_board_name);
+    ROS_INFO_STREAM("Name board: " << code_board_name << " " << code_version);
     diagnostic_updater.setHardwareID(code_board_name);
 
     for(unsigned i=0; i < NUM_MOTORS; i++)

@@ -12,11 +12,11 @@ GenericInterface::GenericInterface(const ros::NodeHandle &nh, const ros::NodeHan
 {
     bool initCallback = mSerial->addCallback(&GenericInterface::systemFrame, this, HASHMAP_SYSTEM);
 
-//    //Publisher
-//    pub_time_process = nh_.advertise<ros_serial_bridge::Process>("process", NUMBER_PUB,
-//                boost::bind(&GenericInterface::connectCallback, this, _1));
+    //Publisher
+    pub_time = private_mNh.advertise<orbus_interface::BoardTime>("system", 10,
+                boost::bind(&GenericInterface::connectCallback, this, _1));
     //Services
-    srv_board = private_mNh.advertiseService("service", &GenericInterface::service_Callback, this);
+    srv_board = private_mNh.advertiseService("system", &GenericInterface::service_Callback, this);
 
     // Build a packet
     packet_information_t frame_code_date = CREATE_PACKET_RESPONSE(SYSTEM_CODE_DATE, HASHMAP_SYSTEM, PACKET_REQUEST);
@@ -56,6 +56,9 @@ void GenericInterface::systemFrame(unsigned char option, unsigned char type, uns
         break;
     case SYSTEM_CODE_BOARD_NAME:
         code_board_name = string((char*)message.system.service);
+        break;
+    //case SYSTEM_TIME:
+        //msg.idle
         break;
     default:
         ROS_ERROR_STREAM("System message "<< command << " does not implemented!");

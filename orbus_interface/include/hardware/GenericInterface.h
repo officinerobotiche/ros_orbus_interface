@@ -4,6 +4,7 @@
 #include <ros/ros.h>
 
 #include <orbus_interface/Service.h>
+#include <orbus_interface/BoardTime.h>
 
 #include "hardware/serial_controller.h"
 
@@ -41,6 +42,10 @@ private:
 
     // Service board
     ros::ServiceServer srv_board;
+    // time execution functions
+    ros::Publisher pub_time;
+    // Message for pubblisher
+    orbus_interface::BoardTime msg;
 
 };
 

@@ -10,6 +10,7 @@
 #include <joint_limits_interface/joint_limits_interface.h>
 
 #include <orbus_msgs/MotorStatus.h>
+#include <orbus_interface/ControlStatus.h>
 
 #include "hardware/serial_controller.h"
 
@@ -58,9 +59,10 @@ private:
     joint_limits_interface::VelocityJointSoftLimitsInterface vel_limits_interface;
 
     // Publisher diagnostic information
-    ros::Publisher motor_publisher;
+    ros::Publisher pub_status, pub_control, pub_measure, pub_reference;
     // Message
-    orbus_msgs::MotorStatus status_msg;
+    orbus_msgs::MotorStatus msg_status;
+    orbus_interface::ControlStatus msg_reference, msg_measure, msg_control;
 
     // Number message
     motor_command_map_t command;

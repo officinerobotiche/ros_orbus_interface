@@ -38,7 +38,11 @@ Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, unsign
     diagnostic_temperature = new MotorDiagnosticConfigurator(nh, serial, mName, "temperature", number);
 
     // Add a status motor publisher
-    motor_publisher = mNh.advertise<orbus_msgs::MotorStatus>(mName + "/status", 10);
+    pub_status = mNh.advertise<orbus_msgs::MotorStatus>(mName + "/status", 10);
+
+    pub_reference = mNh.advertise<orbus_interface::ControlStatus>(mName + "/reference", 10);
+    pub_measure = mNh.advertise<orbus_interface::ControlStatus>(mName + "/measure", 10);
+    pub_control = mNh.advertise<orbus_interface::ControlStatus>(mName + "/control", 10);
 
 }
 
@@ -101,9 +105,9 @@ void Motor::setupLimits(hardware_interface::JointHandle joint_handle, boost::sha
 
     // Send joint limits information to board
     motor_t constraint;
-    constraint.position = -1;
+    constraint.position = MOTOR_CONTROL_MAX;
     constraint.velocity = (motor_control_t) limits.max_velocity*1000;
-    constraint.current = -1;
+    constraint.current = MOTOR_CONTROL_MAX;
 
     // Set type of command
     command.bitset.command = MOTOR_CONSTRAINT;
@@ -137,45 +141,47 @@ void Motor::run(diagnostic_updater::DiagnosticStatusWrapper &stat)
         ROS_ERROR_STREAM("Unable to receive packet from uNav");
     }
 
-    stat.add("State ", (int) status_msg.state);
-    stat.add("PWM rate (%)", status_msg.pwm);
-    stat.add("Position (deg)", ((double)status_msg.position) * 180.0/M_PI);
-    stat.add("Velociy (rad/s)", status_msg.velocity);
-    stat.add("Torque (Nm)", status_msg.effort);
+    stat.add("State ", (int) msg_status.state);
+    stat.add("PWM rate (%)", msg_status.pwm);
 
-    stat.add("Current (A)", status_msg.current);
-    stat.add("Voltage (V)", status_msg.voltage);
-    stat.add("Watt (W)", status_msg.watt);
-    stat.add("Temperature (°C)", status_msg.temperature);
+    stat.add("Position (deg)", ((double)msg_measure.position) * 180.0/M_PI);
+    stat.add("Velociy (rad/s)", msg_measure.velocity);
+    stat.add("Current (A)", msg_measure.current);
 
-    stat.add("Time execution (nS)", status_msg.time_execution);
+    stat.add("Voltage (V)", msg_status.voltage);
+    stat.add("Torque (Nm)", msg_status.effort);
+    stat.add("Watt (W)", msg_status.watt);
+
+    stat.add("Temperature (°C)", msg_status.temperature);
+
+    stat.add("Time execution (nS)", msg_status.time_execution);
 
     stat.summary(diagnostic_msgs::DiagnosticStatus::OK, "Motor Ready!");
 
-    if (status_msg.temperature > diagnostic_temperature->levels.critical)
+    if (msg_status.temperature > diagnostic_temperature->levels.critical)
     {
-        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::ERROR, "Critical temperature: %5.2f > %5.2f °C", status_msg.temperature, diagnostic_temperature->levels.critical);
+        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::ERROR, "Critical temperature: %5.2f > %5.2f °C", msg_status.temperature, diagnostic_temperature->levels.critical);
     }
-    else if (status_msg.temperature > diagnostic_temperature->levels.warning)
+    else if (msg_status.temperature > diagnostic_temperature->levels.warning)
     {
-        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::WARN, "Temperature over: %5.2f > %5.2f °C", status_msg.temperature, diagnostic_temperature->levels.warning);
+        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::WARN, "Temperature over: %5.2f > %5.2f °C", msg_status.temperature, diagnostic_temperature->levels.warning);
     }
     else
     {
-        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::OK, "Temperature OK: %5.2f °C", status_msg.temperature);
+        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::OK, "Temperature OK: %5.2f °C", msg_status.temperature);
     }
 
-    if (status_msg.current > diagnostic_current->levels.critical)
+    if (msg_measure.current > diagnostic_current->levels.critical)
     {
-        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::ERROR, "Critical current: %5.2f > %5.2f A", status_msg.current, diagnostic_current->levels.critical);
+        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::ERROR, "Critical current: %5.2f > %5.2f A", msg_measure.current, diagnostic_current->levels.critical);
     }
-    else if (status_msg.current > diagnostic_current->levels.warning)
+    else if (msg_measure.current > diagnostic_current->levels.warning)
     {
-        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::WARN, "Current over %5.2f > %5.2f A", status_msg.current, diagnostic_current->levels.warning);
+        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::WARN, "Current over %5.2f > %5.2f A", msg_measure.current, diagnostic_current->levels.warning);
     }
     else
     {
-        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::OK, "Current OK: %5.2f A", status_msg.current);
+        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::OK, "Current OK: %5.2f A", msg_measure.current);
     }
 }
 
@@ -186,24 +192,44 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
     switch(command)
     {
     case MOTOR_MEASURE:
-        status_msg.current = ((double) frame.motor.current) / 1000.0;
-        status_msg.effort = ((double) frame.motor.current) / 1000.0 ; ///< TODO Change with a good estimation
-        status_msg.position = frame.motor.position;
-        status_msg.pwm = ((double) frame.motor.pwm) * 100.0 / INT16_MAX;
-        status_msg.state = frame.motor.state;
-        status_msg.velocity = ((double)frame.motor.velocity) / 1000.0;
+        msg_status.pwm = ((double) frame.motor.pwm) * 100.0 / INT16_MAX;
+        msg_status.state = frame.motor.state;
+        msg_status.effort = ((double) frame.motor.current) / 1000.0 ; ///< TODO Change with a good estimation
         // publish a message
-        status_msg.header.stamp = ros::Time::now();
-        motor_publisher.publish(status_msg);
+        msg_status.header.stamp = ros::Time::now();
+        pub_status.publish(msg_status);
+
+        msg_measure.position = frame.motor.position;
+        msg_measure.velocity = ((double)frame.motor.velocity) / 1000.0;
+        msg_measure.current = ((double) frame.motor.current) / 1000.0;
+        // publish a message
+        msg_measure.header.stamp = ros::Time::now();
+        pub_measure.publish(msg_measure);
+        break;
+    case MOTOR_CONTROL:
+        msg_control.position = frame.motor.position;
+        msg_control.velocity = ((double)frame.motor.velocity) / 1000.0;
+        msg_control.current = ((double) frame.motor.current) / 1000.0;
+        // publish a message
+        msg_control.header.stamp = ros::Time::now();
+        pub_control.publish(msg_control);
+        break;
+    case MOTOR_REFERENCE:
+        msg_reference.position = frame.motor.position;
+        msg_reference.velocity = ((double)frame.motor.velocity) / 1000.0;
+        msg_reference.current = ((double) frame.motor.current) / 1000.0;
+        // publish a message
+        msg_reference.header.stamp = ros::Time::now();
+        pub_reference.publish(msg_reference);
         break;
     case MOTOR_DIAGNOSTIC:
-        status_msg.watt = (frame.diagnostic.watt/1000.0); /// in W
-        status_msg.time_execution = frame.diagnostic.time_control;
-        status_msg.voltage = (frame.diagnostic.volt/1000.0); /// in V;
-        status_msg.temperature = frame.diagnostic.temperature;
+        msg_status.watt = (frame.diagnostic.watt/1000.0); /// in W
+        msg_status.time_execution = frame.diagnostic.time_control;
+        msg_status.voltage = (frame.diagnostic.volt/1000.0); /// in V;
+        msg_status.temperature = frame.diagnostic.temperature;
         // publish a message
-        status_msg.header.stamp = ros::Time::now();
-        motor_publisher.publish(status_msg);
+        msg_status.header.stamp = ros::Time::now();
+        pub_status.publish(msg_status);
         break;
     case MOTOR_VEL_PID:
         if(option == PACKET_DATA)
@@ -247,9 +273,17 @@ void Motor::addRequestMeasure()
     // Set type of command
     command.bitset.command = MOTOR_MEASURE;
     // Build a packet
-    packet_information_t frame = CREATE_PACKET_RESPONSE(command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
+    packet_information_t frame_measure = CREATE_PACKET_RESPONSE(command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
+    // Motor control
+    command.bitset.command = MOTOR_CONTROL;
+    // Build a packet
+    packet_information_t frame_control = CREATE_PACKET_RESPONSE(command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
+    // Motor control
+    command.bitset.command = MOTOR_REFERENCE;
+    // Build a packet
+    packet_information_t frame_reference = CREATE_PACKET_RESPONSE(command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
     // Add packet in the frame
-    mSerial->addFrame(frame);
+    mSerial->addFrame(frame_measure)->addFrame(frame_control)->addFrame(frame_reference);
 }
 
 void Motor::resetPosition(double position)

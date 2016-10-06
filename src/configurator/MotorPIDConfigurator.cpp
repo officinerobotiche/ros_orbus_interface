@@ -72,10 +72,11 @@ void MotorPIDConfigurator::initConfigurator()
 
 void MotorPIDConfigurator::setParam(motor_pid_t pid) {
     bool enable = (pid.enable > 0 ? true : false);
-    ROS_DEBUG_STREAM("Parameter [Kp:" << pid.kp << ", Ki:" << pid.ki << ", Kd:" << pid.kd << ", Freq:" << pid.frequency << "Hz, En:" << enable << "]");
+    ROS_DEBUG_STREAM("Parameter [Kp:" << pid.kp << ", Ki:" << pid.ki << ", Kd:" << pid.kd << ", Kaw:" << pid.kaw << ", Freq:" << pid.frequency << "Hz, En:" << enable << "]");
     nh_.setParam(mName + "/Kp", ((double) pid.kp));
     nh_.setParam(mName + "/Ki", (double) pid.ki);
     nh_.setParam(mName + "/Kd", (double) pid.kd);
+    nh_.setParam(mName + "/Kaw", (double) pid.kaw);
     nh_.setParam(mName + "/Frequency", (int) pid.frequency);
     nh_.setParam(mName + "/Enable", enable);
 }
@@ -93,12 +94,14 @@ motor_pid_t MotorPIDConfigurator::getParam() {
     pid.ki = static_cast<float>(temp_double);
     nh_.getParam(mName + "/Kd", temp_double);
     pid.kd = static_cast<float>(temp_double);
+    nh_.getParam(mName + "/Kaw", temp_double);
+    pid.kaw = static_cast<float>(temp_double);
     nh_.getParam(mName + "/Frequency", temp_int);
     pid.frequency = static_cast<uint32_t>(temp_int);
     nh_.getParam(mName + "/Enable", temp);
     pid.enable = (temp == true ? 1 : 0);
 
-    ROS_DEBUG_STREAM("Read param from "<< mName << " [Kp:" << pid.kp << ", Ki:" << pid.ki << ", Kd:" << pid.kd << ", Freq:" << pid.frequency << "Hz, En:" << (int) pid.enable << "]");
+    ROS_DEBUG_STREAM("Read param from "<< mName << " [Kp:" << pid.kp << ", Ki:" << pid.ki << ", Kd:" << pid.kd << ", Kaw:" << pid.kaw << ", Freq:" << pid.frequency << "Hz, En:" << (int) pid.enable << "]");
     return pid;
 }
 
@@ -108,6 +111,7 @@ void MotorPIDConfigurator::reconfigureCB(orbus_interface::UnavPIDConfig &config,
     pid.kp = (float) config.Kp;
     pid.ki = (float) config.Ki;
     pid.kd = (float) config.Kd;
+    pid.kaw = (float) config.Kaw;
     pid.frequency = (uint32_t) config.Frequency;
     pid.enable = (config.Enable == true ? 1 : 0);
 
@@ -128,10 +132,10 @@ void MotorPIDConfigurator::reconfigureCB(orbus_interface::UnavPIDConfig &config,
       pid = default_pid_;
       //if someone sets restore defaults on the parameter server, prevent looping
       config.restore_defaults = false;
-      ROS_WARN_STREAM("Read default param from "<< mName << " [Kp:" << pid.kp << ", Ki:" << pid.ki << ", Kd:" << pid.kd << ", Freq:" << pid.frequency << "Hz, En:" << (int) pid.enable << "]");
+      ROS_WARN_STREAM("Read default param from "<< mName << " [Kp:" << pid.kp << ", Ki:" << pid.ki << ", Kd:" << pid.kd << ", Kaw:" << pid.kaw << ", Freq:" << pid.frequency << "Hz, En:" << (int) pid.enable << "]");
     }
 
-    ROS_DEBUG_STREAM("Send new param from "<< mName << " [Kp:" << pid.kp << ", Ki:" << pid.ki << ", Kd:" << pid.kd << ", Freq:" << pid.frequency << "Hz, En:" << (int) pid.enable << "]");
+    ROS_DEBUG_STREAM("Send new param from "<< mName << " [Kp:" << pid.kp << ", Ki:" << pid.ki << ", Kd:" << pid.kd << ", Kaw:" << pid.kaw << ", Freq:" << pid.frequency << "Hz, En:" << (int) pid.enable << "]");
 
     /// Send configuration to board
     message_abstract_u temp;

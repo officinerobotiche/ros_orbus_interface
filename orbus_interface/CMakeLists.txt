@@ -29,7 +29,6 @@ find_package(catkin REQUIRED
                     dynamic_reconfigure
                     urdf
                     joint_limits_interface
-                    orbus_msgs
                     genmsg
                     std_srvs
                     std_msgs
@@ -51,6 +50,7 @@ add_message_files(
     FILES
     BoardTime.msg
     ControlStatus.msg
+    MotorStatus.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -87,7 +87,6 @@ catkin_package(
         roscpp
         sensor_msgs
         joint_limits_interface
-        orbus_msgs
         std_msgs
         std_srvs
     DEPENDS

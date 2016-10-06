@@ -9,7 +9,7 @@
 #include <hardware_interface/joint_command_interface.h>
 #include <joint_limits_interface/joint_limits_interface.h>
 
-#include <orbus_msgs/MotorStatus.h>
+#include <orbus_interface/MotorStatus.h>
 #include <orbus_interface/ControlStatus.h>
 
 #include "hardware/serial_controller.h"
@@ -64,7 +64,7 @@ private:
     // Publisher diagnostic information
     ros::Publisher pub_status, pub_control, pub_measure, pub_reference;
     // Message
-    orbus_msgs::MotorStatus msg_status;
+    orbus_interface::MotorStatus msg_status;
     orbus_interface::ControlStatus msg_reference, msg_measure, msg_control;
 
     // Number message

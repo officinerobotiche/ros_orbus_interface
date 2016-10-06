@@ -38,7 +38,7 @@ Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, unsign
     diagnostic_temperature = new MotorDiagnosticConfigurator(nh, serial, mName, "temperature", number);
 
     // Add a status motor publisher
-    pub_status = mNh.advertise<orbus_msgs::MotorStatus>(mName + "/status", 10);
+    pub_status = mNh.advertise<orbus_interface::MotorStatus>(mName + "/status", 10);
 
     pub_reference = mNh.advertise<orbus_interface::ControlStatus>(mName + "/reference", 10);
     pub_measure = mNh.advertise<orbus_interface::ControlStatus>(mName + "/measure", 10);

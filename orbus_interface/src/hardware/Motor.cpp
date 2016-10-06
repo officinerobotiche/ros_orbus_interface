@@ -64,6 +64,8 @@ void Motor::setupLimits(hardware_interface::JointHandle joint_handle, boost::sha
     limits.has_velocity_limits = true;
     limits.max_velocity = 5.0;
     bool state = true;
+//    limits.has_effort_limits = true;
+//    limits.max_effort = 2.0;
 
     // Populate (soft) joint limits from URDF
     // Limits specified in URDF overwrite existing values in 'limits' and 'soft_limits'
@@ -142,14 +144,14 @@ void Motor::run(diagnostic_updater::DiagnosticStatusWrapper &stat)
     }
 
     stat.add("State ", (int) msg_status.state);
-    stat.add("PWM rate (%)", msg_status.pwm);
+    stat.add("PWM rate (%)", msg_measure.pwm);
 
     stat.add("Position (deg)", ((double)msg_measure.position) * 180.0/M_PI);
-    stat.add("Velociy (rad/s)", msg_measure.velocity);
+    stat.add("Velociy (RPM)", ((double)msg_measure.velocity) * (30.0 / M_PI));
     stat.add("Current (A)", msg_measure.current);
 
     stat.add("Voltage (V)", msg_status.voltage);
-    stat.add("Torque (Nm)", msg_status.effort);
+    stat.add("Torque (Nm)", msg_measure.effort);
     stat.add("Watt (W)", msg_status.watt);
 
     stat.add("Temperature (°C)", msg_status.temperature);
@@ -192,16 +194,16 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
     switch(command)
     {
     case MOTOR_MEASURE:
-        msg_status.pwm = ((double) frame.motor.pwm) * 100.0 / INT16_MAX;
         msg_status.state = frame.motor.state;
-        msg_status.effort = ((double) frame.motor.current) / 1000.0 ; ///< TODO Change with a good estimation
         // publish a message
         msg_status.header.stamp = ros::Time::now();
         pub_status.publish(msg_status);
 
+        msg_measure.pwm = ((double) frame.motor.pwm) * 100.0 / 2048;
         msg_measure.position = frame.motor.position;
         msg_measure.velocity = ((double)frame.motor.velocity) / 1000.0;
         msg_measure.current = ((double) frame.motor.current) / 1000.0;
+        msg_measure.effort = ((double) frame.motor.effort) / 1000.0;
         // publish a message
         msg_measure.header.stamp = ros::Time::now();
         pub_measure.publish(msg_measure);
@@ -215,6 +217,7 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
         pub_control.publish(msg_control);
         break;
     case MOTOR_REFERENCE:
+        msg_reference.pwm = ((double) frame.motor.pwm) * 100.0 / 2048;
         msg_reference.position = frame.motor.position;
         msg_reference.velocity = ((double)frame.motor.velocity) / 1000.0;
         msg_reference.current = ((double) frame.motor.current) / 1000.0;
@@ -315,7 +318,7 @@ void Motor::writeCommandsToHardware(ros::Duration period, double velocity_comman
         velocity = (motor_control_t) velocity_long;
     }
     // <<<<< Saturation on 32 bit values
-
+    //ROS_INFO_STREAM("Vel[" << mNumber << "]:" << velocity);
     // Set type of command
     command.bitset.command = MOTOR_VEL_REF;
     // Build a packet

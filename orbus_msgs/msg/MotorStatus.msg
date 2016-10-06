@@ -2,11 +2,6 @@ Header header
 
 # State configuration controller
 int8 state
-# Effort
-float64 effort
-
-# PWM rate
-float64 pwm
 
 # Voltage motor
 float64 voltage

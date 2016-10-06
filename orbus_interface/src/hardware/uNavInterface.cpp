@@ -155,7 +155,7 @@ void uNavInterface::allMotorsFrame(unsigned char option, unsigned char type, uns
         // Update status joint
         if(motor.bitset.command == MOTOR_MEASURE)
         {
-            joint[number_motor].effort = ((double) message.motor.motor.current) / 1000.0;
+            joint[number_motor].effort = ((double) message.motor.motor.effort) / 1000.0;
             joint[number_motor].position += message.motor.motor.position_delta;
             joint[number_motor].velocity = ((double)message.motor.motor.velocity) / 1000.0;
         }

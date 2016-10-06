@@ -1,10 +1,16 @@
 Header header
 
-# position reference
+# PWM
+float64 pwm
+
+# position
 float64 position
 
-# velocity reference
+# velocity
 float64 velocity
 
-# current reference
+# current
 float64 current
+
+# Effort
+float64 effort

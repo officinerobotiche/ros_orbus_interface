@@ -46,6 +46,9 @@ public:
     string mMotorName;
 
 private:
+    static string convert_status(motor_state_t status);
+
+private:
     //Initialization object
     //NameSpace for bridge controller
     ros::NodeHandle mNh;

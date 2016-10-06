@@ -1,7 +1,7 @@
 Header header
 
 # State configuration controller
-int8 state
+string state
 
 # Voltage motor
 float64 voltage

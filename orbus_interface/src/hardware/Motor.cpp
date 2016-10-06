@@ -143,20 +143,17 @@ void Motor::run(diagnostic_updater::DiagnosticStatusWrapper &stat)
         ROS_ERROR_STREAM("Unable to receive packet from uNav");
     }
 
-    stat.add("State ", (int) msg_status.state);
+    stat.add("State ", msg_status.state);
     stat.add("PWM rate (%)", msg_measure.pwm);
+    stat.add("Voltage (V)", msg_status.voltage);
+    stat.add("Watt (W)", msg_status.watt);
+    stat.add("Temperature (°C)", msg_status.temperature);
+    stat.add("Time execution (nS)", msg_status.time_execution);
 
     stat.add("Position (deg)", ((double)msg_measure.position) * 180.0/M_PI);
     stat.add("Velociy (RPM)", ((double)msg_measure.velocity) * (30.0 / M_PI));
     stat.add("Current (A)", msg_measure.current);
-
-    stat.add("Voltage (V)", msg_status.voltage);
     stat.add("Torque (Nm)", msg_measure.effort);
-    stat.add("Watt (W)", msg_status.watt);
-
-    stat.add("Temperature (°C)", msg_status.temperature);
-
-    stat.add("Time execution (nS)", msg_status.time_execution);
 
     stat.summary(diagnostic_msgs::DiagnosticStatus::OK, "Motor Ready!");
 
@@ -187,6 +184,26 @@ void Motor::run(diagnostic_updater::DiagnosticStatusWrapper &stat)
     }
 }
 
+string Motor::convert_status(motor_state_t status)
+{
+    switch(status)
+    {
+    case STATE_CONTROL_EMERGENCY:
+        return "Emergency";
+    case STATE_CONTROL_DISABLE:
+        return "Disabled";
+    case STATE_CONTROL_POSITION:
+        return "Position control";
+    case STATE_CONTROL_VELOCITY:
+        return "Velocity control";
+    case STATE_CONTROL_CURRENT:
+        return "Current control";
+    case STATE_CONTROL_DIRECT:
+        return "Direct";
+    default:
+        return "Unknown";
+    }
+}
 
 void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char command, motor_frame_u frame)
 {
@@ -221,7 +238,7 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
         pub_reference.publish(msg_reference);
         break;
     case MOTOR_DIAGNOSTIC:
-        msg_status.state = frame.diagnostic.state;
+        msg_status.state = convert_status(frame.diagnostic.state);
         msg_status.watt = (frame.diagnostic.watt/1000.0); /// in W
         msg_status.time_execution = frame.diagnostic.time_control;
         msg_status.voltage = (frame.diagnostic.volt/1000.0); /// in V;

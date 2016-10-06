@@ -194,11 +194,6 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
     switch(command)
     {
     case MOTOR_MEASURE:
-        msg_status.state = frame.motor.state;
-        // publish a message
-        msg_status.header.stamp = ros::Time::now();
-        pub_status.publish(msg_status);
-
         msg_measure.pwm = ((double) frame.motor.pwm) * 100.0 / 2048;
         msg_measure.position = frame.motor.position;
         msg_measure.velocity = ((double)frame.motor.velocity) / 1000.0;
@@ -226,6 +221,7 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
         pub_reference.publish(msg_reference);
         break;
     case MOTOR_DIAGNOSTIC:
+        msg_status.state = frame.diagnostic.state;
         msg_status.watt = (frame.diagnostic.watt/1000.0); /// in W
         msg_status.time_execution = frame.diagnostic.time_control;
         msg_status.voltage = (frame.diagnostic.volt/1000.0); /// in V;

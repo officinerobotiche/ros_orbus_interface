@@ -97,14 +97,14 @@ catkin_package(
 ## Build ##
 ###########
 include_directories(include
-                    ../or_bus_c.X/includes
+                    or_bus_c.X/includes
                     ${Boost_INCLUDE_DIRS}
                     ${catkin_INCLUDE_DIRS}
 )
 
 add_library(or_bus
-    ../or_bus_c.X/src/or_bus/or_message.c
-    ../or_bus_c.X/src/or_bus/or_frame.c
+    or_bus_c.X/src/or_bus/or_message.c
+    or_bus_c.X/src/or_bus/or_frame.c
 )
 
 set(hardware_unav_SRC

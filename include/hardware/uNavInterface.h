@@ -28,6 +28,10 @@ class uNavInterface : public GenericInterface, public hardware_interface::RobotH
 public:
     uNavInterface(const ros::NodeHandle &nh, const ros::NodeHandle &private_nh, orbus::serial_controller *serial);
 
+    bool prepareSwitch(const std::list<hardware_interface::ControllerInfo>& start_list, const std::list<hardware_interface::ControllerInfo>& stop_list);
+
+    void doSwitch(const std::list<hardware_interface::ControllerInfo>& start_list, const std::list<hardware_interface::ControllerInfo>& stop_list);
+
     /**
      * @brief initializeMotors
      */

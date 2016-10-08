@@ -44,6 +44,33 @@ uNavInterface::uNavInterface(const ros::NodeHandle &nh, const ros::NodeHandle &p
     }
 }
 
+bool uNavInterface::prepareSwitch(const std::list<hardware_interface::ControllerInfo>& start_list, const std::list<hardware_interface::ControllerInfo>& stop_list)
+{
+    ROS_INFO_STREAM("Prepare to switch!");
+    return true;
+}
+
+void uNavInterface::doSwitch(const std::list<hardware_interface::ControllerInfo>& start_list, const std::list<hardware_interface::ControllerInfo>& stop_list)
+{
+
+    for(std::list<hardware_interface::ControllerInfo>::const_iterator it = stop_list.begin(); it != stop_list.end(); ++it)
+    {
+        ROS_INFO_STREAM("DO SWITCH STOP name: " << it->name << " - type: " << it->type);
+    }
+
+    for(std::list<hardware_interface::ControllerInfo>::const_iterator it = start_list.begin(); it != start_list.end(); ++it)
+    {
+        ROS_INFO_STREAM("DO SWITCH START name: " << it->name << " - type: " << it->type);
+        const hardware_interface::InterfaceResources& iface_res = it->claimed_resources.front();
+        for (std::set<std::string>::const_iterator res_it = iface_res.resources.begin(); res_it != iface_res.resources.end(); ++res_it)
+        {
+            ROS_INFO_STREAM("Clamied " << *res_it);
+        }
+    }
+
+    ROS_INFO_STREAM("Switch!");
+}
+
 bool uNavInterface::updateDiagnostics()
 {
     if(serial_status)
@@ -118,7 +145,7 @@ void uNavInterface::initializeInterfaces()
 
 bool uNavInterface::updateJointsFromHardware()
 {
-    ROS_DEBUG_STREAM("Get measure from uNav");
+    //ROS_DEBUG_STREAM("Get measure from uNav");
     for(unsigned i=0; i < NUM_MOTORS; i++)
     {
         // Get motor
@@ -131,7 +158,7 @@ bool uNavInterface::updateJointsFromHardware()
 
 bool uNavInterface::writeCommandsToHardware(ros::Duration period)
 {
-    ROS_DEBUG_STREAM("Write command to uNav");
+    //ROS_DEBUG_STREAM("Write command to uNav");
     for(unsigned i=0; i < NUM_MOTORS; i++)
     {
         // Write command

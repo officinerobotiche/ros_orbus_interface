@@ -46,6 +46,7 @@ public:
     void setupLimits(hardware_interface::JointHandle joint_handle, boost::shared_ptr<urdf::ModelInterface> urdf);
 
     string mMotorName;
+    double velocity_command;
 
 private:
     static string convert_status(motor_state_t status);
@@ -66,7 +67,6 @@ private:
     double position;
     double velocity;
     double effort;
-    double velocity_command;
 
     /// ROS joint limits interface
     joint_limits_interface::VelocityJointSoftLimitsInterface vel_limits_interface;

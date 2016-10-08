@@ -22,17 +22,6 @@ Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, string
 
     mMotorName = name;
 
-//    //Initialize the name of the motor
-//    if(nh.hasParam(mName + "/name_joint"))
-//    {
-//        nh.getParam(mName + "/name_joint", mMotorName);
-//    }
-//    else
-//    {
-//        nh.setParam(mName + "/name_joint", mName);
-//        mMotorName = mName;
-//    }
-
     pid_velocity = new MotorPIDConfigurator(nh, serial, mName, "velocity", MOTOR_VEL_PID, number);
     pid_current = new MotorPIDConfigurator(nh, serial, mName, "current", MOTOR_CURRENT_PID, number);
     parameter = new MotorParamConfigurator(nh, serial, mName, number);
@@ -268,7 +257,7 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
         if(option == PACKET_DATA)
         {
             mState = frame.state;
-            ROS_INFO_STREAM("Motor state: " << convert_status(mState));
+            //ROS_INFO_STREAM("Motor state: " << convert_status(mState));
         }
         break;
     case MOTOR_VEL_PID:
@@ -349,9 +338,7 @@ motor_state_t Motor::get_state(string type)
     {
         state = STATE_CONTROL_DISABLE;
     }
-
-    ROS_INFO_STREAM("type:" << type << " - state: " << (int) state);
-
+    ROS_DEBUG_STREAM("type:" << type << " - state: " << (int) state);
     return state;
 }
 

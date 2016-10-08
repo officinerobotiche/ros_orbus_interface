@@ -140,8 +140,8 @@ void uNavInterface::initializeInterfaces()
         hardware_interface::JointHandle joint_handle(*joint_state_handle, &joint[0].velocity_command);
         velocity_joint_interface.registerHandle(joint_handle);
 
-//        // Setup limits
-//        ((*ii).second)->setupLimits(joint_handle, urdf);
+        // Setup limits
+        ((*ii).second)->setupLimits(joint_handle, urdf);
 
 //        // reset position joint
 //        ROS_DEBUG_STREAM("Reset position motor: " << joint[i].motor->mMotorName);

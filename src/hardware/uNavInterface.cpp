@@ -12,9 +12,6 @@
 namespace ORInterface
 {
 
-// List of motors
-joint_t joint[2];
-
 uNavInterface::uNavInterface(const ros::NodeHandle &nh, const ros::NodeHandle &private_nh, orbus::serial_controller *serial)
     : GenericInterface(nh, private_nh, serial)
 {
@@ -137,7 +134,7 @@ void uNavInterface::initializeInterfaces()
         joint_state_interface.registerHandle(*joint_state_handle);
 
         /// Differential drive interface
-        hardware_interface::JointHandle joint_handle(*joint_state_handle, &joint[0].velocity_command);
+        hardware_interface::JointHandle joint_handle(*joint_state_handle, &((*ii).second)->velocity_command);
         velocity_joint_interface.registerHandle(joint_handle);
 
         // Setup limits
@@ -179,7 +176,7 @@ bool uNavInterface::writeCommandsToHardware(ros::Duration period)
     //ROS_DEBUG_STREAM("Write command to uNav");
     for( map<string, Motor*>::iterator ii=mMotor.begin(); ii!=mMotor.end(); ++ii)
     {
-        (*ii).second->writeCommandsToHardware(period, joint[0].velocity_command);
+        (*ii).second->writeCommandsToHardware(period, ((*ii).second)->velocity_command);
         ROS_DEBUG_STREAM("Motor [" << (*ii).first << "] Send commands");
     }
     //Send all messages

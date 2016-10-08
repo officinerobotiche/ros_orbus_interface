@@ -32,6 +32,8 @@ public:
 
     void doSwitch(const std::list<hardware_interface::ControllerInfo>& start_list, const std::list<hardware_interface::ControllerInfo>& stop_list);
 
+    void write(const ros::Time& time, const ros::Duration& period);
+
     /**
      * @brief initializeMotors
      */
@@ -71,6 +73,8 @@ private:
     hardware_interface::JointStateInterface joint_state_interface;
     hardware_interface::VelocityJointInterface velocity_joint_interface;
 
+    map<string, Motor*> mMotor;
+    vector<string> mMotorName;
 };
 
 }

@@ -10,8 +10,9 @@
 namespace ORInterface
 {
 
-Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, unsigned int number)
+Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, string name, unsigned int number)
     : DiagnosticTask("motor_" + to_string(number) + "_status")
+    , JointStateHandle(name, &position, &velocity, &effort)
     , mNh(nh)
     , mSerial(serial)
     , mName("motor_" + to_string(number))
@@ -19,16 +20,18 @@ Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, unsign
     command.bitset.motor = number;
     mNumber = number;
 
-    //Initialize the name of the motor
-    if(nh.hasParam(mName + "/name_joint"))
-    {
-        nh.getParam(mName + "/name_joint", mMotorName);
-    }
-    else
-    {
-        nh.setParam(mName + "/name_joint", mName);
-        mMotorName = mName;
-    }
+    mMotorName = name;
+
+//    //Initialize the name of the motor
+//    if(nh.hasParam(mName + "/name_joint"))
+//    {
+//        nh.getParam(mName + "/name_joint", mMotorName);
+//    }
+//    else
+//    {
+//        nh.setParam(mName + "/name_joint", mName);
+//        mMotorName = mName;
+//    }
 
     pid_velocity = new MotorPIDConfigurator(nh, serial, mName, "velocity", MOTOR_VEL_PID, number);
     pid_current = new MotorPIDConfigurator(nh, serial, mName, "current", MOTOR_CURRENT_PID, number);
@@ -48,6 +51,13 @@ Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, unsign
 
 void Motor::initializeMotor()
 {
+    // Send information about the state of the robot
+    // Set type of command
+    command.bitset.command = MOTOR_STATE;
+    // Build a packet
+    packet_information_t frame = CREATE_PACKET_RESPONSE(command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
+    mSerial->addFrame(frame);
+
     pid_velocity->initConfigurator();
     pid_current->initConfigurator();
     parameter->initConfigurator();
@@ -220,6 +230,10 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
         // publish a message
         msg_measure.header.stamp = ros::Time::now();
         pub_measure.publish(msg_measure);
+        // Update joint status
+        effort = msg_measure.effort;
+        position += frame.motor.position_delta;
+        velocity = msg_measure.velocity;
         break;
     case MOTOR_CONTROL:
         // ROS_INFO_STREAM("Control Motor[" << mNumber << "] current: " << frame.motor.current);
@@ -249,6 +263,13 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
         // publish a message
         msg_status.header.stamp = ros::Time::now();
         pub_status.publish(msg_status);
+        break;
+    case MOTOR_STATE:
+        if(option == PACKET_DATA)
+        {
+            mState = frame.state;
+            ROS_INFO_STREAM("Motor state: " << convert_status(mState));
+        }
         break;
     case MOTOR_VEL_PID:
         if(option == PACKET_DATA)
@@ -317,29 +338,74 @@ void Motor::resetPosition(double position)
     mSerial->addFrame(frame);
 }
 
-void Motor::writeCommandsToHardware(ros::Duration period, double velocity_command)
+motor_state_t Motor::get_state(string type)
 {
-    // Enforce joint limits for all registered handles
-    // Note: one can also enforce limits on a per-handle basis: handle.enforceLimits(period)
-    vel_limits_interface.enforceLimits(period);
-
-    long long int velocity_long = static_cast<long long int>(velocity_command*1000.0);
-    motor_control_t velocity;
-    // >>>>> Saturation on 32 bit values
-    if(velocity_long > MOTOR_CONTROL_MAX) {
-        velocity = MOTOR_CONTROL_MAX;
-    } else if (velocity_long < MOTOR_CONTROL_MIN) {
-        velocity_long = MOTOR_CONTROL_MIN;
-    } else {
-        velocity = (motor_control_t) velocity_long;
+    motor_state_t state;
+    if(type.compare("diff_drive_controller/DiffDriveController") == 0)
+    {
+        state = STATE_CONTROL_VELOCITY;
     }
-    // <<<<< Saturation on 32 bit values
-    //ROS_INFO_STREAM("Vel[" << mNumber << "]:" << velocity);
+    else
+    {
+        state = STATE_CONTROL_DISABLE;
+    }
+
+    ROS_INFO_STREAM("type:" << type << " - state: " << (int) state);
+
+    return state;
+}
+
+void Motor::switchController(string type)
+{
+    // Update the new state
+    mState = get_state(type);
+
     // Set type of command
-    command.bitset.command = MOTOR_VEL_REF;
+    command.bitset.command = MOTOR_STATE;
     // Build a packet
     message_abstract_u temp;
-    temp.motor.reference = velocity;
+    temp.motor.state = mState;
+    packet_information_t frame = CREATE_PACKET_DATA(command.command_message, HASHMAP_MOTOR, temp);
+    // Add packet in the frame
+    mSerial->addFrame(frame);
+}
+
+void Motor::writeCommandsToHardware(ros::Duration period, double velocity_command)
+{
+    switch(mState)
+    {
+    case STATE_CONTROL_VELOCITY:
+        // Enforce joint limits for all registered handles
+        // Note: one can also enforce limits on a per-handle basis: handle.enforceLimits(period)
+        vel_limits_interface.enforceLimits(period);
+        // Set type of command
+        command.bitset.command = MOTOR_VEL_REF;
+        break;
+    case STATE_CONTROL_CURRENT:
+        // Set type of command
+        command.bitset.command = MOTOR_CURRENT_REF;
+        break;
+    case STATE_CONTROL_DISABLE:
+        // Does not send any command
+        return;
+    }
+
+    long long int reference_long = static_cast<long long int>(velocity_command*1000.0);
+    motor_control_t reference;
+    // >>>>> Saturation on 32 bit values
+    if(reference_long > MOTOR_CONTROL_MAX) {
+        reference = MOTOR_CONTROL_MAX;
+    } else if (reference_long < MOTOR_CONTROL_MIN) {
+        reference_long = MOTOR_CONTROL_MIN;
+    } else {
+        reference = (motor_control_t) reference_long;
+    }
+    // <<<<< Saturation on 32 bit values
+
+    //ROS_INFO_STREAM("Vel[" << mNumber << "]:" << velocity);
+    // Build a packet
+    message_abstract_u temp;
+    temp.motor.reference = reference;
     packet_information_t frame = CREATE_PACKET_DATA(command.command_message, HASHMAP_MOTOR, temp);
     // Add packet in the frame
     mSerial->addFrame(frame);

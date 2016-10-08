@@ -24,10 +24,10 @@ using namespace std;
 namespace ORInterface
 {
 
-class Motor : public diagnostic_updater::DiagnosticTask
+class Motor : public diagnostic_updater::DiagnosticTask, hardware_interface::JointStateHandle
 {
 public:
-    explicit Motor(const ros::NodeHandle &nh, orbus::serial_controller *serial, unsigned int number);
+    explicit Motor(const ros::NodeHandle &nh, orbus::serial_controller *serial, string name, unsigned int number);
 
     void initializeMotor();
 
@@ -39,6 +39,8 @@ public:
 
     void resetPosition(double position);
 
+    void switchController(string type);
+
     void writeCommandsToHardware(ros::Duration period, double velocity_command);
 
     void setupLimits(hardware_interface::JointHandle joint_handle, boost::shared_ptr<urdf::ModelInterface> urdf);
@@ -47,6 +49,8 @@ public:
 
 private:
     static string convert_status(motor_state_t status);
+
+    static motor_state_t get_state(string type);
 
 private:
     //Initialization object
@@ -57,6 +61,12 @@ private:
     // Name of the motor
     string mName;
     unsigned int mNumber;
+    // State of the motor
+    motor_state_t mState;
+    double position;
+    double velocity;
+    double effort;
+    double velocity_command;
 
     /// ROS joint limits interface
     joint_limits_interface::VelocityJointSoftLimitsInterface vel_limits_interface;

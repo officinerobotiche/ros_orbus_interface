@@ -64,23 +64,9 @@ void controlLoop(uNavInterface &orb,
 
     //ROS_INFO_STREAM("CONTROL - running");
     // Process control loop
-    if(!orb.updateJointsFromHardware())
-    {
-        // If the communcation is lost stop the control loop
-        // and wait from diagnostic if the unav is available
-        control_loop.stop();
-        return;
-    }
+    orb.updateJointsFromHardware();
     cm.update(ros::Time::now(), elapsed);
-
-    if(!orb.writeCommandsToHardware(elapsed))
-    {
-        // If the communcation is lost stop the control loop
-        // and wait from diagnostic if the unav is available
-        control_loop.stop();
-        return;
-    }
-
+    orb.writeCommandsToHardware(elapsed);
 }
 
 /**
@@ -91,22 +77,24 @@ void diagnosticLoop(uNavInterface &orb)
     //ROS_INFO_STREAM("DIAGNOSTIC - running");
     bool diagnostic = orb.updateDiagnostics();
     // Set true if the diagnostic change with the before status
+    //ROS_INFO_STREAM("Status:" << status << "- Diagnostic:" << diagnostic);
     if(status != diagnostic)
     {
-    if(diagnostic)
-    {
-        ROS_INFO_STREAM("DIAGNOSTIC - Initialize again the unav and restart control loop");
-        orb.initializeMotors();
-        control_loop.start();
-    }
-    else
-    {
-        // Stopping control node
-        ROS_ERROR_STREAM("DIAGNOSTIC - Stop control loop");
-        control_loop.stop();
-    }
+        if(diagnostic)
+        {
+            ROS_INFO_STREAM("DIAGNOSTIC - Initialize again the unav and restart control loop");
+            orb.initializeMotors();
+            control_loop.start();
+        }
+        else
+        {
+            // Stopping control node
+            ROS_ERROR_STREAM("DIAGNOSTIC - Stop control loop");
+            control_loop.stop();
+        }
     }
     status = diagnostic;
+    //ROS_INFO_STREAM("New status:" << status);
 }
 
 int main(int argc, char **argv) {

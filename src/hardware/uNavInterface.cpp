@@ -51,6 +51,7 @@ bool uNavInterface::updateDiagnostics()
         ROS_DEBUG_STREAM("Update diagnostic");
         // Force update all diagnostic parts
         diagnostic_updater.force_update();
+        return true;
     }
     else
     {
@@ -63,7 +64,7 @@ bool uNavInterface::updateDiagnostics()
             return true;
         }
     }
-    return serial_status;
+    return false;
 }
 
 void uNavInterface::initializeMotors()
@@ -124,7 +125,7 @@ bool uNavInterface::updateJointsFromHardware()
         joint[i].motor->addRequestMeasure();
     }
     //Send all messages
-    serial_status = mSerial->sendList();
+    //serial_status = mSerial->sendList();
     return serial_status;
 }
 

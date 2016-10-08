@@ -87,6 +87,12 @@ bool serial_controller::sendList()
     if(state) {
         list_send.clear();
     }
+    //ROS_INFO_STREAM("Status list:" << mStatus);
+    // TEMP
+    if(mStatus == BUFFER_FULL) {
+        list_send.clear();
+        mStatus = OK;
+    }
     return (mStatus == OK);
 }
 
@@ -119,6 +125,7 @@ bool serial_controller::sendSerialFrame(vector<packet_information_t> list_send)
                 return true;
             }
         }
+        ROS_ERROR_STREAM("Buffer FULL");
         mStatus = BUFFER_FULL;
     }
     return false;

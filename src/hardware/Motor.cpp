@@ -211,6 +211,7 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
     switch(command)
     {
     case MOTOR_MEASURE:
+       // ROS_INFO_STREAM("Measure Motor[" << mNumber << "] current: " << frame.motor.current);
         msg_measure.pwm = ((double) frame.motor.pwm) * 100.0 / 2048;
         msg_measure.position = frame.motor.position;
         msg_measure.velocity = ((double)frame.motor.velocity) / 1000.0;
@@ -221,6 +222,7 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
         pub_measure.publish(msg_measure);
         break;
     case MOTOR_CONTROL:
+        // ROS_INFO_STREAM("Control Motor[" << mNumber << "] current: " << frame.motor.current);
         msg_control.position = frame.motor.position;
         msg_control.velocity = ((double)frame.motor.velocity) / 1000.0;
         msg_control.current = ((double) frame.motor.current) / 1000.0;
@@ -229,6 +231,7 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
         pub_control.publish(msg_control);
         break;
     case MOTOR_REFERENCE:
+        // ROS_INFO_STREAM("Reference Motor[" << mNumber << "] current: " << frame.motor.current);
         msg_reference.pwm = ((double) frame.motor.pwm) * 100.0 / 2048;
         msg_reference.position = frame.motor.position;
         msg_reference.velocity = ((double)frame.motor.velocity) / 1000.0;
@@ -299,7 +302,7 @@ void Motor::addRequestMeasure()
     // Build a packet
     packet_information_t frame_reference = CREATE_PACKET_RESPONSE(command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
     // Add packet in the frame
-    mSerial->addFrame(frame_measure)->addFrame(frame_control)->addFrame(frame_reference);
+    mSerial->addFrame(frame_measure)->addFrame(frame_control)->addFrame(frame_reference)->sendList();
 }
 
 void Motor::resetPosition(double position)

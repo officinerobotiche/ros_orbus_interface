@@ -16,6 +16,7 @@ void GenericConfigurator::SendParameterToBoard(message_abstract_u message)
 {
     packet_information_t frame = CREATE_PACKET_DATA(mCommand.command_message, HASHMAP_MOTOR, message);
     // Add packet in the frame and send
+//    mSerial->addFrame(frame);
     if(mSerial->addFrame(frame)->sendList())
     {
         ROS_DEBUG_STREAM("Write PARAM:" << mName << " in uNav");

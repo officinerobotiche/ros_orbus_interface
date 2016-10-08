@@ -83,6 +83,7 @@ serial_controller* serial_controller::addFrame(packet_information_t packet)
 
 bool serial_controller::sendList()
 {
+    mMutex.lock();
     bool state = sendSerialFrame(list_send);
     if(state) {
         list_send.clear();
@@ -93,6 +94,7 @@ bool serial_controller::sendList()
         list_send.clear();
         mStatus = OK;
     }
+    mMutex.unlock();
     return (mStatus == OK);
 }
 

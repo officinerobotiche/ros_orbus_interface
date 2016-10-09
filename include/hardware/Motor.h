@@ -44,7 +44,7 @@ public:
 
     void writeCommandsToHardware(ros::Duration period);
 
-    void setupLimits(string urdf_name);
+    void setupLimits(urdf::Model model);
 
     string mMotorName;
 

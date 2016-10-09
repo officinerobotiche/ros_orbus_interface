@@ -114,15 +114,10 @@ void uNavInterface::initializeInterfaces()
     // Initialize the diagnostic from the primitive object
     initializeDiagnostic();
 
-    /// Load URDF from robot_description
-    if(mNh.hasParam("/robot_description"))
-    {
-        ROS_INFO_STREAM("/robot_description found!");
-        mNh.getParam("/robot_description", urdf_string);
-    } else
-    {
-        ROS_WARN_STREAM("/robot_description NOT found!");
+    if (!model.initParam("/robot_description")){
+      ROS_ERROR("Failed to parse urdf file");
     }
+    ROS_INFO_STREAM("/robot_description found! " << model.name_ << " parsed!");
 
     for( map<string, Motor*>::iterator ii=mMotor.begin(); ii!=mMotor.end(); ++ii)
     {
@@ -132,7 +127,7 @@ void uNavInterface::initializeInterfaces()
         velocity_joint_interface.registerHandle(((*ii).second)->joint_handle);
 
         // Setup limits
-//        ((*ii).second)->setupLimits(urdf);
+        ((*ii).second)->setupLimits(model);
 
 //        // reset position joint
 //        ROS_DEBUG_STREAM("Reset position motor: " << joint[i].motor->mMotorName);

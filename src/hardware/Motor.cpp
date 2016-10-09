@@ -54,77 +54,76 @@ void Motor::initializeMotor()
     emergency->initConfigurator();
 }
 
-void Motor::setupLimits(string urdf_name)
+void Motor::setupLimits(urdf::Model model)
 {
-//    /// Add a velocity joint limits infomations
-//    joint_limits_interface::JointLimits limits;
-//    joint_limits_interface::SoftJointLimits soft_limits;
+    /// Add a velocity joint limits infomations
+    joint_limits_interface::JointLimits limits;
+    joint_limits_interface::SoftJointLimits soft_limits;
 
-//    // Manual value setting
-//    limits.has_velocity_limits = true;
-//    limits.max_velocity = 5.0;
-//    bool state = true;
-////    limits.has_effort_limits = true;
-////    limits.max_effort = 2.0;
+    bool state = true;
 
-//    // Populate (soft) joint limits from URDF
-//    // Limits specified in URDF overwrite existing values in 'limits' and 'soft_limits'
-//    // Limits not specified in URDF preserve their existing values
-//    if(urdf_name != NULL) {
-//        boost::shared_ptr<const urdf::Joint> urdf_joint = urdf_name->getJoint(mMotorName);
-//        const bool urdf_limits_ok = getJointLimits(urdf_joint, limits);
-//        const bool urdf_soft_limits_ok = getSoftJointLimits(urdf_joint, soft_limits);
-//        if(urdf_limits_ok) {
-//            ROS_INFO_STREAM("LOAD [" << mMotorName << "] limits from URDF: |" << limits.max_velocity << "| rad/s");
-//        }
-//        if(urdf_soft_limits_ok) {
-//            ROS_INFO_STREAM("LOAD [" << mMotorName << "] soft limits from URDF: |" << limits.max_velocity << "| rad/s");
-//        }
-//        state = false;
-//    }
-//    else
-//    {
-//        ROS_WARN("Setup limits, URDF NOT available");
-//    }
+    // Manual value setting
+    limits.has_velocity_limits = true;
+    limits.max_velocity = 5.0;
+    limits.has_effort_limits = true;
+    limits.max_effort = 2.0;
 
-//    // Populate (soft) joint limits from the ros parameter server
-//    // Limits specified in the parameter server overwrite existing values in 'limits' and 'soft_limits'
-//    // Limits not specified in the parameter server preserve their existing values
-//    const bool rosparam_limits_ok = getJointLimits(mMotorName, mNh, limits);
-//    if(rosparam_limits_ok) {
-//        ROS_WARN_STREAM("OVERLOAD [" << mMotorName << "] limits from ROSPARAM: |" << limits.max_velocity << "| rad/s");
-//        state = false;
-//    }
-//    else
-//    {
-//        ROS_DEBUG("Setup limits, PARAM NOT available");
-//    }
-//    // If does not read any parameter from URDF or rosparm load default parameter
-//    if(state)
-//    {
-//        ROS_INFO_STREAM("Load [" << mMotorName << "] with limit = |" << limits.max_velocity << "| rad/s");
-//    }
+    // Populate (soft) joint limits from URDF
+    // Limits specified in URDF overwrite existing values in 'limits' and 'soft_limits'
+    // Limits not specified in URDF preserve their existing values
 
-//    // Send joint limits information to board
-//    motor_t constraint;
-//    constraint.position = MOTOR_CONTROL_MAX;
-//    constraint.velocity = (motor_control_t) limits.max_velocity*1000;
-//    constraint.current = MOTOR_CONTROL_MAX;
+    boost::shared_ptr<const urdf::Joint> urdf_joint = model.getJoint(mMotorName);
+    const bool urdf_limits_ok = getJointLimits(urdf_joint, limits);
+    const bool urdf_soft_limits_ok = getSoftJointLimits(urdf_joint, soft_limits);
 
-//    // Set type of command
-//    command.bitset.command = MOTOR_CONSTRAINT;
-//    // Build a packet
-//    message_abstract_u temp;
-//    temp.motor.motor = constraint;
-//    packet_information_t frame = CREATE_PACKET_DATA(command.command_message, HASHMAP_MOTOR, temp);
-//    // Add packet in the frame
-//    mSerial->addFrame(frame);
+    if(urdf_limits_ok) {
+        ROS_INFO_STREAM("LOAD [" << mMotorName << "] limits from URDF: |" << limits.max_velocity << "| rad/s");
+        state = false;
+    }
 
-//    joint_limits_interface::VelocityJointSoftLimitsHandle handle(joint_handle, // We read the state and read/write the command
-//                                                                 limits,       // Limits spec
-//                                                                 soft_limits);  // Soft limits spec
+    if(urdf_soft_limits_ok) {
+        ROS_INFO_STREAM("LOAD [" << mMotorName << "] soft limits from URDF: |" << limits.max_velocity << "| rad/s");
+        state = false;
+    }
 
-//    vel_limits_interface.registerHandle(handle);
+    // Populate (soft) joint limits from the ros parameter server
+    // Limits specified in the parameter server overwrite existing values in 'limits' and 'soft_limits'
+    // Limits not specified in the parameter server preserve their existing values
+    const bool rosparam_limits_ok = getJointLimits(mMotorName, mNh, limits);
+    if(rosparam_limits_ok) {
+        ROS_WARN_STREAM("OVERLOAD [" << mMotorName << "] limits from ROSPARAM: |" << limits.max_velocity << "| rad/s");
+        state = false;
+    }
+    else
+    {
+        ROS_DEBUG("Setup limits, PARAM NOT available");
+    }
+    // If does not read any parameter from URDF or rosparm load default parameter
+    if(state)
+    {
+        ROS_WARN_STREAM("LOAD [" << mMotorName << "] with DEFAULT limit = |" << limits.max_velocity << "| rad/s");
+    }
+
+    // Send joint limits information to board
+    motor_t constraint;
+    constraint.position = MOTOR_CONTROL_MAX;
+    constraint.velocity = (motor_control_t) limits.max_velocity*1000;
+    constraint.current = MOTOR_CONTROL_MAX;
+
+    // Set type of command
+    command.bitset.command = MOTOR_CONSTRAINT;
+    // Build a packet
+    message_abstract_u temp;
+    temp.motor.motor = constraint;
+    packet_information_t frame = CREATE_PACKET_DATA(command.command_message, HASHMAP_MOTOR, temp);
+    // Add packet in the frame
+    mSerial->addFrame(frame);
+
+    joint_limits_interface::VelocityJointSoftLimitsHandle handle(joint_handle, // We read the state and read/write the command
+                                                                 limits,       // Limits spec
+                                                                 soft_limits);  // Soft limits spec
+
+    vel_limits_interface.registerHandle(handle);
 }
 
 void Motor::run(diagnostic_updater::DiagnosticStatusWrapper &stat)

@@ -67,7 +67,8 @@ private:
 
 private:
     /// URDF information about robot
-    boost::shared_ptr<urdf::ModelInterface> urdf;
+    //boost::shared_ptr<urdf::ModelInterface> urdf;
+    std::string urdf_string;
 
     /// ROS Control interfaces
     hardware_interface::JointStateInterface joint_state_interface;

@@ -3,6 +3,7 @@
 
 #include <ros/ros.h>
 #include <urdf/model.h>
+
 #include <diagnostic_updater/diagnostic_updater.h>
 #include <diagnostic_updater/publisher.h>
 #include <hardware_interface/joint_state_interface.h>
@@ -24,7 +25,7 @@ using namespace std;
 namespace ORInterface
 {
 
-class Motor : public diagnostic_updater::DiagnosticTask, hardware_interface::HardwareInterface //, hardware_interface::JointStateHandle, hardware_interface::JointHandle
+class Motor : public diagnostic_updater::DiagnosticTask
 {
 public:
     explicit Motor(const ros::NodeHandle &nh, orbus::serial_controller *serial, string name, unsigned int number);
@@ -43,7 +44,7 @@ public:
 
     void writeCommandsToHardware(ros::Duration period);
 
-    void setupLimits(boost::shared_ptr<urdf::ModelInterface> urdf);
+    void setupLimits(string urdf_name);
 
     string mMotorName;
 

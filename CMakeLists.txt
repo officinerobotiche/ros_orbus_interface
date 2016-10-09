@@ -26,12 +26,12 @@ find_package(catkin REQUIRED
                     serial
                     roscpp
                     sensor_msgs
-                    dynamic_reconfigure
-                    urdf
-                    joint_limits_interface
-                    genmsg
                     std_srvs
                     std_msgs
+                    dynamic_reconfigure
+                    joint_limits_interface
+                    genmsg
+                    urdf
 )
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED
@@ -82,13 +82,13 @@ catkin_package(
         or_bus
     CATKIN_DEPENDS
         diagnostic_updater
+        std_msgs
+        std_srvs
         dynamic_reconfigure
         hardware_interface
         roscpp
         sensor_msgs
         joint_limits_interface
-        std_msgs
-        std_srvs
     DEPENDS
         Boost
 )
@@ -123,6 +123,7 @@ set(hardware_unav_SRC
 ## Declare a cpp executable
 add_executable(unav_node ${hardware_unav_SRC})
 target_link_libraries(unav_node or_bus ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+add_dependencies(unav_node ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 

@@ -1,9 +1,6 @@
 
 #include <string>
 
-#include <urdf/model.h>
-#include <urdf_parser/urdf_parser.h>
-
 #include <hardware_interface/joint_state_interface.h>
 #include <hardware_interface/joint_command_interface.h>
 
@@ -18,17 +15,6 @@ uNavInterface::uNavInterface(const ros::NodeHandle &nh, const ros::NodeHandle &p
     /// Added all callback to receive information about messages
     bool initCallback = mSerial->addCallback(&uNavInterface::allMotorsFrame, this, HASHMAP_MOTOR);
 
-    /// Load URDF from robot_description
-    if(nh.hasParam("/robot_description"))
-    {
-        ROS_INFO_STREAM("/robot_description found!");
-        std::string urdf_string;
-        nh.getParam("/robot_description", urdf_string);
-        urdf = urdf::parseURDF(urdf_string);
-    } else
-    {
-        ROS_WARN_STREAM("/robot_description NOT found!");
-    }
     // Initialize Joints
     #define NUM_MOTORS 2
     for(unsigned i=0; i < NUM_MOTORS; i++)
@@ -127,6 +113,16 @@ void uNavInterface::initializeInterfaces()
 {
     // Initialize the diagnostic from the primitive object
     initializeDiagnostic();
+
+    /// Load URDF from robot_description
+    if(mNh.hasParam("/robot_description"))
+    {
+        ROS_INFO_STREAM("/robot_description found!");
+        mNh.getParam("/robot_description", urdf_string);
+    } else
+    {
+        ROS_WARN_STREAM("/robot_description NOT found!");
+    }
 
     for( map<string, Motor*>::iterator ii=mMotor.begin(); ii!=mMotor.end(); ++ii)
     {

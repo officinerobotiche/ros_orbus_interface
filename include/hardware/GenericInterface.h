@@ -5,6 +5,7 @@
 #include <diagnostic_updater/diagnostic_updater.h>
 #include <diagnostic_updater/publisher.h>
 
+#include <orbus_interface/GPIO.h>
 #include <orbus_interface/Service.h>
 #include <orbus_interface/BoardTime.h>
 #include <orbus_interface/Peripheral.h>
@@ -56,7 +57,7 @@ private:
      */
     void peripheralFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
 
-    void convertGPIO(int16_t data);
+    void convertGPIO(peripherals_gpio_port_t data);
 
     /**
      * @brief service_Callback Internal service to require information from the board connected
@@ -66,14 +67,20 @@ private:
      */
     bool service_Callback(orbus_interface::Service::Request &req, orbus_interface::Service::Response &msg_system);
 
+    bool gpio_Callback(orbus_interface::GPIO::Request &req, orbus_interface::GPIO::Response &msg_system);
+
+    int binary_decimal(int n);
+
     // Service board
-    ros::ServiceServer srv_board;
+    ros::ServiceServer srv_board, srv_gpio;
     // time execution functions
     ros::Publisher pub_time;
     ros::Publisher pub_peripheral;
     // Message for pubblisher
     orbus_interface::BoardTime msg_system;
     orbus_interface::Peripheral msg_peripheral;
+
+    peripheral_gpio_map_t gpio_map;
 
 };
 

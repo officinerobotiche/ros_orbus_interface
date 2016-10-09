@@ -58,6 +58,7 @@ add_message_files(
 add_service_files(
    FILES
    Service.srv
+   GPIO.srv
 )
 
 # dynamic reconfigure

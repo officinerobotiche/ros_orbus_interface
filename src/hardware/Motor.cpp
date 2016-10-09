@@ -108,6 +108,7 @@ void Motor::setupLimits(urdf::Model model)
     constraint.position = MOTOR_CONTROL_MAX;
     constraint.velocity = (motor_control_t) limits.max_velocity*1000;
     constraint.current = MOTOR_CONTROL_MAX;
+    constraint.effort = (motor_control_t) limits.max_effort*1000;
 
     // Set type of command
     motor_command.bitset.command = MOTOR_CONSTRAINT;

@@ -56,6 +56,8 @@ private:
      */
     void peripheralFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
 
+    void convertGPIO(int16_t data);
+
     /**
      * @brief service_Callback Internal service to require information from the board connected
      * @param req

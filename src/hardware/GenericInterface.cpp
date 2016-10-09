@@ -3,6 +3,9 @@
 namespace ORInterface
 {
 
+#define BIT_MASK(x)                       (1 << (x))
+#define REGISTER_MASK_READ(reg, mask)     ((*(reg) & (mask)) == (mask))
+
 GenericInterface::GenericInterface(const ros::NodeHandle &nh, const ros::NodeHandle &private_nh, orbus::serial_controller *serial)
     : DiagnosticTask("board")
     , mNh(nh)
@@ -88,12 +91,24 @@ void GenericInterface::connectCallback(const ros::SingleSubscriberPublisher& pub
     ROS_INFO("Connect: %s - %s", pub.getSubscriberName().c_str(), pub.getTopic().c_str());
 }
 
+void GenericInterface::convertGPIO(int16_t data) {
+    msg_peripheral.gpio.clear();
+    for(unsigned i=0; i < 16; ++i)
+    {
+        int n = BIT_MASK(i);
+        msg_peripheral.gpio.push_back(REGISTER_MASK_READ(&data, n));
+    }
+}
+
 void GenericInterface::peripheralFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
     ROS_DEBUG_STREAM("Frame [Option: " << option << ", HashMap: " << type << ", Command: " << (int) command << "]");
     switch(command)
     {
     case PERIPHERALS_GPIO_ALL:
-        ROS_INFO_STREAM("Data: " << (int) message.gpio.port.port);
+        convertGPIO(message.gpio.port.port);
+        // publish a message
+        msg_peripheral.header.stamp = ros::Time::now();
+        pub_peripheral.publish(msg_peripheral);
         break;
     default:
         ROS_ERROR_STREAM("Peripheral message \""<< command << "\"=(" << (int) command << ")" << " does not implemented!");

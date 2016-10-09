@@ -130,15 +130,13 @@ void uNavInterface::initializeInterfaces()
 
     for( map<string, Motor*>::iterator ii=mMotor.begin(); ii!=mMotor.end(); ++ii)
     {
-        hardware_interface::JointStateHandle *joint_state_handle = (hardware_interface::JointStateHandle*) ((*ii).second);
-        joint_state_interface.registerHandle(*joint_state_handle);
-
-        /// Differential drive interface
-        hardware_interface::JointHandle joint_handle(*joint_state_handle, &((*ii).second)->velocity_command);
-        velocity_joint_interface.registerHandle(joint_handle);
+        /// State interface
+        joint_state_interface.registerHandle(((*ii).second)->joint_state_handle);
+        /// Velocity interface
+        velocity_joint_interface.registerHandle(((*ii).second)->joint_handle);
 
         // Setup limits
-        ((*ii).second)->setupLimits(joint_handle, urdf);
+//        ((*ii).second)->setupLimits(urdf);
 
 //        // reset position joint
 //        ROS_DEBUG_STREAM("Reset position motor: " << joint[i].motor->mMotorName);
@@ -176,7 +174,7 @@ bool uNavInterface::writeCommandsToHardware(ros::Duration period)
     //ROS_DEBUG_STREAM("Write command to uNav");
     for( map<string, Motor*>::iterator ii=mMotor.begin(); ii!=mMotor.end(); ++ii)
     {
-        (*ii).second->writeCommandsToHardware(period, ((*ii).second)->velocity_command);
+        (*ii).second->writeCommandsToHardware(period);
         ROS_DEBUG_STREAM("Motor [" << (*ii).first << "] Send commands");
     }
     //Send all messages

@@ -12,7 +12,8 @@ namespace ORInterface
 
 Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, string name, unsigned int number)
     : DiagnosticTask("motor_" + to_string(number) + "_status")
-    , JointStateHandle(name, &position, &velocity, &effort)
+    , joint_state_handle(name, &position, &velocity, &effort)
+    , joint_handle(joint_state_handle, &velocity_command)
     , mNh(nh)
     , mSerial(serial)
     , mName("motor_" + to_string(number))
@@ -53,7 +54,7 @@ void Motor::initializeMotor()
     emergency->initConfigurator();
 }
 
-void Motor::setupLimits(hardware_interface::JointHandle joint_handle, boost::shared_ptr<urdf::ModelInterface> urdf)
+void Motor::setupLimits(boost::shared_ptr<urdf::ModelInterface> urdf)
 {
     /// Add a velocity joint limits infomations
     joint_limits_interface::JointLimits limits;
@@ -357,7 +358,7 @@ void Motor::switchController(string type)
     mSerial->addFrame(frame);
 }
 
-void Motor::writeCommandsToHardware(ros::Duration period, double velocity_command)
+void Motor::writeCommandsToHardware(ros::Duration period)
 {
     switch(mState)
     {

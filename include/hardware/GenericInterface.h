@@ -7,6 +7,7 @@
 
 #include <orbus_interface/Service.h>
 #include <orbus_interface/BoardTime.h>
+#include <orbus_interface/Peripheral.h>
 
 #include "hardware/serial_controller.h"
 
@@ -61,14 +62,16 @@ private:
      * @param msg
      * @return
      */
-    bool service_Callback(orbus_interface::Service::Request &req, orbus_interface::Service::Response &msg);
+    bool service_Callback(orbus_interface::Service::Request &req, orbus_interface::Service::Response &msg_system);
 
     // Service board
     ros::ServiceServer srv_board;
     // time execution functions
     ros::Publisher pub_time;
+    ros::Publisher pub_peripheral;
     // Message for pubblisher
-    orbus_interface::BoardTime msg;
+    orbus_interface::BoardTime msg_system;
+    orbus_interface::Peripheral msg_peripheral;
 
 };
 

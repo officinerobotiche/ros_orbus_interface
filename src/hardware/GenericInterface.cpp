@@ -18,6 +18,10 @@ GenericInterface::GenericInterface(const ros::NodeHandle &nh, const ros::NodeHan
     //Publisher
     pub_time = private_mNh.advertise<orbus_interface::BoardTime>("system", 10,
                 boost::bind(&GenericInterface::connectCallback, this, _1));
+
+    pub_peripheral = private_mNh.advertise<orbus_interface::Peripheral>("peripheral", 10,
+                boost::bind(&GenericInterface::connectCallback, this, _1));
+
     //Services
     srv_board = private_mNh.advertiseService("system", &GenericInterface::service_Callback, this);
 
@@ -51,8 +55,12 @@ void GenericInterface::run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
     ROS_DEBUG_STREAM("DIAGNOSTIC Generic interface I'm here!");
     // Build a packet
     packet_information_t frame = CREATE_PACKET_RESPONSE(SYSTEM_TIME, HASHMAP_SYSTEM, PACKET_REQUEST);
+
+    // Build a packet
+    packet_information_t frame_gpio = CREATE_PACKET_RESPONSE(PERIPHERALS_GPIO_ALL, HASHMAP_PERIPHERALS, PACKET_REQUEST);
+
     // Add packet in the frame
-    if(mSerial->addFrame(frame)->sendList())
+    if(mSerial->addFrame(frame)->addFrame(frame_gpio)->sendList())
     {
         ROS_DEBUG_STREAM("Request Diagnostic COMPLETED");
     }
@@ -67,11 +75,11 @@ void GenericInterface::run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
     stat.add("Version", code_version);
     stat.add("Build", code_date);
 
-    stat.add("Idle (%)", (int) msg.idle);
-    stat.add("ADC (nS)", (int) msg.ADC);
-    stat.add("LED (nS)", (int) msg.led);
-    stat.add("Serial parser (nS)", (int) msg.serial_parser);
-    stat.add("I2C (nS)", (int) msg.I2C);
+    stat.add("Idle (%)", (int) msg_system.idle);
+    stat.add("ADC (nS)", (int) msg_system.ADC);
+    stat.add("LED (nS)", (int) msg_system.led);
+    stat.add("Serial parser (nS)", (int) msg_system.serial_parser);
+    stat.add("I2C (nS)", (int) msg_system.I2C);
 
     stat.summary(diagnostic_msgs::DiagnosticStatus::OK, "Board ready!");
 }
@@ -81,7 +89,16 @@ void GenericInterface::connectCallback(const ros::SingleSubscriberPublisher& pub
 }
 
 void GenericInterface::peripheralFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
-    ROS_WARN_STREAM("Frame [Option: " << option << ", HashMap: " << type << ", Command: " << command << "]");
+    ROS_DEBUG_STREAM("Frame [Option: " << option << ", HashMap: " << type << ", Command: " << (int) command << "]");
+    switch(command)
+    {
+    case PERIPHERALS_GPIO_ALL:
+        ROS_INFO_STREAM("Data: " << (int) message.gpio.port.port);
+        break;
+    default:
+        ROS_ERROR_STREAM("Peripheral message \""<< command << "\"=(" << (int) command << ")" << " does not implemented!");
+        break;
+    }
 }
 
 void GenericInterface::systemFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
@@ -103,14 +120,14 @@ void GenericInterface::systemFrame(unsigned char option, unsigned char type, uns
         code_board_name = string((char*)message.system.service);
         break;
     case SYSTEM_TIME:
-        msg.idle = message.system.time.idle;
-        msg.ADC = message.system.time.adc;
-        msg.led = message.system.time.led;
-        msg.serial_parser = message.system.time.parser;
-        msg.I2C = message.system.time.i2c;
+        msg_system.idle = message.system.time.idle;
+        msg_system.ADC = message.system.time.adc;
+        msg_system.led = message.system.time.led;
+        msg_system.serial_parser = message.system.time.parser;
+        msg_system.I2C = message.system.time.i2c;
         // publish a message
-        msg.header.stamp = ros::Time::now();
-        pub_time.publish(msg);
+        msg_system.header.stamp = ros::Time::now();
+        pub_time.publish(msg_system);
         break;
     default:
         ROS_ERROR_STREAM("System message \""<< command << "\"=(" << (int) command << ")" << " does not implemented!");

@@ -51,6 +51,7 @@ add_message_files(
     BoardTime.msg
     ControlStatus.msg
     MotorStatus.msg
+    Peripheral.msg
 )
 
 ## Generate services in the 'srv' folder

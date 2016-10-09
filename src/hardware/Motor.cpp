@@ -18,7 +18,7 @@ Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, string
     , mSerial(serial)
     , mName("motor_" + to_string(number))
 {
-    command.bitset.motor = number;
+    motor_command.bitset.motor = number;
     mNumber = number;
 
     mMotorName = name;
@@ -43,9 +43,9 @@ void Motor::initializeMotor()
 {
     // Send information about the state of the robot
     // Set type of command
-    command.bitset.command = MOTOR_STATE;
+    motor_command.bitset.command = MOTOR_STATE;
     // Build a packet
-    packet_information_t frame = CREATE_PACKET_RESPONSE(command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
+    packet_information_t frame = CREATE_PACKET_RESPONSE(motor_command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
     mSerial->addFrame(frame);
 
     pid_velocity->initConfigurator();
@@ -111,11 +111,11 @@ void Motor::setupLimits(urdf::Model model)
     constraint.current = MOTOR_CONTROL_MAX;
 
     // Set type of command
-    command.bitset.command = MOTOR_CONSTRAINT;
+    motor_command.bitset.command = MOTOR_CONSTRAINT;
     // Build a packet
     message_abstract_u temp;
     temp.motor.motor = constraint;
-    packet_information_t frame = CREATE_PACKET_DATA(command.command_message, HASHMAP_MOTOR, temp);
+    packet_information_t frame = CREATE_PACKET_DATA(motor_command.command_message, HASHMAP_MOTOR, temp);
     // Add packet in the frame
     mSerial->addFrame(frame);
 
@@ -129,9 +129,9 @@ void Motor::setupLimits(urdf::Model model)
 void Motor::run(diagnostic_updater::DiagnosticStatusWrapper &stat)
 {
     // Set type of command
-    command.bitset.command = MOTOR_DIAGNOSTIC;
+    motor_command.bitset.command = MOTOR_DIAGNOSTIC;
     // Build a packet
-    packet_information_t frame = CREATE_PACKET_RESPONSE(command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
+    packet_information_t frame = CREATE_PACKET_RESPONSE(motor_command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
     // Add packet in the frame
     if(mSerial->addFrame(frame)->sendList())
     {
@@ -300,17 +300,17 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
 void Motor::addRequestMeasure()
 {
     // Set type of command
-    command.bitset.command = MOTOR_MEASURE;
+    motor_command.bitset.command = MOTOR_MEASURE;
     // Build a packet
-    packet_information_t frame_measure = CREATE_PACKET_RESPONSE(command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
+    packet_information_t frame_measure = CREATE_PACKET_RESPONSE(motor_command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
     // Motor control
-    command.bitset.command = MOTOR_CONTROL;
+    motor_command.bitset.command = MOTOR_CONTROL;
     // Build a packet
-    packet_information_t frame_control = CREATE_PACKET_RESPONSE(command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
+    packet_information_t frame_control = CREATE_PACKET_RESPONSE(motor_command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
     // Motor control
-    command.bitset.command = MOTOR_REFERENCE;
+    motor_command.bitset.command = MOTOR_REFERENCE;
     // Build a packet
-    packet_information_t frame_reference = CREATE_PACKET_RESPONSE(command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
+    packet_information_t frame_reference = CREATE_PACKET_RESPONSE(motor_command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
     // Add packet in the frame
     mSerial->addFrame(frame_measure)->addFrame(frame_control)->addFrame(frame_reference)->sendList();
 }
@@ -318,11 +318,11 @@ void Motor::addRequestMeasure()
 void Motor::resetPosition(double position)
 {
     // Set type of command
-    command.bitset.command = MOTOR_POS_RESET;
+    motor_command.bitset.command = MOTOR_POS_RESET;
     // Build a packet
     message_abstract_u temp;
     temp.motor.reference = static_cast<motor_control_t>(position*1000.0);
-    packet_information_t frame = CREATE_PACKET_DATA(command.command_message, HASHMAP_MOTOR, temp);
+    packet_information_t frame = CREATE_PACKET_DATA(motor_command.command_message, HASHMAP_MOTOR, temp);
     // Add packet in the frame
     mSerial->addFrame(frame);
 }
@@ -348,11 +348,11 @@ void Motor::switchController(string type)
     mState = get_state(type);
 
     // Set type of command
-    command.bitset.command = MOTOR_STATE;
+    motor_command.bitset.command = MOTOR_STATE;
     // Build a packet
     message_abstract_u temp;
     temp.motor.state = mState;
-    packet_information_t frame = CREATE_PACKET_DATA(command.command_message, HASHMAP_MOTOR, temp);
+    packet_information_t frame = CREATE_PACKET_DATA(motor_command.command_message, HASHMAP_MOTOR, temp);
     // Add packet in the frame
     mSerial->addFrame(frame);
 }
@@ -366,11 +366,11 @@ void Motor::writeCommandsToHardware(ros::Duration period)
         // Note: one can also enforce limits on a per-handle basis: handle.enforceLimits(period)
         vel_limits_interface.enforceLimits(period);
         // Set type of command
-        command.bitset.command = MOTOR_VEL_REF;
+        motor_command.bitset.command = MOTOR_VEL_REF;
         break;
     case STATE_CONTROL_CURRENT:
         // Set type of command
-        command.bitset.command = MOTOR_CURRENT_REF;
+        motor_command.bitset.command = MOTOR_CURRENT_REF;
         break;
     case STATE_CONTROL_DISABLE:
         // Does not send any command
@@ -393,7 +393,7 @@ void Motor::writeCommandsToHardware(ros::Duration period)
     // Build a packet
     message_abstract_u temp;
     temp.motor.reference = reference;
-    packet_information_t frame = CREATE_PACKET_DATA(command.command_message, HASHMAP_MOTOR, temp);
+    packet_information_t frame = CREATE_PACKET_DATA(motor_command.command_message, HASHMAP_MOTOR, temp);
     // Add packet in the frame
     mSerial->addFrame(frame);
 

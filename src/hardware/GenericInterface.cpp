@@ -11,7 +11,9 @@ GenericInterface::GenericInterface(const ros::NodeHandle &nh, const ros::NodeHan
     , serial_status(true)
     , code_date("Unknown"), code_version("Unknown"), code_author("Unknown"), code_board_type("Unknown"), code_board_name("Unknown")
 {
-    bool initCallback = mSerial->addCallback(&GenericInterface::systemFrame, this, HASHMAP_SYSTEM);
+    bool initsystemCallback = mSerial->addCallback(&GenericInterface::systemFrame, this, HASHMAP_SYSTEM);
+
+    bool initgpioCallback = mSerial->addCallback(&GenericInterface::peripheralFrame, this, HASHMAP_PERIPHERALS);
 
     //Publisher
     pub_time = private_mNh.advertise<orbus_interface::BoardTime>("system", 10,
@@ -76,6 +78,10 @@ void GenericInterface::run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
 
 void GenericInterface::connectCallback(const ros::SingleSubscriberPublisher& pub) {
     ROS_INFO("Connect: %s - %s", pub.getSubscriberName().c_str(), pub.getTopic().c_str());
+}
+
+void GenericInterface::peripheralFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
+    ROS_WARN_STREAM("Frame [Option: " << option << ", HashMap: " << type << ", Command: " << command << "]");
 }
 
 void GenericInterface::systemFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {

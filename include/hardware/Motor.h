@@ -82,7 +82,7 @@ private:
     orbus_interface::ControlStatus msg_reference, msg_measure, msg_control;
 
     // Number message
-    motor_command_map_t command;
+    motor_command_map_t motor_command;
     /// Load all configurators
     MotorPIDConfigurator *pid_velocity, *pid_current;
     MotorParamConfigurator *parameter;

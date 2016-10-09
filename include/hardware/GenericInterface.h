@@ -37,7 +37,23 @@ protected:
     //Name of device
     string code_date, code_version, code_author, code_board_type, code_board_name;
 private:
+    /**
+     * @brief systemFrame
+     * @param option
+     * @param type
+     * @param command
+     * @param message
+     */
     void systemFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
+
+    /**
+     * @brief peripheralFrame
+     * @param option
+     * @param type
+     * @param command
+     * @param message
+     */
+    void peripheralFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
 
     /**
      * @brief service_Callback Internal service to require information from the board connected

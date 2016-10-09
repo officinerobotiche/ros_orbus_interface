@@ -70,7 +70,7 @@ private:
     double position;
     double velocity;
     double effort;
-    double velocity_command;
+    double command;
 
     /// ROS joint limits interface
     joint_limits_interface::VelocityJointSoftLimitsInterface vel_limits_interface;

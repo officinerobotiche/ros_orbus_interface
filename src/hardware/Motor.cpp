@@ -13,7 +13,7 @@ namespace ORInterface
 Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, string name, unsigned int number)
     : DiagnosticTask("motor_" + to_string(number) + "_status")
     , joint_state_handle(name, &position, &velocity, &effort)
-    , joint_handle(joint_state_handle, &velocity_command)
+    , joint_handle(joint_state_handle, &command)
     , mNh(nh)
     , mSerial(serial)
     , mName("motor_" + to_string(number))
@@ -377,7 +377,7 @@ void Motor::writeCommandsToHardware(ros::Duration period)
         return;
     }
 
-    long long int reference_long = static_cast<long long int>(velocity_command*1000.0);
+    long long int reference_long = static_cast<long long int>(command*1000.0);
     motor_control_t reference;
     // >>>>> Saturation on 32 bit values
     if(reference_long > MOTOR_CONTROL_MAX) {

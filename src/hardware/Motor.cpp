@@ -77,12 +77,12 @@ void Motor::setupLimits(urdf::Model model)
     const bool urdf_soft_limits_ok = getSoftJointLimits(urdf_joint, soft_limits);
 
     if(urdf_limits_ok) {
-        ROS_INFO_STREAM("LOAD [" << mMotorName << "] limits from URDF: |" << limits.max_velocity << "| rad/s");
+        ROS_INFO_STREAM("LOAD [" << mMotorName << "] limits from URDF: |" << limits.max_velocity << "| rad/s & |" << limits.max_effort << "| Nm");
         state = false;
     }
 
     if(urdf_soft_limits_ok) {
-        ROS_INFO_STREAM("LOAD [" << mMotorName << "] soft limits from URDF: |" << limits.max_velocity << "| rad/s");
+        ROS_INFO_STREAM("LOAD [" << mMotorName << "] soft limits from URDF: |" << limits.max_velocity << "| rad/s & |" << limits.max_effort << "| Nm");
         state = false;
     }
 
@@ -91,7 +91,7 @@ void Motor::setupLimits(urdf::Model model)
     // Limits not specified in the parameter server preserve their existing values
     const bool rosparam_limits_ok = getJointLimits(mMotorName, mNh, limits);
     if(rosparam_limits_ok) {
-        ROS_WARN_STREAM("OVERLOAD [" << mMotorName << "] limits from ROSPARAM: |" << limits.max_velocity << "| rad/s");
+        ROS_WARN_STREAM("OVERLOAD [" << mMotorName << "] limits from ROSPARAM: |" << limits.max_velocity << "| rad/s & |" << limits.max_effort << "| Nm");
         state = false;
     }
     else
@@ -101,7 +101,7 @@ void Motor::setupLimits(urdf::Model model)
     // If does not read any parameter from URDF or rosparm load default parameter
     if(state)
     {
-        ROS_WARN_STREAM("LOAD [" << mMotorName << "] with DEFAULT limit = |" << limits.max_velocity << "| rad/s");
+        ROS_WARN_STREAM("LOAD [" << mMotorName << "] with DEFAULT limit = |" << limits.max_velocity << "| rad/s & |" << limits.max_effort << "| Nm");
     }
 
     // Send joint limits information to board

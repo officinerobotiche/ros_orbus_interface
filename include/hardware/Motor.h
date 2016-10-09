@@ -46,7 +46,7 @@ public:
 
     void setupLimits(urdf::Model model);
 
-    string mMotorName;
+
 
     hardware_interface::JointStateHandle joint_state_handle;
     hardware_interface::JointHandle joint_handle;
@@ -63,7 +63,7 @@ private:
     // Serial controller communication
     orbus::serial_controller *mSerial;
     // Name of the motor
-    string mName;
+    string mMotorName;
     unsigned int mNumber;
     // State of the motor
     motor_state_t mState;

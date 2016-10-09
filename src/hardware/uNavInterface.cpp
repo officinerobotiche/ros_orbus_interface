@@ -15,22 +15,23 @@ uNavInterface::uNavInterface(const ros::NodeHandle &nh, const ros::NodeHandle &p
     /// Added all callback to receive information about messages
     bool initCallback = mSerial->addCallback(&uNavInterface::allMotorsFrame, this, HASHMAP_MOTOR);
 
+   std::vector<std::string> joint_list;
+   if(private_nh.hasParam("joint"))
+   {
+       private_nh.getParam("joint", joint_list);
+   }
+   else
+   {
+       ROS_WARN("No joint list!");
+       joint_list.push_back("joint_0");
+       joint_list.push_back("joint_1");
+       private_nh.setParam("joint", joint_list);
+   }
+
     // Initialize Joints
-    #define NUM_MOTORS 2
-    for(unsigned i=0; i < NUM_MOTORS; i++)
+    for(unsigned i=0; i < joint_list.size(); ++i)
     {
-        string name = "motor_" + to_string(i);
-        string motor_name;
-        //Initialize the name of the motor
-        if(private_nh.hasParam(name + "/name_joint"))
-        {
-            private_nh.getParam(name + "/name_joint", motor_name);
-        }
-        else
-        {
-            private_nh.setParam(name + "/name_joint", name);
-            motor_name = name;
-        }
+        string motor_name = joint_list.at(i);
         ROS_INFO_STREAM("Motor name: " << motor_name);
         mMotor[motor_name] = new Motor(private_mNh, serial, motor_name, i);
         mMotorName.push_back(motor_name);

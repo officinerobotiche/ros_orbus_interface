@@ -11,31 +11,30 @@ namespace ORInterface
 {
 
 Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, string name, unsigned int number)
-    : DiagnosticTask("motor_" + to_string(number) + "_status")
+    : DiagnosticTask(name + "_status")
     , joint_state_handle(name, &position, &velocity, &effort)
     , joint_handle(joint_state_handle, &command)
     , mNh(nh)
     , mSerial(serial)
-    , mName("motor_" + to_string(number))
 {
     motor_command.bitset.motor = number;
     mNumber = number;
 
     mMotorName = name;
 
-    pid_velocity = new MotorPIDConfigurator(nh, serial, mName, "velocity", MOTOR_VEL_PID, number);
-    pid_current = new MotorPIDConfigurator(nh, serial, mName, "current", MOTOR_CURRENT_PID, number);
-    parameter = new MotorParamConfigurator(nh, serial, mName, number);
-    emergency = new MotorEmergencyConfigurator(nh, serial, mName, number);
-    diagnostic_current = new MotorDiagnosticConfigurator(nh, serial, mName, "current", number);
-    diagnostic_temperature = new MotorDiagnosticConfigurator(nh, serial, mName, "temperature", number);
+    pid_velocity = new MotorPIDConfigurator(nh, serial, mMotorName, "velocity", MOTOR_VEL_PID, number);
+    pid_current = new MotorPIDConfigurator(nh, serial, mMotorName, "current", MOTOR_CURRENT_PID, number);
+    parameter = new MotorParamConfigurator(nh, serial, mMotorName, number);
+    emergency = new MotorEmergencyConfigurator(nh, serial, mMotorName, number);
+    diagnostic_current = new MotorDiagnosticConfigurator(nh, serial, mMotorName, "current", number);
+    diagnostic_temperature = new MotorDiagnosticConfigurator(nh, serial, mMotorName, "temperature", number);
 
     // Add a status motor publisher
-    pub_status = mNh.advertise<orbus_interface::MotorStatus>(mName + "/status", 10);
+    pub_status = mNh.advertise<orbus_interface::MotorStatus>(mMotorName + "/status", 10);
 
-    pub_reference = mNh.advertise<orbus_interface::ControlStatus>(mName + "/reference", 10);
-    pub_measure = mNh.advertise<orbus_interface::ControlStatus>(mName + "/measure", 10);
-    pub_control = mNh.advertise<orbus_interface::ControlStatus>(mName + "/control", 10);
+    pub_reference = mNh.advertise<orbus_interface::ControlStatus>(mMotorName + "/reference", 10);
+    pub_measure = mNh.advertise<orbus_interface::ControlStatus>(mMotorName + "/measure", 10);
+    pub_control = mNh.advertise<orbus_interface::ControlStatus>(mMotorName + "/control", 10);
 
 }
 
@@ -206,7 +205,7 @@ string Motor::convert_status(motor_state_t status)
 
 void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char command, motor_frame_u frame)
 {
-    ROS_DEBUG_STREAM("Motor decode " << mName );
+    ROS_DEBUG_STREAM("Motor decode " << mMotorName );
     switch(command)
     {
     case MOTOR_MEASURE:

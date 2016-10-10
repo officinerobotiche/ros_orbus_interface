@@ -242,7 +242,7 @@ void GenericInterface::gpio_subscriber_Callback(const orbus_interface::Periphera
             port.port += BIT_MASK(i);
         }
     }
-    ROS_INFO_STREAM("Gpio: " << port.port);
+    //ROS_INFO_STREAM("Gpio: " << port.port);
 
     peripheral_gpio_map_t gpio;
     gpio.bitset.command = PERIPHERALS_GPIO_DIGITAL;

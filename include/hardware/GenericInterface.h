@@ -59,6 +59,8 @@ private:
 
     void initGPIO();
 
+    void setupGPIO(std::vector<int> gpio_list);
+
     void convertGPIO(peripherals_gpio_port_t data);
 
     /**

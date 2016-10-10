@@ -57,12 +57,60 @@ GenericInterface::GenericInterface(const ros::NodeHandle &nh, const ros::NodeHan
 
 void GenericInterface::initGPIO()
 {
-    std::vector<uint8_t> gpio_list;
+    std::vector<int> gpio_list;
     if(private_mNh.hasParam("gpio"))
     {
         private_mNh.getParam("gpio", gpio_list);
+        setupGPIO(gpio_list);
     }
+}
 
+void GenericInterface::setupGPIO(std::vector<int> gpio_list)
+{
+    peripheral_gpio_map_t gpio;
+    gpio.bitset.command = PERIPHERALS_GPIO_SET;
+    gpio.bitset.port = 1;
+
+    peripherals_gpio_port_t input, output;
+    input.port = 0;
+    output.port = 0;
+    unsigned int counter_input = 0, counter_output = 0;
+
+    for(unsigned i=0; i < gpio_list.size(); ++i)
+    {
+        switch(gpio_list.at(i))
+        {
+        case PERIPHERAL_GPIO_OUTPUT:
+            output.port += BIT_MASK(i);
+            counter_output++;
+            break;
+        case PERIPHERAL_GPIO_INPUT:
+            input.port += BIT_MASK(i);
+            counter_input++;
+            break;
+        default:
+            input.port += BIT_MASK(i);
+            counter_input++;
+            break;
+        }
+
+    }
+    ROS_INFO_STREAM("Port config INPUT n=" << counter_input << " - OUTPUT n=" << counter_output);
+    // Build a packet
+    message_abstract_u temp_input;
+    temp_input.gpio.set.port.len = input.len;
+    temp_input.gpio.set.port.port = input.port;
+    temp_input.gpio.set.type = PERIPHERAL_GPIO_INPUT;
+    packet_information_t frame_input = CREATE_PACKET_DATA(gpio.message, HASHMAP_PERIPHERALS, temp_input);
+
+    message_abstract_u temp_output;
+    temp_output.gpio.set.port.len = output.len;
+    temp_output.gpio.set.port.port = output.port;
+    temp_output.gpio.set.type = PERIPHERAL_GPIO_OUTPUT;
+    packet_information_t frame_output = CREATE_PACKET_DATA(gpio.message, HASHMAP_PERIPHERALS, temp_output);
+
+    // Update and send list configuration GPIO
+    mSerial->addFrame(frame_input)->addFrame(frame_output)->sendList();
 }
 
 void GenericInterface::initializeDiagnostic()
@@ -135,6 +183,12 @@ void GenericInterface::peripheralFrame(unsigned char option, unsigned char type,
         // publish a message
         msg_peripheral.header.stamp = ros::Time::now();
         pub_peripheral.publish(msg_peripheral);
+        break;
+    case PERIPHERALS_GPIO_SET:
+        if(option == PACKET_DATA)
+        {
+            ROS_INFO_STREAM("GPIO SET Data");
+        }
         break;
     default:
         ROS_ERROR_STREAM("Peripheral message \""<< command << "\"=(" << (int) command << ")" << " does not implemented!");
@@ -216,57 +270,29 @@ int GenericInterface::binary_decimal(int n) /* Function to convert binary to dec
 }
 
 bool GenericInterface::gpio_Callback(orbus_interface::GPIO::Request &req, orbus_interface::GPIO::Response &msg) {
-    smatch result;
-    regex port_type("[[:alpha:]]{1}-((0x|0b)?[[:digit:]]+)");
-    regex_search(req.port, result, port_type);
 
-    string data = result[0].str();
-
-    if(!data.empty())
+    if(req.gpio.size() > 0)
     {
-
-        regex port_number("(0x|0b)?[[:digit:]]+");
-        regex_search(data, result, port_number);
-
-        string str_number = result[0].str();
-
-        if(!str_number.empty())
+        std::vector<int> gpio_list;
+        vector<unsigned char> data = req.gpio;
+        for(unsigned i=0; i < data.size(); ++i)
         {
-            regex port_binary("0b");
-            regex_search(str_number, result, port_binary);
-            uint16_t number;
-            if(result[0].str().empty())
-            {
-                number = std::stoi(str_number,nullptr,0);
-
-            }
-            else
-            {
-                number = std::stoi(str_number,nullptr,2);
-            }
-
-            //ROS_INFO_STREAM("Number " << number);
-            msg.information = "\nNew configuration: " + str_number;
-
-            peripheral_gpio_map_t gpio;
-            gpio.bitset.command = PERIPHERALS_GPIO_DIGITAL;
-            gpio.bitset.port = 1;
-            // Build a packet
-            message_abstract_u temp;
-            temp.gpio.port.port = number;
-            packet_information_t frame = CREATE_PACKET_DATA(gpio.message, HASHMAP_PERIPHERALS, temp);
-            // Send new configuration
-            mSerial->addFrame(frame)->sendList();
-
-            return true;
+            int number = (int) data.at(i);
+            //ROS_INFO_STREAM("Data: " << number);
+            gpio_list.push_back(number);
         }
-
+        setupGPIO(gpio_list);
+        msg.information = "Setup ok!";
     }
-    msg.information = "\nUsage: N-PORT...\n"
-                      "PORT is the input value for your port\n"
-                      "0 for LOW level\n"
-                      "1 for HIGH level\n"
-                      "Example: N-0xFF";
+    else
+    {
+        msg.information = "\nUsage: [X,X,...,X]\n"
+                          "PORT is the input value for your port\n"
+                          "0 for OUTOUT level\n"
+                          "1 for INPUT level\n"
+                          "Example: [1,0,1,1,1]";
+    }
+
     return true;
 }
 

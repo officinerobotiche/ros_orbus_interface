@@ -57,6 +57,8 @@ private:
      */
     void peripheralFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
 
+    void initGPIO();
+
     void convertGPIO(peripherals_gpio_port_t data);
 
     /**
@@ -69,6 +71,8 @@ private:
 
     bool gpio_Callback(orbus_interface::GPIO::Request &req, orbus_interface::GPIO::Response &msg_system);
 
+    void gpio_subscriber_Callback(const orbus_interface::Peripheral::ConstPtr& msg);
+
     int binary_decimal(int n);
 
     // Service board
@@ -76,6 +80,8 @@ private:
     // time execution functions
     ros::Publisher pub_time;
     ros::Publisher pub_peripheral;
+    // Subscriber peripherals
+    ros::Subscriber sub_peripheral;
     // Message for pubblisher
     orbus_interface::BoardTime msg_system;
     orbus_interface::Peripheral msg_peripheral;

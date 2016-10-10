@@ -26,9 +26,12 @@ GenericInterface::GenericInterface(const ros::NodeHandle &nh, const ros::NodeHan
 
     pub_peripheral = private_mNh.advertise<orbus_interface::Peripheral>("peripheral", 10,
                 boost::bind(&GenericInterface::connectCallback, this, _1));
+    //Subscriber
+    sub_peripheral = private_mNh.subscribe("cmd_peripheral", 1, &GenericInterface::gpio_subscriber_Callback, this);
 
     //Services
     srv_board = private_mNh.advertiseService("system", &GenericInterface::service_Callback, this);
+
     // GPIO
     srv_gpio = private_mNh.advertiseService("gpio", &GenericInterface::gpio_Callback, this);
 
@@ -47,9 +50,23 @@ GenericInterface::GenericInterface(const ros::NodeHandle &nh, const ros::NodeHan
     {
         ROS_ERROR_STREAM("Any messages from board");
     }
+
+    // Initialize all GPIO
+    initGPIO();
 }
 
-void GenericInterface::initializeDiagnostic() {
+void GenericInterface::initGPIO()
+{
+    std::vector<uint8_t> gpio_list;
+    if(private_mNh.hasParam("gpio"))
+    {
+        private_mNh.getParam("gpio", gpio_list);
+    }
+
+}
+
+void GenericInterface::initializeDiagnostic()
+{
 
     ROS_INFO_STREAM("Name board: " << code_board_name << " - " << code_version);
     diagnostic_updater.setHardwareID(code_board_name);
@@ -159,6 +176,32 @@ void GenericInterface::systemFrame(unsigned char option, unsigned char type, uns
     }
 }
 
+void GenericInterface::gpio_subscriber_Callback(const orbus_interface::Peripheral::ConstPtr& msg)
+{
+    peripherals_gpio_port_t port;
+    port.port = 0;
+    port.len = (msg->gpio.size() > 16 ? 16 : msg->gpio.size());
+    for(unsigned i=0; i < port.len; ++i)
+    {
+        if(msg->gpio.at(i) > 0)
+        {
+            port.port += BIT_MASK(i);
+        }
+    }
+    ROS_INFO_STREAM("Gpio: " << port.port);
+
+    peripheral_gpio_map_t gpio;
+    gpio.bitset.command = PERIPHERALS_GPIO_DIGITAL;
+    gpio.bitset.port = 1;
+    // Build a packet
+    message_abstract_u temp;
+    temp.gpio.port.len = port.len;
+    temp.gpio.port.port = port.port;
+    packet_information_t frame = CREATE_PACKET_DATA(gpio.message, HASHMAP_PERIPHERALS, temp);
+    // Send new configuration
+    mSerial->addFrame(frame)->sendList();
+}
+
 int GenericInterface::binary_decimal(int n) /* Function to convert binary to decimal.*/
 {
     int decimal=0, i=0, rem;
@@ -212,7 +255,7 @@ bool GenericInterface::gpio_Callback(orbus_interface::GPIO::Request &req, orbus_
             message_abstract_u temp;
             temp.gpio.port.port = number;
             packet_information_t frame = CREATE_PACKET_DATA(gpio.message, HASHMAP_PERIPHERALS, temp);
-            // Send new configurationW
+            // Send new configuration
             mSerial->addFrame(frame)->sendList();
 
             return true;

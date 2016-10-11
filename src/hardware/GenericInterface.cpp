@@ -179,10 +179,13 @@ void GenericInterface::peripheralFrame(unsigned char option, unsigned char type,
     switch(peripheral.bitset.command)
     {
     case PERIPHERALS_GPIO_DIGITAL:
-        convertGPIO(message.gpio.port);
-        // publish a message
-        msg_peripheral.header.stamp = ros::Time::now();
-        pub_peripheral.publish(msg_peripheral);
+        if(option == PACKET_DATA)
+        {
+            convertGPIO(message.gpio.port);
+            // publish a message
+            msg_peripheral.header.stamp = ros::Time::now();
+            pub_peripheral.publish(msg_peripheral);
+        }
         break;
     case PERIPHERALS_GPIO_SET:
         if(option == PACKET_DATA)

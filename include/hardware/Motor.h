@@ -66,7 +66,7 @@ private:
     string mMotorName;
     unsigned int mNumber;
     // State of the motor
-    motor_state_t mState;
+    motor_state_t mState, mDiagnosticState;
     double position;
     double velocity;
     double effort;

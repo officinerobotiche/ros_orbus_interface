@@ -151,10 +151,19 @@ void Motor::run(diagnostic_updater::DiagnosticStatusWrapper &stat)
 
     stat.add("Position (deg)", ((double)msg_measure.position) * 180.0/M_PI);
     stat.add("Velociy (RPM)", ((double)msg_measure.velocity) * (30.0 / M_PI));
-    stat.add("Current (A)", msg_measure.current);
+    stat.add("Current (A)", fabs(msg_measure.current));
     stat.add("Torque (Nm)", msg_measure.effort);
 
     stat.summary(diagnostic_msgs::DiagnosticStatus::OK, "Motor Ready!");
+
+    if(mDiagnosticState < STATE_CONTROL_DISABLE)
+    {
+        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::ERROR, "%s control", msg_status.state.c_str());
+    }
+    else
+    {
+        stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::OK, "%s", msg_status.state.c_str());
+    }
 
     if (msg_status.temperature > diagnostic_temperature->levels.critical)
     {
@@ -169,11 +178,11 @@ void Motor::run(diagnostic_updater::DiagnosticStatusWrapper &stat)
         stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::OK, "Temperature OK: %5.2f °C", msg_status.temperature);
     }
 
-    if (msg_measure.current > diagnostic_current->levels.critical)
+    if (fabs(msg_measure.current) > diagnostic_current->levels.critical)
     {
         stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::ERROR, "Critical current: %5.2f > %5.2f A", msg_measure.current, diagnostic_current->levels.critical);
     }
-    else if (msg_measure.current > diagnostic_current->levels.warning)
+    else if (fabs(msg_measure.current) > diagnostic_current->levels.warning)
     {
         stat.mergeSummaryf(diagnostic_msgs::DiagnosticStatus::WARN, "Current over %5.2f > %5.2f A", msg_measure.current, diagnostic_current->levels.warning);
     }
@@ -187,6 +196,8 @@ string Motor::convert_status(motor_state_t status)
 {
     switch(status)
     {
+    case STATE_CONTROL_SAFETY:
+        return "Safety";
     case STATE_CONTROL_EMERGENCY:
         return "Emergency";
     case STATE_CONTROL_DISABLE:
@@ -244,6 +255,7 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
         pub_reference.publish(msg_reference);
         break;
     case MOTOR_DIAGNOSTIC:
+        mDiagnosticState = frame.diagnostic.state;
         msg_status.state = convert_status(frame.diagnostic.state);
         msg_status.watt = (frame.diagnostic.watt/1000.0); /// in W
         msg_status.time_execution = frame.diagnostic.time_control;
@@ -258,6 +270,8 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
         {
             mState = frame.state;
             //ROS_INFO_STREAM("Motor state: " << convert_status(mState));
+        } else if(option != PACKET_ACK) {
+            ROS_ERROR_STREAM("ERROR "<< option << " Motor[" << mNumber << "] message \""<< command << "\"=(" << (int) command << ")");
         }
         break;
     case MOTOR_VEL_PID:
@@ -265,6 +279,8 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
         {
             ROS_INFO_STREAM("Velocity PID frame");
             pid_velocity->setParam(frame.pid);
+        } else if(option != PACKET_ACK) {
+            ROS_ERROR_STREAM("ERROR "<< option << " Motor[" << mNumber << "] message \""<< command << "\"=(" << (int) command << ")");
         }
         break;
     case MOTOR_CURRENT_PID:
@@ -272,6 +288,8 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
         {
             ROS_INFO_STREAM("Current PID frame");
             pid_current->setParam(frame.pid);
+        } else if(option != PACKET_ACK) {
+            ROS_ERROR_STREAM("ERROR "<< option << " Motor[" << mNumber << "] message \""<< command << "\"=(" << (int) command << ")");
         }
         break;
     case MOTOR_EMERGENCY:
@@ -279,6 +297,8 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
         {
             ROS_INFO_STREAM("Emergency frame");
             emergency->setParam(frame.emergency);
+        } else if(option != PACKET_ACK) {
+            ROS_ERROR_STREAM("ERROR "<< option << " Motor[" << mNumber << "] message \""<< command << "\"=(" << (int) command << ")");
         }
         break;
     case MOTOR_PARAMETER:
@@ -286,6 +306,8 @@ void Motor::motorFrame(unsigned char option, unsigned char type, unsigned char c
         {
             ROS_INFO_STREAM("Parameter frame");
             parameter->setParam(frame.parameter);
+        } else if(option != PACKET_ACK) {
+            ROS_ERROR_STREAM("ERROR "<< option << " Motor[" << mNumber << "] message \""<< command << "\"=(" << (int) command << ")");
         }
         break;
     default:

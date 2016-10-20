@@ -16,9 +16,16 @@ typedef struct _MotorLevels
 class MotorDiagnosticConfigurator : public GenericConfigurator
 {
 public:
-    MotorDiagnosticConfigurator(const ros::NodeHandle &nh, orbus::serial_controller *serial, string path, string name, unsigned int number);
+    MotorDiagnosticConfigurator(const ros::NodeHandle &nh, orbus::serial_controller *serial, string path, string name, unsigned int type, unsigned int number);
 
-    //void initConfigurator();
+    void initConfigurator();
+
+    void setParam(motor_safety_t safety);
+    /**
+     * @brief getParam from ROSPARAM and save in motor_pid_t function
+     * @return t return the motor_safety_t function
+     */
+    motor_safety_t getParam();
 
     MotorLevels levels;
 

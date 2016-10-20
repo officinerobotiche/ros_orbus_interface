@@ -26,8 +26,8 @@ Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, string
     pid_current = new MotorPIDConfigurator(nh, serial, mMotorName, "current", MOTOR_CURRENT_PID, number);
     parameter = new MotorParamConfigurator(nh, serial, mMotorName, number);
     emergency = new MotorEmergencyConfigurator(nh, serial, mMotorName, number);
-    diagnostic_current = new MotorDiagnosticConfigurator(nh, serial, mMotorName, "current", number);
-    diagnostic_temperature = new MotorDiagnosticConfigurator(nh, serial, mMotorName, "temperature", number);
+    diagnostic_current = new MotorDiagnosticConfigurator(nh, serial, mMotorName, "current", MOTOR_SAFETY, number);
+    diagnostic_temperature = new MotorDiagnosticConfigurator(nh, serial, mMotorName, "temperature", 0xFFFF, number);
 
     // Add a status motor publisher
     pub_status = mNh.advertise<orbus_interface::MotorStatus>(mMotorName + "/status", 10);
@@ -51,6 +51,8 @@ void Motor::initializeMotor()
     pid_current->initConfigurator();
     parameter->initConfigurator();
     emergency->initConfigurator();
+    // Initialize ONLY diagnostic current
+    diagnostic_current->initConfigurator();
 }
 
 void Motor::setupLimits(urdf::Model model)

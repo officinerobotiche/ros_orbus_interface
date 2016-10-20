@@ -34,6 +34,8 @@ public:
 
     void write(const ros::Time& time, const ros::Duration& period);
 
+    void read(const ros::Time& time, const ros::Duration& period);
+
     /**
      * @brief initializeMotors
      */
@@ -43,17 +45,6 @@ public:
      * Add all Control Interface availbles and add in diagnostic task
      */
     void initializeInterfaces();
-    /**
-     * @brief updateJointsFromHardware
-     */
-    bool updateJointsFromHardware();
-
-    /**
-     * @brief writeCommandsToHardware
-     * @param period
-     */
-    bool writeCommandsToHardware(ros::Duration period);
-
     /**
      * @brief updateDiagnostics
      */

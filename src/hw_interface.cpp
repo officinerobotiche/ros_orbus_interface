@@ -64,9 +64,9 @@ void controlLoop(uNavInterface &orb,
 
     //ROS_INFO_STREAM("CONTROL - running");
     // Process control loop
-    orb.updateJointsFromHardware();
+    orb.read(ros::Time::now(), elapsed);
     cm.update(ros::Time::now(), elapsed);
-    orb.writeCommandsToHardware(elapsed);
+    orb.write(ros::Time::now(), elapsed);
 }
 
 /**

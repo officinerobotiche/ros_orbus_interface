@@ -71,10 +71,6 @@ void uNavInterface::doSwitch(const std::list<hardware_interface::ControllerInfo>
     }
 }
 
-void uNavInterface::write(const ros::Time& time, const ros::Duration& period) {
-    ROS_INFO_STREAM("Write!");
-}
-
 bool uNavInterface::updateDiagnostics()
 {
     if(serial_status)
@@ -148,8 +144,7 @@ void uNavInterface::initializeInterfaces()
     registerInterface(&velocity_joint_interface);
 }
 
-bool uNavInterface::updateJointsFromHardware()
-{
+void uNavInterface::read(const ros::Time& time, const ros::Duration& period) {
     //ROS_DEBUG_STREAM("Get measure from uNav");
     for( map<string, Motor*>::iterator ii=mMotor.begin(); ii!=mMotor.end(); ++ii)
     {
@@ -158,11 +153,9 @@ bool uNavInterface::updateJointsFromHardware()
     }
     //Send all messages
     //serial_status = mSerial->sendList();
-    return serial_status;
 }
 
-bool uNavInterface::writeCommandsToHardware(ros::Duration period)
-{
+void uNavInterface::write(const ros::Time& time, const ros::Duration& period) {
     //ROS_DEBUG_STREAM("Write command to uNav");
     for( map<string, Motor*>::iterator ii=mMotor.begin(); ii!=mMotor.end(); ++ii)
     {
@@ -171,7 +164,6 @@ bool uNavInterface::writeCommandsToHardware(ros::Duration period)
     }
     //Send all messages
     serial_status = mSerial->sendList();
-    return serial_status;
 }
 
 void uNavInterface::allMotorsFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message)

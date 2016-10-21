@@ -49,8 +49,8 @@ void Motor::initializeMotor()
     // Set type of command
     motor_command.bitset.command = MOTOR_STATE;
     // Build a packet
-    packet_information_t frame = CREATE_PACKET_RESPONSE(motor_command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
-    mSerial->addFrame(frame);
+    packet_information_t frame_state = CREATE_PACKET_RESPONSE(motor_command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
+    mSerial->addFrame(frame_state);
 
     pid_velocity->initConfigurator();
     pid_current->initConfigurator();
@@ -58,9 +58,18 @@ void Motor::initializeMotor()
     emergency->initConfigurator();
     // Initialize ONLY diagnostic current
     diagnostic_current->initConfigurator();
+
+    // Set type of command
+    motor_command.bitset.command = MOTOR_CONSTRAINT;
+    // Build a packet
+    message_abstract_u temp;
+    temp.motor.motor = constraints;
+    packet_information_t frame_constraints = CREATE_PACKET_DATA(motor_command.command_message, HASHMAP_MOTOR, temp);
+    // Add packet in the frame
+    mSerial->addFrame(frame_constraints);
 }
 
-void Motor::updateLimits(double position, double velocity, double effort)
+motor_t Motor::updateLimits(double position, double velocity, double effort)
 {
     // Constraints
     motor_t constraints;
@@ -71,29 +80,19 @@ void Motor::updateLimits(double position, double velocity, double effort)
     constraints.effort = (motor_control_t) (effort * 1000.0);
     constraints.pwm = (motor_control_t) last_config_.PWM;
 
-
     last_config_.position = position;
     last_config_.velocity = velocity;
     last_config_.effort = effort;
 
     dsrv->updateConfig(last_config_);
 
-    ROS_INFO_STREAM("LIMITS param [pos:" << constraints.position << ", vel:" << constraints.velocity << ", curr:" << constraints.current << ", eff:" << constraints.effort <<", PWM:" << constraints.pwm << "]");
+    ROS_DEBUG_STREAM("LIMITS param [pos:" << constraints.position << ", vel:" << constraints.velocity << ", curr:" << constraints.current << ", eff:" << constraints.effort <<", PWM:" << constraints.pwm << "]");
 
-    // Set type of command
-    motor_command.bitset.command = MOTOR_CONSTRAINT;
-    // Build a packet
-    message_abstract_u temp;
-    temp.motor.motor = limits;
-    packet_information_t frame = CREATE_PACKET_DATA(motor_command.command_message, HASHMAP_MOTOR, temp);
-    // Add packet in the frame
-    mSerial->addFrame(frame);
+    return constraints;
 }
 
 void Motor::reconfigureCB(orbus_interface::UnavLimitsConfig &config, uint32_t level)
 {
-    ROS_INFO_STREAM("Reconfigure motor");
-
     //The first time we're called, we just want to make sure we have the
     //original configuration
     if(!setup_)
@@ -114,7 +113,16 @@ void Motor::reconfigureCB(orbus_interface::UnavLimitsConfig &config, uint32_t le
     last_config_ = config;
 
     // Update limits
-    updateLimits(config.position, config.velocity, config.effort);
+    constraints = updateLimits(config.position, config.velocity, config.effort);
+
+    // Set type of command
+    motor_command.bitset.command = MOTOR_CONSTRAINT;
+    // Build a packet
+    message_abstract_u temp;
+    temp.motor.motor = constraints;
+    packet_information_t frame = CREATE_PACKET_DATA(motor_command.command_message, HASHMAP_MOTOR, temp);
+    // Add packet in the frame
+    mSerial->addFrame(frame);
 }
 
 void Motor::setupLimits(urdf::Model model)
@@ -173,7 +181,16 @@ void Motor::setupLimits(urdf::Model model)
         limits.max_position = 6.28;
     }
     // Update limits
-    updateLimits(limits.max_position, limits.max_velocity, limits.max_effort);
+    constraints = updateLimits(limits.max_position, limits.max_velocity, limits.max_effort);
+
+    // Set type of command
+    motor_command.bitset.command = MOTOR_CONSTRAINT;
+    // Build a packet
+    message_abstract_u temp;
+    temp.motor.motor = constraints;
+    packet_information_t frame = CREATE_PACKET_DATA(motor_command.command_message, HASHMAP_MOTOR, temp);
+    // Add packet in the frame
+    mSerial->addFrame(frame);
 
     joint_limits_interface::VelocityJointSoftLimitsHandle handle(joint_handle, // We read the state and read/write the command
                                                                  limits,       // Limits spec

@@ -58,7 +58,7 @@ private:
 
     static motor_state_t get_state(string type);
 
-    void updateLimits(double position, double velocity, double effort);
+    motor_t updateLimits(double position, double velocity, double effort);
 
     void reconfigureCB(orbus_interface::UnavLimitsConfig &config, uint32_t level);
 
@@ -78,6 +78,8 @@ private:
     double effort;
     double command;
 
+    // Constraints
+    motor_t constraints;
     // Reconfigure status
     orbus_interface::UnavLimitsConfig limits;
 

@@ -45,12 +45,12 @@ Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, string
 
 void Motor::initializeMotor()
 {
-    // Send information about the state of the robot
-    // Set type of command
-    motor_command.bitset.command = MOTOR_STATE;
-    // Build a packet
-    packet_information_t frame_state = CREATE_PACKET_RESPONSE(motor_command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
-    mSerial->addFrame(frame_state);
+//    // Send information about the state of the robot
+//    // Set type of command
+//    motor_command.bitset.command = MOTOR_STATE;
+//    // Build a packet
+//    packet_information_t frame_state = CREATE_PACKET_RESPONSE(motor_command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
+//    mSerial->addFrame(frame_state);
 
     pid_velocity->initConfigurator();
     pid_current->initConfigurator();

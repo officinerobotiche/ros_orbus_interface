@@ -120,7 +120,12 @@ int main(int argc, char **argv) {
 
     orbus::serial_controller orbusSerial(serial_port_string, baud_rate);
     // Run the serial controller
-    orbusSerial.start();
+    bool start = orbusSerial.start();
+    if(!start) {
+        ROS_ERROR_STREAM("Error connection, shutting down");
+        ros::shutdown();
+        return 0;
+    }
 
     uNavInterface interface(nh, private_nh, &orbusSerial);
     // Initialize the motor parameters

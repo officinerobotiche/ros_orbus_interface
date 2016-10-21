@@ -13,7 +13,6 @@ GenericInterface::GenericInterface(const ros::NodeHandle &nh, const ros::NodeHan
     , mNh(nh)
     , private_mNh(private_nh)
     , mSerial(serial)
-    , serial_status(true)
     , code_date("Unknown"), code_version("Unknown"), code_author("Unknown"), code_board_type("Unknown"), code_board_name("Unknown")
 {
     bool initsystemCallback = mSerial->addCallback(&GenericInterface::systemFrame, this, HASHMAP_SYSTEM);

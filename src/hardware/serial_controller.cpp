@@ -46,8 +46,18 @@ bool serial_controller::start()
         return false;
     }
 
-    ROS_DEBUG_STREAM( "Serial port ready" );
     mStopping = false;
+
+    if(this->isAlive()){
+        ROS_DEBUG_STREAM("ORBUS Connection started: " << mSerialPort );
+    }
+    else
+    {
+        ROS_ERROR_STREAM("ORBUS does not found: " << mSerialPort );
+        return false;
+    }
+
+    ROS_DEBUG_STREAM( "Serial port ready" );
     return true;
 }
 
@@ -83,12 +93,8 @@ serial_controller* serial_controller::addFrame(packet_information_t packet)
 
 void serial_controller::resetList()
 {
-    //ROS_INFO_STREAM("Status list:" << mStatus);
     mMutex.lock();
-    if(mStatus == SERIAL_BUFFER_FULL) {
-        list_send.clear();
-        mStatus = SERIAL_OK;
-    }
+    list_send.clear();
     mMutex.unlock();
 }
 
@@ -108,6 +114,47 @@ serial_status_t serial_controller::getStatus()
     return mStatus;
 }
 
+bool serial_controller::isAlive()
+{
+    mSerial.flush();
+    return sendSerialFrame(CREATE_PACKET_RESPONSE(0, 0, PACKET_REQUEST));
+}
+
+bool serial_controller::sendSerialFrame(packet_information_t frame)
+{
+    packet_t packet = encoderSingle(frame);
+    // Send the packet in serial and wait the received data
+    packet_t receive = sendSerialPacket(packet);
+    return parse_packet(receive);
+}
+
+bool serial_controller::parse_packet(packet_t receive)
+{
+    if(receive.length > 0)
+    {
+        // Read all frame and if is true send a packet with all new information
+        for (int i = 0; i < receive.length; i += receive.buffer[i]) {
+            packet_information_t info;
+            memcpy((unsigned char*) &info, &receive.buffer[i], receive.buffer[i]);
+            if(info.type == 0)
+            {
+                ROS_DEBUG("Return alive message");
+            }
+            // Check if is available on the hashmap
+            else if (info.type == 0 || hashmap.find(info.type) != hashmap.end())
+            {
+                // Send the message
+                callback_data_packet_t callback = hashmap[info.type];
+                callback(info.option, info.type, info.command, info.message);
+            }
+        }
+        mStatus = SERIAL_OK;
+        return true;
+    }
+    mStatus = SERIAL_EMPTY;
+    return false;
+}
+
 bool serial_controller::sendSerialFrame(vector<packet_information_t> list_send)
 {
     if(list_send.size())
@@ -119,28 +166,13 @@ bool serial_controller::sendSerialFrame(vector<packet_information_t> list_send)
         {
             // Send the packet in serial and wait the received data
             packet_t receive = sendSerialPacket(packet);
-            if(receive.length > 0)
-            {
-                // Read all frame and if is true send a packet with all new information
-                for (int i = 0; i < receive.length; i += receive.buffer[i]) {
-                    packet_information_t info;
-                    memcpy((unsigned char*) &info, &receive.buffer[i], receive.buffer[i]);
-                    // Check if is available on the hashmap
-                    if (hashmap.find(info.type) != hashmap.end())
-                    {
-                        // Send the message
-                        callback_data_packet_t callback = hashmap[info.type];
-                        callback(info.option, info.type, info.command, info.message);
-                    }
-                }
-                mStatus = SERIAL_OK;
-                return true;
-            }
+            // Parse packet
+            return parse_packet(receive);
         }
-        ROS_DEBUG_STREAM("Buffer FULL");
+        ROS_ERROR_STREAM("Buffer FULL");
         mStatus = SERIAL_BUFFER_FULL;
     }
-    return false;
+    return true;
 }
 
 packet_t serial_controller::sendSerialPacket(packet_t packet)

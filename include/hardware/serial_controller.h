@@ -22,6 +22,7 @@ typedef enum serial_status
 {
     SERIAL_OK,
     SERIAL_TIMEOUT,
+    SERIAL_EMPTY,
     SERIAL_BUFFER_FULL,
     SERIAL_IOEXCEPTION,
     SERIAL_EXCEPTION
@@ -72,7 +73,11 @@ public:
 
     serial_status_t getStatus();
 
+    bool isAlive();
+
 protected:
+
+    bool sendSerialFrame(packet_information_t frame);
     /**
      * @brief sendSerialFrame
      * @param list_send
@@ -117,6 +122,12 @@ private:
      * @return if received all data in packet return true
      */
     bool readPacket();
+    /**
+     * @brief parse_packet
+     * @param receive
+     * @return
+     */
+    bool parse_packet(packet_t receive);
 
 private:
     // Serial port object

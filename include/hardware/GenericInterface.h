@@ -32,8 +32,6 @@ protected:
     ros::NodeHandle private_mNh;
     // Serial controller communication
     orbus::serial_controller *mSerial;
-    // Status connection
-    bool serial_status;
     // Diagnostic
     diagnostic_updater::Updater diagnostic_updater;
     //Name of device

@@ -83,11 +83,11 @@ bool uNavInterface::updateDiagnostics()
     else
     {
         ROS_ERROR("Error connection! Try to connect again ...");
-        // Send list of Command
-        serial_status = mSerial->sendList();
-        if(mSerial->getStatus() == orbus::SERIAL_OK)
+        if(mSerial->isAlive())
         {
             ROS_INFO("... connected!");
+            // Reset list
+            mSerial->resetList();
             return true;
         }
     }
@@ -100,10 +100,9 @@ void uNavInterface::initializeMotors()
     {
         (*ii).second->initializeMotor();
         ROS_DEBUG_STREAM("Motor [" << (*ii).first << "] Initialized");
+        // Send list
+        mSerial->sendList();
     }
-
-    // Send list of Command
-    serial_status = mSerial->sendList();
 }
 
 void uNavInterface::initializeInterfaces()
@@ -137,7 +136,7 @@ void uNavInterface::initializeInterfaces()
 
     ROS_INFO_STREAM("Send all Constraint configuration");
     // Send list of Command
-    serial_status = mSerial->sendList();
+    mSerial->sendList();
 
     /// Register interfaces
     registerInterface(&joint_state_interface);
@@ -163,7 +162,7 @@ void uNavInterface::write(const ros::Time& time, const ros::Duration& period) {
         ROS_DEBUG_STREAM("Motor [" << (*ii).first << "] Send commands");
     }
     //Send all messages
-    serial_status = mSerial->sendList();
+    mSerial->sendList();
 }
 
 void uNavInterface::allMotorsFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message)

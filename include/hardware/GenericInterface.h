@@ -24,6 +24,8 @@ public:
 
     void run(diagnostic_updater::DiagnosticStatusWrapper &stat);
 
+    void updateInterface();
+
 protected:
 
     /**
@@ -46,6 +48,8 @@ protected:
     diagnostic_updater::Updater diagnostic_updater;
     //Name of device
     string code_date, code_version, code_author, code_board_type, code_board_name;
+    // List of messages to send to the board
+    vector<packet_information_t> information_frames;
 private:
     /**
      * @brief systemFrame

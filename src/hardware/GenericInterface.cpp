@@ -67,6 +67,22 @@ void GenericInterface::initialize()
     }
 }
 
+void GenericInterface::connectionCallback(const ros::SingleSubscriberPublisher& pub) {
+    ROS_INFO_STREAM("Update: " << pub.getSubscriberName() << " - " << pub.getTopic());
+    // Clear list
+    information_frames.clear();
+    //Check publisher
+    if(pub_peripheral.getNumSubscribers() >= 1)
+    {
+        // Build a packet
+        gpio_map.bitset.port = 1;
+        gpio_map.bitset.command = PERIPHERALS_GPIO_DIGITAL;
+        packet_information_t frame_gpio = CREATE_PACKET_RESPONSE(gpio_map.message, HASHMAP_PERIPHERALS, PACKET_REQUEST);
+        // Add request
+        information_frames.push_back(frame_gpio);
+    }
+}
+
 void GenericInterface::setupGPIO(std::vector<int> gpio_list)
 {
     peripheral_gpio_map_t gpio;
@@ -125,18 +141,20 @@ void GenericInterface::initializeDiagnostic()
     diagnostic_updater.add(*this);
 }
 
+void GenericInterface::updateInterface()
+{
+    //ROS_INFO_STREAM("Size information: " << information_frames.size());
+    // Send all list of frame required
+    mSerial->addFrame(information_frames)->sendList();
+}
+
 void GenericInterface::run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
     ROS_DEBUG_STREAM("DIAGNOSTIC Generic interface I'm here!");
     // Build a packet
     packet_information_t frame = CREATE_PACKET_RESPONSE(SYSTEM_TIME, HASHMAP_SYSTEM, PACKET_REQUEST);
 
-    // Build a packet
-    gpio_map.bitset.port = 1;
-    gpio_map.bitset.command = PERIPHERALS_GPIO_DIGITAL;
-    packet_information_t frame_gpio = CREATE_PACKET_RESPONSE(gpio_map.message, HASHMAP_PERIPHERALS, PACKET_REQUEST);
-
     // Add packet in the frame
-    if(mSerial->addFrame(frame)->addFrame(frame_gpio)->sendList())
+    if(mSerial->addFrame(frame)->sendList())
     {
         ROS_DEBUG_STREAM("Request Diagnostic COMPLETED");
     }
@@ -158,10 +176,6 @@ void GenericInterface::run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
     stat.add("I2C (nS)", (int) msg_system.I2C);
 
     stat.summary(diagnostic_msgs::DiagnosticStatus::OK, "Board ready!");
-}
-
-void GenericInterface::connectionCallback(const ros::SingleSubscriberPublisher& pub) {
-    ROS_INFO_STREAM("Updste: " << pub.getSubscriberName() << " - " << pub.getTopic());
 }
 
 void GenericInterface::convertGPIO(peripherals_gpio_port_t data) {

@@ -63,6 +63,8 @@ void controlLoop(uNavInterface &orb,
     last_time = this_time;
 
     //ROS_INFO_STREAM("CONTROL - running");
+    // Internal data update
+    orb.updateInterface();
     // Process control loop
     orb.read(ros::Time::now(), elapsed);
     cm.update(ros::Time::now(), elapsed);

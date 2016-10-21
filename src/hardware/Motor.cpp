@@ -46,7 +46,7 @@ Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, string
 
 void Motor::connectionCallback(const ros::SingleSubscriberPublisher& pub)
 {
-    ROS_DEBUG_STREAM("Updste: " << pub.getSubscriberName() << " - " << pub.getTopic());
+    ROS_DEBUG_STREAM("Update: " << pub.getSubscriberName() << " - " << pub.getTopic());
     // Clear list to send
     information_motor.clear();
     ROS_DEBUG_STREAM("Num referecence: " << pub_reference.getNumSubscribers());

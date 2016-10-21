@@ -25,7 +25,17 @@ public:
     void run(diagnostic_updater::DiagnosticStatusWrapper &stat);
 
 protected:
-    void connectCallback(const ros::SingleSubscriberPublisher& pub);
+
+    /**
+     * @brief initialize Initialization all parts
+     */
+    void initialize();
+
+    /**
+     * @brief connectionCallback When a Publisher is connected launch this callback
+     * @param pub information about the publisher
+     */
+    void connectionCallback(const ros::SingleSubscriberPublisher& pub);
     //Initialization object
     //NameSpace for bridge controller
     ros::NodeHandle mNh;
@@ -54,8 +64,6 @@ private:
      * @param message
      */
     void peripheralFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
-
-    void initGPIO();
 
     void setupGPIO(std::vector<int> gpio_list);
 
@@ -87,6 +95,7 @@ private:
     orbus_interface::Peripheral msg_peripheral;
 
     peripheral_gpio_map_t gpio_map;
+    std::vector<int> gpio_list;
 
 };
 

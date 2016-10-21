@@ -37,10 +37,6 @@ public:
     void read(const ros::Time& time, const ros::Duration& period);
 
     /**
-     * @brief initializeMotors
-     */
-    void initializeMotors();
-    /**
      * @brief initializeInterfaces Initialize all motors.
      * Add all Control Interface availbles and add in diagnostic task
      */
@@ -49,6 +45,11 @@ public:
      * @brief updateDiagnostics
      */
     bool updateDiagnostics();
+
+    /**
+     * @brief initialize
+     */
+    void initialize();
 
 private:
 

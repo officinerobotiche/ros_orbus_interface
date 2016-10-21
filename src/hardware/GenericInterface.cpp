@@ -21,10 +21,10 @@ GenericInterface::GenericInterface(const ros::NodeHandle &nh, const ros::NodeHan
 
     //Publisher
     pub_time = private_mNh.advertise<orbus_interface::BoardTime>("system", 10,
-                boost::bind(&GenericInterface::connectCallback, this, _1));
+                boost::bind(&GenericInterface::connectionCallback, this, _1), boost::bind(&GenericInterface::connectionCallback, this, _1));
 
     pub_peripheral = private_mNh.advertise<orbus_interface::Peripheral>("peripheral", 10,
-                boost::bind(&GenericInterface::connectCallback, this, _1));
+                boost::bind(&GenericInterface::connectionCallback, this, _1), boost::bind(&GenericInterface::connectionCallback, this, _1));
     //Subscriber
     sub_peripheral = private_mNh.subscribe("cmd_peripheral", 1, &GenericInterface::gpio_subscriber_Callback, this);
 
@@ -51,15 +51,18 @@ GenericInterface::GenericInterface(const ros::NodeHandle &nh, const ros::NodeHan
     }
 
     // Initialize all GPIO
-    initGPIO();
-}
-
-void GenericInterface::initGPIO()
-{
-    std::vector<int> gpio_list;
     if(private_mNh.hasParam("gpio"))
     {
+        ROS_INFO("GPIO configuration available.");
         private_mNh.getParam("gpio", gpio_list);
+    }
+}
+
+void GenericInterface::initialize()
+{
+    // Send correct GPIO configuration if available
+    if(private_mNh.hasParam("gpio"))
+    {
         setupGPIO(gpio_list);
     }
 }
@@ -94,7 +97,7 @@ void GenericInterface::setupGPIO(std::vector<int> gpio_list)
         }
 
     }
-    ROS_INFO_STREAM("Port config INPUT n=" << counter_input << " - OUTPUT n=" << counter_output);
+    ROS_DEBUG_STREAM("Port config INPUT n=" << counter_input << " - OUTPUT n=" << counter_output);
     // Build a packet
     message_abstract_u temp_input;
     temp_input.gpio.set.port.len = input.len;
@@ -157,8 +160,8 @@ void GenericInterface::run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
     stat.summary(diagnostic_msgs::DiagnosticStatus::OK, "Board ready!");
 }
 
-void GenericInterface::connectCallback(const ros::SingleSubscriberPublisher& pub) {
-    ROS_INFO("Connect: %s - %s", pub.getSubscriberName().c_str(), pub.getTopic().c_str());
+void GenericInterface::connectionCallback(const ros::SingleSubscriberPublisher& pub) {
+    ROS_INFO_STREAM("Updste: " << pub.getSubscriberName() << " - " << pub.getTopic());
 }
 
 void GenericInterface::convertGPIO(peripherals_gpio_port_t data) {
@@ -275,7 +278,6 @@ bool GenericInterface::gpio_Callback(orbus_interface::GPIO::Request &req, orbus_
 
     if(req.gpio.size() > 0)
     {
-        std::vector<int> gpio_list;
         vector<unsigned char> data = req.gpio;
         for(unsigned i=0; i < data.size(); ++i)
         {
@@ -283,6 +285,9 @@ bool GenericInterface::gpio_Callback(orbus_interface::GPIO::Request &req, orbus_
             //ROS_INFO_STREAM("Data: " << number);
             gpio_list.push_back(number);
         }
+        // Update GPIO config on rosparam
+        private_mNh.setParam("gpio", gpio_list);
+        // Setup GPIO on board
         setupGPIO(gpio_list);
         msg.information = "Setup ok!";
     }

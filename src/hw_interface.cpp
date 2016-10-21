@@ -83,7 +83,7 @@ void diagnosticLoop(uNavInterface &orb)
         if(diagnostic)
         {
             ROS_INFO_STREAM("DIAGNOSTIC - Initialize again the unav and restart control loop");
-            orb.initializeMotors();
+            orb.initialize();
             control_loop.start();
         }
         else
@@ -121,11 +121,12 @@ int main(int argc, char **argv) {
     orbus::serial_controller orbusSerial(serial_port_string, baud_rate);
     // Run the serial controller
     bool start = orbusSerial.start();
+    // If the conection start
     if(start)
     {
         uNavInterface interface(nh, private_nh, &orbusSerial);
         // Initialize the motor parameters
-        interface.initializeMotors();
+        interface.initialize();
         //Initialize all interfaces and setup diagnostic messages
         interface.initializeInterfaces();
 

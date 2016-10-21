@@ -94,8 +94,11 @@ bool uNavInterface::updateDiagnostics()
     return false;
 }
 
-void uNavInterface::initializeMotors()
+void uNavInterface::initialize()
 {
+    // Launch super inizializer
+    GenericInterface::initialize();
+
     for( map<string, Motor*>::iterator ii=mMotor.begin(); ii!=mMotor.end(); ++ii)
     {
         (*ii).second->initializeMotor();
@@ -128,9 +131,10 @@ void uNavInterface::initializeInterfaces()
         // Setup limits
         ((*ii).second)->setupLimits(model);
 
-//        // reset position joint
-//        ROS_DEBUG_STREAM("Reset position motor: " << joint[i].motor->mMotorName);
-//        joint[i].motor->resetPosition(0);
+        // reset position joint
+        double position = 0;
+        ROS_DEBUG_STREAM("Motor [" << (*ii).first << "] reset position to: " << position);
+        ((*ii).second)->resetPosition(position);
 
         //Add motor in diagnostic updater
         diagnostic_updater.add(*((*ii).second));

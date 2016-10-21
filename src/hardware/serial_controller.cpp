@@ -88,7 +88,7 @@ serial_controller* serial_controller::addFrame(vector<packet_information_t> pack
 {
     mMutex.lock();
     list_send.reserve(list_send.size() + packet.size());
-    list_send.insert(list_send.end(), list_send.begin(), list_send.end());
+    list_send.insert(list_send.end(), packet.begin(), packet.end());
     mMutex.unlock();
     return this;
 }

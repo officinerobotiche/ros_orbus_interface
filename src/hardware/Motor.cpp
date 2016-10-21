@@ -30,41 +30,42 @@ Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, string
     diagnostic_temperature = new MotorDiagnosticConfigurator(nh, serial, mMotorName, "temperature", 0xFFFF, number);
 
     // Add a status motor publisher
-    pub_status = mNh.advertise<orbus_interface::MotorStatus>(mMotorName + "/status", 10,
-            boost::bind(&Motor::connectCallback, this, _1));
+    pub_status = mNh.advertise<orbus_interface::MotorStatus>(mMotorName + "/status", 10);
 
     pub_reference = mNh.advertise<orbus_interface::ControlStatus>(mMotorName + "/reference", 10,
-            boost::bind(&Motor::connectCallback, this, _1));
-    pub_measure = mNh.advertise<orbus_interface::ControlStatus>(mMotorName + "/measure", 10,
-            boost::bind(&Motor::connectCallback, this, _1));
+            boost::bind(&Motor::connectionCallback, this, _1), boost::bind(&Motor::connectionCallback, this, _1));
+    pub_measure = mNh.advertise<orbus_interface::ControlStatus>(mMotorName + "/measure", 10);
     pub_control = mNh.advertise<orbus_interface::ControlStatus>(mMotorName + "/control", 10,
-            boost::bind(&Motor::connectCallback, this, _1));
+            boost::bind(&Motor::connectionCallback, this, _1), boost::bind(&Motor::connectionCallback, this, _1));
 
     //Load limits dynamic reconfigure
     dsrv = new dynamic_reconfigure::Server<orbus_interface::UnavLimitsConfig>(config_mutex, ros::NodeHandle("~" + mMotorName + "/limits"));
     dynamic_reconfigure::Server<orbus_interface::UnavLimitsConfig>::CallbackType cb = boost::bind(&Motor::reconfigureCB, this, _1, _2);
     dsrv->setCallback(cb);
-
 }
 
-void Motor::connectCallback(const ros::SingleSubscriberPublisher& pub)
+void Motor::connectionCallback(const ros::SingleSubscriberPublisher& pub)
 {
-    ROS_INFO("Connect: %s - %s", pub.getSubscriberName().c_str(), pub.getTopic().c_str());
-    if(pub_status.getNumSubscribers() >= 1)
-    {
-
-    }
+    ROS_DEBUG_STREAM("Updste: " << pub.getSubscriberName() << " - " << pub.getTopic());
+    // Clear list to send
+    information_motor.clear();
+    ROS_DEBUG_STREAM("Num referecence: " << pub_reference.getNumSubscribers());
     if(pub_reference.getNumSubscribers() >= 1)
     {
-
+        // Motor control
+        motor_command.bitset.command = MOTOR_REFERENCE;
+        // Build a packet
+        packet_information_t frame_reference = CREATE_PACKET_RESPONSE(motor_command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
+        information_motor.push_back(frame_reference);
     }
-    if(pub_measure.getNumSubscribers() >= 1)
-    {
-
-    }
+    ROS_DEBUG_STREAM("Num control: " << pub_control.getNumSubscribers());
     if(pub_control.getNumSubscribers() >= 1)
     {
-
+        // Motor control
+        motor_command.bitset.command = MOTOR_CONTROL;
+        // Build a packet
+        packet_information_t frame_control = CREATE_PACKET_RESPONSE(motor_command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
+        information_motor.push_back(frame_control);
     }
 }
 
@@ -417,16 +418,8 @@ void Motor::addRequestMeasure()
     motor_command.bitset.command = MOTOR_MEASURE;
     // Build a packet
     packet_information_t frame_measure = CREATE_PACKET_RESPONSE(motor_command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
-    // Motor control
-    motor_command.bitset.command = MOTOR_CONTROL;
-    // Build a packet
-    packet_information_t frame_control = CREATE_PACKET_RESPONSE(motor_command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
-    // Motor control
-    motor_command.bitset.command = MOTOR_REFERENCE;
-    // Build a packet
-    packet_information_t frame_reference = CREATE_PACKET_RESPONSE(motor_command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
     // Add packet in the frame
-    mSerial->addFrame(frame_measure)->addFrame(frame_control)->addFrame(frame_reference)->sendList();
+    mSerial->addFrame(frame_measure)->addFrame(information_motor)->sendList();
 }
 
 void Motor::resetPosition(double position)

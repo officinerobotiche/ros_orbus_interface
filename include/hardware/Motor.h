@@ -62,7 +62,7 @@ private:
 
     void reconfigureCB(orbus_interface::UnavLimitsConfig &config, uint32_t level);
 
-    void connectCallback(const ros::SingleSubscriberPublisher& pub);
+    void connectionCallback(const ros::SingleSubscriberPublisher& pub);
 
 private:
     //Initialization object
@@ -79,6 +79,8 @@ private:
     double velocity;
     double effort;
     double command;
+
+    vector<packet_information_t> information_motor;
 
     // Constraints
     motor_t constraints;

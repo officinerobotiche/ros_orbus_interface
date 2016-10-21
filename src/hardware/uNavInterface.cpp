@@ -153,8 +153,6 @@ void uNavInterface::read(const ros::Time& time, const ros::Duration& period) {
         (*ii).second->addRequestMeasure();
         ROS_DEBUG_STREAM("Motor [" << (*ii).first << "] Request measures");
     }
-    //Send all messages
-    //serial_status = mSerial->sendList();
 }
 
 void uNavInterface::write(const ros::Time& time, const ros::Duration& period) {

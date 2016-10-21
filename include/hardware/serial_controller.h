@@ -65,6 +65,8 @@ public:
         return addCallback(bind(fp, obj, _1, _2, _3, _4), type);
     }
 
+    serial_controller* addFrame(vector<packet_information_t> packet);
+
     serial_controller *addFrame(packet_information_t packet);
 
     bool sendList();

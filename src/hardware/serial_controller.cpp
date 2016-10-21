@@ -83,6 +83,16 @@ bool serial_controller::addCallback(const callback_data_packet_t &callback, unsi
     }
 
 }
+
+serial_controller* serial_controller::addFrame(vector<packet_information_t> packet)
+{
+    mMutex.lock();
+    list_send.reserve(list_send.size() + packet.size());
+    list_send.insert(list_send.end(), list_send.begin(), list_send.end());
+    mMutex.unlock();
+    return this;
+}
+
 serial_controller* serial_controller::addFrame(packet_information_t packet)
 {
     mMutex.lock();

@@ -62,6 +62,8 @@ private:
 
     void reconfigureCB(orbus_interface::UnavLimitsConfig &config, uint32_t level);
 
+    void connectCallback(const ros::SingleSubscriberPublisher& pub);
+
 private:
     //Initialization object
     //NameSpace for bridge controller

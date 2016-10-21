@@ -52,8 +52,6 @@ public:
 
 private:
 
-
-
     void allMotorsFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
 
 private:

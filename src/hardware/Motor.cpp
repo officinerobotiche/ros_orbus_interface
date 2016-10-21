@@ -30,11 +30,15 @@ Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, string
     diagnostic_temperature = new MotorDiagnosticConfigurator(nh, serial, mMotorName, "temperature", 0xFFFF, number);
 
     // Add a status motor publisher
-    pub_status = mNh.advertise<orbus_interface::MotorStatus>(mMotorName + "/status", 10);
+    pub_status = mNh.advertise<orbus_interface::MotorStatus>(mMotorName + "/status", 10,
+            boost::bind(&Motor::connectCallback, this, _1));
 
-    pub_reference = mNh.advertise<orbus_interface::ControlStatus>(mMotorName + "/reference", 10);
-    pub_measure = mNh.advertise<orbus_interface::ControlStatus>(mMotorName + "/measure", 10);
-    pub_control = mNh.advertise<orbus_interface::ControlStatus>(mMotorName + "/control", 10);
+    pub_reference = mNh.advertise<orbus_interface::ControlStatus>(mMotorName + "/reference", 10,
+            boost::bind(&Motor::connectCallback, this, _1));
+    pub_measure = mNh.advertise<orbus_interface::ControlStatus>(mMotorName + "/measure", 10,
+            boost::bind(&Motor::connectCallback, this, _1));
+    pub_control = mNh.advertise<orbus_interface::ControlStatus>(mMotorName + "/control", 10,
+            boost::bind(&Motor::connectCallback, this, _1));
 
     //Load limits dynamic reconfigure
     dsrv = new dynamic_reconfigure::Server<orbus_interface::UnavLimitsConfig>(config_mutex, ros::NodeHandle("~" + mMotorName + "/limits"));
@@ -43,15 +47,30 @@ Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, string
 
 }
 
+void Motor::connectCallback(const ros::SingleSubscriberPublisher& pub)
+{
+    ROS_INFO("Connect: %s - %s", pub.getSubscriberName().c_str(), pub.getTopic().c_str());
+    if(pub_status.getNumSubscribers() >= 1)
+    {
+
+    }
+    if(pub_reference.getNumSubscribers() >= 1)
+    {
+
+    }
+    if(pub_measure.getNumSubscribers() >= 1)
+    {
+
+    }
+    if(pub_control.getNumSubscribers() >= 1)
+    {
+
+    }
+}
+
 void Motor::initializeMotor()
 {
-//    // Send information about the state of the robot
-//    // Set type of command
-//    motor_command.bitset.command = MOTOR_STATE;
-//    // Build a packet
-//    packet_information_t frame_state = CREATE_PACKET_RESPONSE(motor_command.command_message, HASHMAP_MOTOR, PACKET_REQUEST);
-//    mSerial->addFrame(frame_state);
-
+    // Initialize all parameters
     pid_velocity->initConfigurator();
     pid_current->initConfigurator();
     parameter->initConfigurator();

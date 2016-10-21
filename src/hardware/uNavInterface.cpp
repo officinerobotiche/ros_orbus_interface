@@ -17,6 +17,9 @@ uNavInterface::uNavInterface(const ros::NodeHandle &nh, const ros::NodeHandle &p
     /// Added all callback to receive information about messages
     bool initCallback = mSerial->addCallback(&uNavInterface::allMotorsFrame, this, HASHMAP_MOTOR);
 
+    //Services
+    srv_unav = private_mNh.advertiseService("board", &uNavInterface::service_Callback, this);
+
    std::vector<std::string> joint_list;
    if(private_nh.hasParam("joint"))
    {
@@ -57,6 +60,17 @@ uNavInterface::uNavInterface(const ros::NodeHandle &nh, const ros::NodeHandle &p
         }
     }
 
+}
+
+bool uNavInterface::service_Callback(orbus_interface::Service::Request &req, orbus_interface::Service::Response &msg)
+{
+    // Convert to lower case
+    std::transform(req.service.begin(), req.service.end(), req.service.begin(), ::tolower);
+    ROS_INFO_STREAM("Name request: " << req.service);
+
+    msg.information = "\nList of commands availabes: \n"
+                      "* help  - this help.";
+    return true;
 }
 
 bool uNavInterface::prepareSwitch(const std::list<hardware_interface::ControllerInfo>& start_list, const std::list<hardware_interface::ControllerInfo>& stop_list)
@@ -161,7 +175,7 @@ void uNavInterface::initializeInterfaces()
         ROS_DEBUG_STREAM("Motor [" << (*ii).first << "] Registered");
     }
 
-    ROS_INFO_STREAM("Send all Constraint configuration");
+    ROS_DEBUG_STREAM("Send all Constraint configuration");
     // Send list of Command
     mSerial->sendList();
 

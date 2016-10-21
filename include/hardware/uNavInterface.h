@@ -55,9 +55,16 @@ private:
 
     void allMotorsFrame(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
 
+    /**
+    * @brief service_Callback
+    * @param req
+    * @param msg
+    * @return
+    */
+    bool service_Callback(orbus_interface::Service::Request &req, orbus_interface::Service::Response &msg);
+
 private:
     /// URDF information about robot
-    //boost::shared_ptr<urdf::ModelInterface> urdf;
     urdf::Model model;
 
     /// ROS Control interfaces
@@ -66,6 +73,9 @@ private:
 
     map<string, Motor*> mMotor;
     map<int, string> mMotorName;
+
+    // Service board
+    ros::ServiceServer srv_unav;
 };
 
 }

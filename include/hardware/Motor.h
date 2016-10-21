@@ -58,7 +58,7 @@ private:
 
     static motor_state_t get_state(string type);
 
-    motor_t updateLimits(double position, double velocity, double effort);
+    void updateLimits(double position, double velocity, double effort);
 
     void reconfigureCB(orbus_interface::UnavLimitsConfig &config, uint32_t level);
 
@@ -75,17 +75,16 @@ private:
     unsigned int mNumber;
     // State of the motor
     motor_state_t mState, mDiagnosticState;
-    double position;
-    double velocity;
-    double effort;
+    double position, max_position;
+    double velocity, max_velocity;
+    double effort, max_effort;
     double command;
 
     vector<packet_information_t> information_motor;
 
-    // Constraints
-    motor_t constraints;
     // Reconfigure status
     orbus_interface::UnavLimitsConfig limits;
+    bool first;
 
     /// ROS joint limits interface
     joint_limits_interface::VelocityJointSoftLimitsInterface vel_limits_interface;

@@ -36,6 +36,11 @@ Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, string
     pub_measure = mNh.advertise<orbus_interface::ControlStatus>(mMotorName + "/measure", 10);
     pub_control = mNh.advertise<orbus_interface::ControlStatus>(mMotorName + "/control", 10);
 
+    //Load limits dynamic reconfigure
+    dsrv = new dynamic_reconfigure::Server<orbus_interface::UnavLimitsConfig>(ros::NodeHandle("~" + mMotorName + "/limits"));
+    dynamic_reconfigure::Server<orbus_interface::UnavLimitsConfig>::CallbackType cb = boost::bind(&Motor::reconfigureCB, this, _1, _2);
+    dsrv->setCallback(cb);
+
 }
 
 void Motor::initializeMotor()
@@ -53,6 +58,12 @@ void Motor::initializeMotor()
     emergency->initConfigurator();
     // Initialize ONLY diagnostic current
     diagnostic_current->initConfigurator();
+}
+
+void Motor::reconfigureCB(orbus_interface::UnavLimitsConfig &config, uint32_t level)
+{
+    ROS_INFO_STREAM("Reconfigure motor");
+
 }
 
 void Motor::setupLimits(urdf::Model model)

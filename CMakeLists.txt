@@ -69,6 +69,7 @@ generate_dynamic_reconfigure_options(
     cfg/UnavBridge.cfg
     cfg/UnavEmergency.cfg
     cfg/UnavDiagnostic.cfg
+    cfg/UnavLimits.cfg
 )
 
 ## Generate added messages and services

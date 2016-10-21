@@ -13,6 +13,8 @@
 #include <orbus_interface/MotorStatus.h>
 #include <orbus_interface/ControlStatus.h>
 
+#include <orbus_interface/UnavLimitsConfig.h>
+
 #include "hardware/serial_controller.h"
 
 #include "configurator/MotorPIDConfigurator.h"
@@ -88,6 +90,9 @@ private:
     MotorParamConfigurator *parameter;
     MotorEmergencyConfigurator *emergency;
     MotorDiagnosticConfigurator *diagnostic_current, *diagnostic_temperature;
+    // Dynamic reconfigurator for limits
+    dynamic_reconfigure::Server<orbus_interface::UnavLimitsConfig> *dsrv;
+    void reconfigureCB(orbus_interface::UnavLimitsConfig &config, uint32_t level);
 };
 
 }

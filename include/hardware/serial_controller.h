@@ -20,11 +20,11 @@ typedef function<void (unsigned char option, unsigned char type, unsigned char c
 
 typedef enum serial_status
 {
-    OK,
-    TIMEOUT,
-    BUFFER_FULL,
-    IOEXCEPTION,
-    SERIALEXCEPTION
+    SERIAL_OK,
+    SERIAL_TIMEOUT,
+    SERIAL_BUFFER_FULL,
+    SERIAL_IOEXCEPTION,
+    SERIAL_EXCEPTION
 
 } serial_status_t;
 
@@ -67,6 +67,10 @@ public:
     serial_controller *addFrame(packet_information_t packet);
 
     bool sendList();
+
+    void resetList();
+
+    serial_status_t getStatus();
 
 protected:
     /**

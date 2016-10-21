@@ -10,7 +10,7 @@ serial_controller::serial_controller(string port, unsigned long baudrate)
     orb_message_init(&mReceive);           ///< Initialize buffer serial error
     orb_frame_init();                      ///< Initialize hash map packet
     // Start status of the serial controller
-    mStatus = OK;
+    mStatus = SERIAL_OK;
     // Default timeout
     mTimeout = 500;
 }
@@ -81,6 +81,17 @@ serial_controller* serial_controller::addFrame(packet_information_t packet)
     return this;
 }
 
+void serial_controller::resetList()
+{
+    //ROS_INFO_STREAM("Status list:" << mStatus);
+    mMutex.lock();
+    if(mStatus == SERIAL_BUFFER_FULL) {
+        list_send.clear();
+        mStatus = SERIAL_OK;
+    }
+    mMutex.unlock();
+}
+
 bool serial_controller::sendList()
 {
     mMutex.lock();
@@ -88,14 +99,13 @@ bool serial_controller::sendList()
     if(state) {
         list_send.clear();
     }
-    //ROS_INFO_STREAM("Status list:" << mStatus);
-    // TEMP
-    if(mStatus == BUFFER_FULL) {
-        list_send.clear();
-        mStatus = OK;
-    }
     mMutex.unlock();
-    return (mStatus == OK);
+    return state;
+}
+
+serial_status_t serial_controller::getStatus()
+{
+    return mStatus;
 }
 
 bool serial_controller::sendSerialFrame(vector<packet_information_t> list_send)
@@ -123,12 +133,12 @@ bool serial_controller::sendSerialFrame(vector<packet_information_t> list_send)
                         callback(info.option, info.type, info.command, info.message);
                     }
                 }
-                mStatus = OK;
+                mStatus = SERIAL_OK;
                 return true;
             }
         }
-        ROS_ERROR_STREAM("Buffer FULL");
-        mStatus = BUFFER_FULL;
+        ROS_DEBUG_STREAM("Buffer FULL");
+        mStatus = SERIAL_BUFFER_FULL;
     }
     return false;
 }
@@ -164,13 +174,13 @@ bool serial_controller::writePacket(packet_t packet)
     }
     catch (serial::SerialException& e)
     {
-        mStatus = SERIALEXCEPTION;
+        mStatus = SERIAL_EXCEPTION;
         ROS_ERROR_STREAM("Unable to write serial port " << mSerialPort << " - Error: "  << e.what() );
         return false;
     }
     catch (serial::IOException& e)
     {
-        mStatus = IOEXCEPTION;
+        mStatus = SERIAL_IOEXCEPTION;
         ROS_ERROR_STREAM("Unable to write serial port " << mSerialPort << " - Error: "  << e.what() );
         return false;
     }
@@ -194,7 +204,7 @@ bool serial_controller::readPacket()
 
         if( !mSerial.waitReadable() )
         {
-            mStatus = TIMEOUT;
+            mStatus = SERIAL_TIMEOUT;
             ROS_ERROR_STREAM( "Serial timeout connecting");
             return false;
         }
@@ -205,13 +215,13 @@ bool serial_controller::readPacket()
         }
         catch (serial::SerialException& e)
         {
-            mStatus = SERIALEXCEPTION;
+            mStatus = SERIAL_EXCEPTION;
             ROS_ERROR_STREAM("Unable to read serial port " << mSerialPort << " - Error: "  << e.what() );
             return false;
         }
         catch (serial::IOException& e)
         {
-            mStatus = IOEXCEPTION;
+            mStatus = SERIAL_IOEXCEPTION;
             ROS_ERROR_STREAM("Unable to read serial port " << mSerialPort << " - Error: "  << e.what() );
             return false;
         }

@@ -73,7 +73,7 @@ void uNavInterface::doSwitch(const std::list<hardware_interface::ControllerInfo>
 
 bool uNavInterface::updateDiagnostics()
 {
-    if(serial_status)
+    if(mSerial->getStatus() == orbus::SERIAL_OK)
     {
         ROS_DEBUG_STREAM("Update diagnostic");
         // Force update all diagnostic parts
@@ -85,7 +85,7 @@ bool uNavInterface::updateDiagnostics()
         ROS_ERROR("Error connection! Try to connect again ...");
         // Send list of Command
         serial_status = mSerial->sendList();
-        if(serial_status)
+        if(mSerial->getStatus() == orbus::SERIAL_OK)
         {
             ROS_INFO("... connected!");
             return true;

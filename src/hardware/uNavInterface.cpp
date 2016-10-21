@@ -111,9 +111,12 @@ void uNavInterface::initializeInterfaces()
     initializeDiagnostic();
 
     if (!model.initParam("/robot_description")){
-      ROS_ERROR("Failed to parse urdf file");
+        ROS_ERROR("Failed to parse urdf file");
     }
-    ROS_INFO_STREAM("/robot_description found! " << model.name_ << " parsed!");
+    else
+    {
+        ROS_INFO_STREAM("/robot_description found! " << model.name_ << " parsed!");
+    }
 
     for( map<string, Motor*>::iterator ii=mMotor.begin(); ii!=mMotor.end(); ++ii)
     {

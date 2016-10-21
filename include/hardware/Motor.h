@@ -58,6 +58,10 @@ private:
 
     static motor_state_t get_state(string type);
 
+    void updateLimits(double position, double velocity, double effort);
+
+    void reconfigureCB(orbus_interface::UnavLimitsConfig &config, uint32_t level);
+
 private:
     //Initialization object
     //NameSpace for bridge controller
@@ -73,6 +77,9 @@ private:
     double velocity;
     double effort;
     double command;
+
+    // Reconfigure status
+    orbus_interface::UnavLimitsConfig limits;
 
     /// ROS joint limits interface
     joint_limits_interface::VelocityJointSoftLimitsInterface vel_limits_interface;
@@ -90,9 +97,13 @@ private:
     MotorParamConfigurator *parameter;
     MotorEmergencyConfigurator *emergency;
     MotorDiagnosticConfigurator *diagnostic_current, *diagnostic_temperature;
+
     // Dynamic reconfigurator for limits
     dynamic_reconfigure::Server<orbus_interface::UnavLimitsConfig> *dsrv;
-    void reconfigureCB(orbus_interface::UnavLimitsConfig &config, uint32_t level);
+    boost::recursive_mutex config_mutex;
+    /// Setup variable
+    bool setup_;
+    orbus_interface::UnavLimitsConfig last_config_, default_config_;
 };
 
 }

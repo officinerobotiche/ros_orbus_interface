@@ -37,7 +37,7 @@ Motor::Motor(const ros::NodeHandle& nh, orbus::serial_controller *serial, string
     pub_control = mNh.advertise<orbus_interface::ControlStatus>(mMotorName + "/control", 10);
 
     //Load limits dynamic reconfigure
-    dsrv = new dynamic_reconfigure::Server<orbus_interface::UnavLimitsConfig>(ros::NodeHandle("~" + mMotorName + "/limits"));
+    dsrv = new dynamic_reconfigure::Server<orbus_interface::UnavLimitsConfig>(config_mutex, ros::NodeHandle("~" + mMotorName + "/limits"));
     dynamic_reconfigure::Server<orbus_interface::UnavLimitsConfig>::CallbackType cb = boost::bind(&Motor::reconfigureCB, this, _1, _2);
     dsrv->setCallback(cb);
 
@@ -60,10 +60,61 @@ void Motor::initializeMotor()
     diagnostic_current->initConfigurator();
 }
 
+void Motor::updateLimits(double position, double velocity, double effort)
+{
+    // Constraints
+    motor_t constraints;
+
+    constraints.position = position;
+    constraints.velocity = (motor_control_t) (velocity * 1000.0);
+    constraints.current = (motor_control_t) (last_config_.current * 1000.0);
+    constraints.effort = (motor_control_t) (effort * 1000.0);
+    constraints.pwm = (motor_control_t) last_config_.PWM;
+
+
+    last_config_.position = position;
+    last_config_.velocity = velocity;
+    last_config_.effort = effort;
+
+    dsrv->updateConfig(last_config_);
+
+    ROS_INFO_STREAM("LIMITS param [pos:" << constraints.position << ", vel:" << constraints.velocity << ", curr:" << constraints.current << ", eff:" << constraints.effort <<", PWM:" << constraints.pwm << "]");
+
+    // Set type of command
+    motor_command.bitset.command = MOTOR_CONSTRAINT;
+    // Build a packet
+    message_abstract_u temp;
+    temp.motor.motor = limits;
+    packet_information_t frame = CREATE_PACKET_DATA(motor_command.command_message, HASHMAP_MOTOR, temp);
+    // Add packet in the frame
+    mSerial->addFrame(frame);
+}
+
 void Motor::reconfigureCB(orbus_interface::UnavLimitsConfig &config, uint32_t level)
 {
     ROS_INFO_STREAM("Reconfigure motor");
 
+    //The first time we're called, we just want to make sure we have the
+    //original configuration
+    if(!setup_)
+    {
+      last_config_ = config;
+      default_config_ = last_config_;
+      setup_ = true;
+      return;
+    }
+
+    if(config.restore_defaults) {
+      config = default_config_;
+      //if someone sets restore defaults on the parameter server, prevent looping
+      config.restore_defaults = false;
+    }
+
+    // Update last config
+    last_config_ = config;
+
+    // Update limits
+    updateLimits(config.position, config.velocity, config.effort);
 }
 
 void Motor::setupLimits(urdf::Model model)
@@ -116,21 +167,13 @@ void Motor::setupLimits(urdf::Model model)
         ROS_WARN_STREAM("LOAD [" << mMotorName << "] with DEFAULT limit = |" << limits.max_velocity << "| rad/s & |" << limits.max_effort << "| Nm");
     }
 
-    // Send joint limits information to board
-    motor_t constraint;
-    constraint.position = MOTOR_CONTROL_MAX;
-    constraint.velocity = (motor_control_t) limits.max_velocity*1000;
-    constraint.current = MOTOR_CONTROL_MAX;
-    constraint.effort = (motor_control_t) limits.max_effort*1000;
-
-    // Set type of command
-    motor_command.bitset.command = MOTOR_CONSTRAINT;
-    // Build a packet
-    message_abstract_u temp;
-    temp.motor.motor = constraint;
-    packet_information_t frame = CREATE_PACKET_DATA(motor_command.command_message, HASHMAP_MOTOR, temp);
-    // Add packet in the frame
-    mSerial->addFrame(frame);
+    // Set maximum limits if doesn't have limit
+    if(limits.has_position_limits == false)
+    {
+        limits.max_position = 6.28;
+    }
+    // Update limits
+    updateLimits(limits.max_position, limits.max_velocity, limits.max_effort);
 
     joint_limits_interface::VelocityJointSoftLimitsHandle handle(joint_handle, // We read the state and read/write the command
                                                                  limits,       // Limits spec

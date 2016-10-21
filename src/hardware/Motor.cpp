@@ -98,7 +98,7 @@ motor_t Motor::updateLimits(double position, double velocity, double effort)
     constraints.velocity = (motor_control_t) (velocity * 1000.0);
     constraints.current = (motor_control_t) (last_config_.current * 1000.0);
     constraints.effort = (motor_control_t) (effort * 1000.0);
-    constraints.pwm = (motor_control_t) last_config_.PWM;
+    constraints.pwm = (motor_control_t) (last_config_.PWM * ((double) MOTOR_CONTROL_MAX) / 100.0);
 
     last_config_.position = position;
     last_config_.velocity = velocity;

@@ -65,7 +65,7 @@ private:
     hardware_interface::VelocityJointInterface velocity_joint_interface;
 
     map<string, Motor*> mMotor;
-    vector<string> mMotorName;
+    map<int, string> mMotorName;
 };
 
 }

@@ -151,7 +151,7 @@ bool serial_controller::parse_packet(packet_t receive)
                 ROS_DEBUG("Return alive message");
             }
             // Check if is available on the hashmap
-            else if (info.type == 0 || hashmap.find(info.type) != hashmap.end())
+            else if (hashmap.find(info.type) != hashmap.end())
             {
                 // Send the message
                 callback_data_packet_t callback = hashmap[info.type];

@@ -9,6 +9,8 @@
 namespace ORInterface
 {
 
+#define MAX_MOTORS 8
+
 uNavInterface::uNavInterface(const ros::NodeHandle &nh, const ros::NodeHandle &private_nh, orbus::serial_controller *serial)
     : GenericInterface(nh, private_nh, serial)
 {
@@ -32,9 +34,27 @@ uNavInterface::uNavInterface(const ros::NodeHandle &nh, const ros::NodeHandle &p
     for(unsigned i=0; i < joint_list.size(); ++i)
     {
         string motor_name = joint_list.at(i);
-        ROS_INFO_STREAM("Motor name: " << motor_name);
-        mMotor[motor_name] = new Motor(private_mNh, serial, motor_name, i);
-        mMotorName.push_back(motor_name);
+        int number = i;
+        if(private_nh.hasParam(motor_name + "/number"))
+        {
+            private_nh.getParam(motor_name + "/number", number);
+        }
+        else
+        {
+            ROS_WARN_STREAM("Default number selected for Motor: " << motor_name << " is " << number);
+            private_nh.setParam(motor_name + "/number", number);
+        }
+        // Check if the number is available in the unav protocol
+        if(number < MAX_MOTORS)
+        {
+            ROS_INFO_STREAM("Motor[" << number << "] name: " << motor_name);
+            mMotor[motor_name] = new Motor(private_mNh, serial, motor_name, number);
+            mMotorName[number] = motor_name;
+        }
+        else
+        {
+            ROS_ERROR_STREAM("Motor: " << motor_name <<  ". Is to high with maximum motors available " << number << " > " << MAX_MOTORS);
+        }
     }
 
 }
@@ -178,17 +198,16 @@ void uNavInterface::allMotorsFrame(unsigned char option, unsigned char type, uns
     int number_motor = (int) motor.bitset.motor;
     ROS_DEBUG_STREAM("Frame [Option: " << option << ", HashMap: " << type << ", Nmotor: " << number_motor << ", Command: " << (int) motor.bitset.command << "]");
 
-    if(number_motor >= 0 || number_motor < mMotorName.size())
+    if(mMotorName.find(number_motor) != mMotorName.end())
     {
-        string name = mMotorName.at(number_motor);
-        // Update information
+        string name = mMotorName[number_motor];
+        // ROS_DEBUG_STREAM("Motor[" << number_motor << "] found! Name: " << name);
         mMotor[name]->motorFrame(option, type, motor.bitset.command, message.motor);
     }
     else
     {
         ROS_WARN_STREAM("Error enything motor is initialized for Motor: " << number_motor);
     }
-
 }
 
 }

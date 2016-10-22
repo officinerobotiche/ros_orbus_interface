@@ -134,13 +134,26 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 ## Install ##
 #############
 
-#install(TARGETS lib_orbus_cpp hardware_unav
-#  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-#  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
+# Mark executables and/or libraries for installation
+ install(TARGETS or_bus unav_node
+   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+ )
 
-#install(DIRECTORY include/${PROJECT_NAME}/
-#        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+# Mark cpp header files for installation
+ install(DIRECTORY include/ or_bus_c.X/includes/
+   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+   FILES_MATCHING PATTERN "*.h"
+   PATTERN ".git" EXCLUDE
+ )
+
+## Mark other files for installation (e.g. launch and bag files, etc.)
+# install(FILES
+#   # myfile1
+#   # myfile2
+#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+# )
 
 #install(DIRECTORY launch config
 #  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
@@ -148,5 +161,14 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 #############
 ## Testing ##
 #############
+
+## Add gtest based cpp test target and link libraries
+# catkin_add_gtest(${PROJECT_NAME}-unav test/unav_node_test.cpp)
+# if(TARGET ${PROJECT_NAME}-unav)
+#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
+# endif()
+
+## Add folders to be run by python nosetests
+# catkin_add_nosetests(test)
 
 
